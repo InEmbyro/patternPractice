@@ -56,6 +56,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ModuleDefinitionFile>.\canEngine.def</ModuleDefinitionFile>
+      <AdditionalDependencies>$(SolutionDir)\Softing\canL2.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>

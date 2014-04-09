@@ -13,6 +13,7 @@ extern "C" {
 #endif  /* __cplusplus */
 
 DLLEXPORT BOOL WINAPI InitCan(void);
+DLLEXPORT int WINAPI GetCanNo(void);
 DLLEXPORT void WINAPI StringTest(CString*);
 
 #ifdef __cplusplus

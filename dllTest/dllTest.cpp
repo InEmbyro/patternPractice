@@ -92,6 +92,8 @@ BOOL CdllTestApp::InitInstance()
 	CString name;
 	name.SetString(_T("John"));
 	StringTest(&name);
+	InitCan();
+	int canNo = GetCanNo();
 
 	InitContextMenuManager();
 

@@ -10,6 +10,12 @@
 // CcanEngineApp
 // 這個類別的實作請參閱 canEngine.cpp
 //
+class CCanInfo
+{
+public:
+	int CanChNo;
+};
+
 class CcanEngineApp : public CWinApp
 {
 public:
