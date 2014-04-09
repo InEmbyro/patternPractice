@@ -1,2 +1,3 @@
-1. Start to compose the canEngine of Softing CAN.
+1. The code is able to initate and list the channel information.
 
+Now, I am considering FIFO or Dynamical mode to be implemented.

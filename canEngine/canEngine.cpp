@@ -61,3 +61,66 @@ BOOL CcanEngineApp::InitInstance()
 
 	return TRUE;
 }
+
+CCanInfo::CCanInfo()
+	:m_pBuf(NULL)
+{
+
+}
+
+CCanInfo::~CCanInfo()
+{
+	if (m_pBuf)
+		free(m_pBuf);
+	
+	POSITION pos;
+	MY_L2CONF l2con;
+	while ((pos = m_ListL2Config.GetHeadPosition())) {
+		l2con = m_ListL2Config.GetAt(pos);
+		if (l2con.HasInit)
+			INIL2_close_channel(l2con.chHnd);
+		m_ListL2Config.RemoveHead();
+	}
+}
+
+void CCanInfo::GetDeviceType(int u32DeviceType)
+{
+	switch(u32DeviceType) {
+	case D_CANCARD2:
+		m_CurTypeName.SetString(_T("CANcard2"));
+		break;
+	case D_CANACPCI:
+		m_CurTypeName.SetString(_T("CAN-AC PCI"));
+		break;
+	case D_CANACPCIDN:
+		m_CurTypeName.SetString(_T("CAN-AC PCI/DN"));
+		break;
+	case D_CANAC104:
+		m_CurTypeName.SetString(_T("CAN-AC PC/104"));
+		break;
+	case D_CANUSB:
+		m_CurTypeName.SetString(_T("CANusb"));
+		break;
+	case D_EDICCARD2:
+		m_CurTypeName.SetString(_T("EDICcard2"));
+		break;
+	case D_CANPROXPCIE:
+		m_CurTypeName.SetString(_T("CANpro PCI Express"));
+		break;
+	case D_CANPROX104:
+		m_CurTypeName.SetString(_T("CANpro PC/104plus"));
+		break;
+	case D_CANECO104:
+		m_CurTypeName.SetString(_T("CAN-ECOx-104"));
+		break;
+	case D_CANFANUPC8:
+		m_CurTypeName.SetString(_T("PC8 onboard CAN"));
+		break;
+	case D_CANPROUSB:
+		m_CurTypeName.SetString(_T("CANpro USB"));
+		break;
+	default:
+		m_CurTypeName.SetString(_T("default"));
+		break;
+	}
+}
