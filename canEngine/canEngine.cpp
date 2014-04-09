@@ -61,16 +61,3 @@ BOOL CcanEngineApp::InitInstance()
 
 	return TRUE;
 }
-
-DllImport int InitCan()
-{
-
-	return TRUE;
-}
-
-DllImport void StringTest(CString* pN)
-{
-	if (pN) {
-		pN->Insert(0, _T("Hello "));
-	}
-}

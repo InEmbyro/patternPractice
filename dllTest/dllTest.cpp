@@ -7,8 +7,7 @@
 #include "afxdialogex.h"
 #include "dllTest.h"
 #include "MainFrm.h"
-#include "../canEngine/canEngine.h"
-
+#include "../canEngine/canEngineApi.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -172,11 +171,6 @@ END_MESSAGE_MAP()
 void CdllTestApp::OnAppAbout()
 {
 	CAboutDlg aboutDlg;
-	CString name;
-
-	name.SetString(_T("John"));
-	StringTest(&name);
-	aboutDlg.m_Str.SetString(name);
 	aboutDlg.DoModal();
 }
 
