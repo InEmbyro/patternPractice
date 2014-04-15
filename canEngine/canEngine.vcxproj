@@ -103,6 +103,7 @@
   <ItemGroup>
     <ClCompile Include="canEngine.cpp" />
     <ClCompile Include="canEngineApi.cpp" />
+    <ClCompile Include="CCanRaw.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
@@ -112,6 +113,7 @@
     <ClInclude Include="canEngine.h" />
     <ClInclude Include="canEngineApi.h" />
     <ClInclude Include="canEngine_def.h" />
+    <ClInclude Include="CCanRaw.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />

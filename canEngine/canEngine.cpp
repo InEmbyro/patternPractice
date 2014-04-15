@@ -80,10 +80,11 @@ CCanInfo::CCanInfo()
 	while (i--) {
 		_p = new CCanRaw();
 		if (_p) {
-			_p->_refCount = 0;
 			_pRawList.AddHead(_p);
 		}
 	}
+	if (!_pRawList.IsEmpty())
+		_curRawListPos = _pRawList.GetHeadPosition();
 }
 
 CCanInfo::~CCanInfo()
@@ -213,28 +214,11 @@ _error:
 	return -1;
 }
 
-void CCanInfo::setRefCount()
-{
-	CCanRaw *_p;
-	POSITION pos;
-
-	if (_pRawList.IsEmpty())
-		return;
-
-	pos = _pRawList.GetHeadPosition();
-	do {
-		_p = _pRawList.GetNext(pos);
-		_p->_refCount = _notedEvt.GetCount();
-	} while (pos);
-
-}
-
 POSITION CCanInfo::RegEvent(HANDLE eV)
 {
 	POSITION pos;
 
 	pos = _notedEvt.AddTail(eV);
-	setRefCount();
 
 	return pos;
 }
@@ -253,6 +237,34 @@ void CCanInfo::SetEvent()
 		::SetEvent(hnd);		
 	} while(pos);
 }
+
+BOOL CCanInfo::FindNextPool(CCanRaw **_p)
+{
+	CCanRaw *p;
+	POSITION pos;
+
+	pos = _curRawListPos;
+
+	do {
+		p = _pRawList.GetNext(pos);
+		if (p->GetRefCount() == 0)
+			break;
+		if (pos == NULL) {
+			pos = _pRawList.GetHeadPosition();
+		}
+		if (pos == _curRawListPos)
+			return FALSE;
+	} while (1);
+
+	if (pos == NULL)
+		_curRawListPos =_pRawList.GetHeadPosition();
+	else
+		_curRawListPos = pos;
+
+	*_p = p;
+	return TRUE;
+}
+
 UINT CCanInfo::receiveThread(LPVOID pa)
 {
 	CCanInfo *pThis = (CCanInfo*) pa;
@@ -262,19 +274,15 @@ UINT CCanInfo::receiveThread(LPVOID pa)
 	unsigned long diff_time = 0, old_time = 0;
 	CCanRaw *_pR = NULL;
 
-	POSITION pos = pThis->_pRawList.GetHeadPosition();
-	if (!pos) {
-		LOG_ERROR("RAW MEMEORY POOL IS NULL");
-		return 1;
-	}
 	while(1) {
 		ret = WaitForMultipleObjects(2, &pThis->_ThreadEvent[0], FALSE, INFINITE);
 		switch (ret - WAIT_OBJECT_0 ) {
 		case 0:
-			if (!pos) {
-				pos = pThis->_pRawList.GetHeadPosition();
-			}
-			_pR = pThis->_pRawList.GetNext(pos);
+			if (pThis->FindNextPool(&_pR) == FALSE) {
+				LOG_ERROR("RAW MEMEORY POOL IS NULL");
+				break;
+			}	
+			_pR->SetRefCount(pThis->_notedEvt.GetCount());
 			do {
 				switch (frc = CANL2_read_ac(pThis->_curHandle, &param)) {
 					case CANL2_RA_DATAFRAME:
@@ -284,10 +292,8 @@ UINT CCanInfo::receiveThread(LPVOID pa)
 						break;
 				}
 			} while (frc > 0);
-#ifdef _DEBUG
 			pThis->SetEvent();
-			Sleep(1);
-#endif //_DEBUG
+
 			break;
 		case 1:
 			LOG_ERROR("interruptThread exit");

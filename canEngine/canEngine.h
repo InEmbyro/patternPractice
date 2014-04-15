@@ -9,13 +9,10 @@
 
 #include "../Softing/Can_def.h"
 #include "../Softing/CANL2.H"
+#include "CCanRaw.h"
 #include "canEngine_def.h"
 
-#if 0
-#define LOG_ERROR(A)	AfxMessageBox(_T(A))
-#else
-#define LOG_ERROR(A)
-#endif
+
 
 // CcanEngineApp
 // 這個類別的實作請參閱 canEngine.cpp
@@ -32,13 +29,14 @@ class CCanInfo
 {
 	static UINT receiveThread(LPVOID);
 
-	void	setRefCount(void);
 	void	SetEvent(void);
 	int				PrepareForIntEvent(MY_L2CONF);
 	HANDLE			_ThreadEvent[2];
 	CWinThread*		_pThreadHandle;
 	CAN_HANDLE		_curHandle;
 	CList <HANDLE, HANDLE&> _notedEvt;
+	BOOL		FindNextPool(CCanRaw **_p);
+	POSITION	_curRawListPos;
 
 public:
 	CCanInfo();
