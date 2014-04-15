@@ -1,3 +1,1 @@
-1. Add the receivingThread to acquire the CAN pkt.
-2. Add the CCanRaw class to manipulate the received data.
-
+1. Add the register event function of CAN raw data.

@@ -6,6 +6,11 @@
 
 CCanInfo canInfo;
 
+DLLEXPORT POSITION WINAPI RegisterAcquire(HANDLE eV)
+{
+	return canInfo.RegEvent(eV);
+}
+
 DLLEXPORT HANDLE WINAPI GetTerminalHnd()
 {
 	return INVALID_HANDLE_VALUE;

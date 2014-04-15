@@ -84,7 +84,6 @@ CCanInfo::CCanInfo()
 			_pRawList.AddHead(_p);
 		}
 	}
-
 }
 
 CCanInfo::~CCanInfo()
@@ -214,6 +213,46 @@ _error:
 	return -1;
 }
 
+void CCanInfo::setRefCount()
+{
+	CCanRaw *_p;
+	POSITION pos;
+
+	if (_pRawList.IsEmpty())
+		return;
+
+	pos = _pRawList.GetHeadPosition();
+	do {
+		_p = _pRawList.GetNext(pos);
+		_p->_refCount = _notedEvt.GetCount();
+	} while (pos);
+
+}
+
+POSITION CCanInfo::RegEvent(HANDLE eV)
+{
+	POSITION pos;
+
+	pos = _notedEvt.AddTail(eV);
+	setRefCount();
+
+	return pos;
+}
+
+void CCanInfo::SetEvent()
+{
+	POSITION pos;
+	HANDLE hnd;
+
+	if (_notedEvt.IsEmpty())
+		return;
+
+	pos = _notedEvt.GetHeadPosition();
+	do {
+		hnd = _notedEvt.GetNext(pos);
+		::SetEvent(hnd);		
+	} while(pos);
+}
 UINT CCanInfo::receiveThread(LPVOID pa)
 {
 	CCanInfo *pThis = (CCanInfo*) pa;
@@ -232,8 +271,9 @@ UINT CCanInfo::receiveThread(LPVOID pa)
 		ret = WaitForMultipleObjects(2, &pThis->_ThreadEvent[0], FALSE, INFINITE);
 		switch (ret - WAIT_OBJECT_0 ) {
 		case 0:
-			if (!pos)
-				break;
+			if (!pos) {
+				pos = pThis->_pRawList.GetHeadPosition();
+			}
 			_pR = pThis->_pRawList.GetNext(pos);
 			do {
 				switch (frc = CANL2_read_ac(pThis->_curHandle, &param)) {
@@ -245,6 +285,7 @@ UINT CCanInfo::receiveThread(LPVOID pa)
 				}
 			} while (frc > 0);
 #ifdef _DEBUG
+			pThis->SetEvent();
 			Sleep(1);
 #endif //_DEBUG
 			break;
@@ -258,3 +299,4 @@ UINT CCanInfo::receiveThread(LPVOID pa)
 __exit:
 	return 1;
 }
+

@@ -92,7 +92,12 @@ BOOL CdllTestApp::InitInstance()
 
 	if (!InitCan())
 		AfxMessageBox(_T("Initiate CAN fail!"));
+
+	m_Event = CreateEvent(NULL, FALSE, FALSE, NULL);
 	int canNo = GetCanNo();
+	RegisterAcquire(m_Event);
+
+	WaitForSingleObject(m_Event, INFINITE);
 
 	InitContextMenuManager();
 

@@ -30,6 +30,7 @@ public:
 public:
 	UINT  m_nAppLook;
 	BOOL  m_bHiColorIcons;
+	HANDLE m_Event;
 
 	virtual void PreLoadState();
 	virtual void LoadCustomState();

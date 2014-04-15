@@ -32,15 +32,20 @@ class CCanInfo
 {
 	static UINT receiveThread(LPVOID);
 
+	void	setRefCount(void);
+	void	SetEvent(void);
 	int				PrepareForIntEvent(MY_L2CONF);
 	HANDLE			_ThreadEvent[2];
 	CWinThread*		_pThreadHandle;
 	CAN_HANDLE		_curHandle;
+	CList <HANDLE, HANDLE&> _notedEvt;
+
 public:
 	CCanInfo();
 	~CCanInfo();
-	void GetDeviceType(int u32DeviceType);
-	BOOL StartThread(MY_L2CONF);
+	void		GetDeviceType(int u32DeviceType);
+	POSITION	RegEvent(HANDLE eV);
+	BOOL		StartThread(MY_L2CONF);
 
 	int m_CanChNo;
 
@@ -48,7 +53,6 @@ public:
 	LPVOID m_pBuf;
 	CList <MY_L2CONF, MY_L2CONF> m_ListL2Config;
 	CString m_CurTypeName;
-
 	CList <CCanRaw*, CCanRaw*> _pRawList;
 };
 
