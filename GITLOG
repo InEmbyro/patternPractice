@@ -1,4 +1,3 @@
-Oh... my God...
-
-I forgot adding Softing files.
+1. Add the receivingThread to acquire the CAN pkt.
+2. Add the CCanRaw class to manipulate the received data.
 

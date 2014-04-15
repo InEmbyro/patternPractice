@@ -49,6 +49,11 @@ CcanEngineApp::CcanEngineApp()
 	// 將所有重要的初始設定加入 InitInstance 中
 }
 
+CcanEngineApp::~CcanEngineApp()
+{
+
+}
+
 
 // 僅有的一個 CcanEngineApp 物件
 
@@ -66,6 +71,20 @@ CCanInfo::CCanInfo()
 	:m_pBuf(NULL)
 {
 
+	_pThreadHandle = NULL;
+	for (int i = 0; i < 2; i++)
+		_ThreadEvent[i] = INVALID_HANDLE_VALUE;
+
+	CCanRaw *_p;
+	int i = 3;
+	while (i--) {
+		_p = new CCanRaw();
+		if (_p) {
+			_p->_refCount = 0;
+			_pRawList.AddHead(_p);
+		}
+	}
+
 }
 
 CCanInfo::~CCanInfo()
@@ -73,6 +92,12 @@ CCanInfo::~CCanInfo()
 	if (m_pBuf)
 		free(m_pBuf);
 	
+	/*	_pThreadHandle pointers to a address, which is created by AfxBeginThread.
+		Theoretically, the pointers will be released when the thread exists. But, 
+		the thread is brutally terminated by UNKNOW timing.
+	*/
+	delete _pThreadHandle;
+
 	POSITION pos;
 	MY_L2CONF l2con;
 	while ((pos = m_ListL2Config.GetHeadPosition())) {
@@ -81,8 +106,24 @@ CCanInfo::~CCanInfo()
 			INIL2_close_channel(l2con.chHnd);
 		m_ListL2Config.RemoveHead();
 	}
+
+	while ((pos = _pRawList.GetHeadPosition()))
+		delete _pRawList.RemoveHead();
+
 }
 
+BOOL CCanInfo::StartThread(MY_L2CONF l2con)
+{
+	/* We need to ensure there is at least one available CAN channel */
+	if (m_ListL2Config.IsEmpty()) {
+		LOG_ERROR("No available CAN channel; cannot start thread");
+		return FALSE;
+	}
+
+	PrepareForIntEvent(l2con);
+
+	return TRUE;
+}
 void CCanInfo::GetDeviceType(int u32DeviceType)
 {
 	switch(u32DeviceType) {
@@ -123,4 +164,97 @@ void CCanInfo::GetDeviceType(int u32DeviceType)
 		m_CurTypeName.SetString(_T("default"));
 		break;
 	}
+}
+
+int CCanInfo::PrepareForIntEvent(MY_L2CONF l2con)
+{
+	DWORD rtnCode;
+
+	if ((_ThreadEvent[0] = CreateEvent(NULL, FALSE, FALSE, NULL)) == NULL) {
+		LOG_ERROR("_ThreadEvent[0] == NULL");
+		goto _error;
+	}
+	if ((_ThreadEvent[1] = CreateEvent(NULL, FALSE, FALSE, NULL)) == NULL) {
+		LOG_ERROR("_ThreadEvent[1] == NULL");
+		goto _error;
+	}
+
+	ResetEvent(_ThreadEvent[0]);
+	ResetEvent(_ThreadEvent[1]);
+	
+	l2con.l2conf.hEvent = _ThreadEvent[0];
+
+	if (CANL2_initialize_fifo_mode(l2con.chHnd, &l2con.l2conf)) {
+		LOG_ERROR("CANL2_initialize_fifo_mode fail");
+		goto _error;
+	}
+
+	_curHandle = l2con.chHnd;
+	if ((_pThreadHandle = AfxBeginThread(receiveThread, this)) == NULL) {
+		LOG_ERROR("_pThreadHandle = NULL");
+		goto _error;
+	}
+
+	return 0;
+
+_error:
+	for (int i = 0; i < 2; i++) {
+		if (_ThreadEvent[i] != INVALID_HANDLE_VALUE)
+			CloseHandle(_ThreadEvent[i]);
+	}
+
+	if (GetExitCodeThread(_pThreadHandle, &rtnCode)) {
+		if (rtnCode == STILL_ACTIVE) {
+			::TerminateThread(_pThreadHandle, 0);
+			_pThreadHandle = NULL;
+		}
+	}
+
+
+	return -1;
+}
+
+UINT CCanInfo::receiveThread(LPVOID pa)
+{
+	CCanInfo *pThis = (CCanInfo*) pa;
+	PARAM_STRUCT param;
+	DWORD  ret;
+	int frc = CANL2_RA_NO_DATA;
+	unsigned long diff_time = 0, old_time = 0;
+	CCanRaw *_pR = NULL;
+
+	POSITION pos = pThis->_pRawList.GetHeadPosition();
+	if (!pos) {
+		LOG_ERROR("RAW MEMEORY POOL IS NULL");
+		return 1;
+	}
+	while(1) {
+		ret = WaitForMultipleObjects(2, &pThis->_ThreadEvent[0], FALSE, INFINITE);
+		switch (ret - WAIT_OBJECT_0 ) {
+		case 0:
+			if (!pos)
+				break;
+			_pR = pThis->_pRawList.GetNext(pos);
+			do {
+				switch (frc = CANL2_read_ac(pThis->_curHandle, &param)) {
+					case CANL2_RA_DATAFRAME:
+						_pR->_list.AddTail(param);
+						break;
+					default:
+						break;
+				}
+			} while (frc > 0);
+#ifdef _DEBUG
+			Sleep(1);
+#endif //_DEBUG
+			break;
+		case 1:
+			LOG_ERROR("interruptThread exit");
+			goto __exit;
+			break;
+		}
+	}
+
+__exit:
+	return 1;
 }

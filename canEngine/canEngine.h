@@ -6,8 +6,16 @@
 #ifndef __AFXWIN_H__
 	#error "對 PCH 包含此檔案前先包含 'stdafx.h'"
 #endif
+
 #include "../Softing/Can_def.h"
 #include "../Softing/CANL2.H"
+#include "canEngine_def.h"
+
+#if 0
+#define LOG_ERROR(A)	AfxMessageBox(_T(A))
+#else
+#define LOG_ERROR(A)
+#endif
 
 // CcanEngineApp
 // 這個類別的實作請參閱 canEngine.cpp
@@ -22,12 +30,18 @@ typedef struct {
 
 class CCanInfo
 {
+	static UINT receiveThread(LPVOID);
+
+	int				PrepareForIntEvent(MY_L2CONF);
+	HANDLE			_ThreadEvent[2];
+	CWinThread*		_pThreadHandle;
+	CAN_HANDLE		_curHandle;
 public:
 	CCanInfo();
 	~CCanInfo();
 	void GetDeviceType(int u32DeviceType);
+	BOOL StartThread(MY_L2CONF);
 
-public:
 	int m_CanChNo;
 
 	/* Pointer */
@@ -35,13 +49,14 @@ public:
 	CList <MY_L2CONF, MY_L2CONF> m_ListL2Config;
 	CString m_CurTypeName;
 
-
+	CList <CCanRaw*, CCanRaw*> _pRawList;
 };
 
 class CcanEngineApp : public CWinApp
 {
 public:
 	CcanEngineApp();
+	~CcanEngineApp();
 
 // 覆寫
 public:

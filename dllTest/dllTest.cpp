@@ -18,6 +18,7 @@
 
 BEGIN_MESSAGE_MAP(CdllTestApp, CWinAppEx)
 	ON_COMMAND(ID_APP_ABOUT, &CdllTestApp::OnAppAbout)
+	ON_COMMAND(ID_TERMINATE, &CdllTestApp::OnTerminate)
 END_MESSAGE_MAP()
 
 
@@ -197,3 +198,9 @@ void CdllTestApp::SaveCustomState()
 
 
 
+
+
+void CdllTestApp::OnTerminate()
+{
+	// TODO: 在此加入您的命令處理常式程式碼
+}

@@ -37,6 +37,7 @@ public:
 
 	afx_msg void OnAppAbout();
 	DECLARE_MESSAGE_MAP()
+	afx_msg void OnTerminate();
 };
 
 extern CdllTestApp theApp;

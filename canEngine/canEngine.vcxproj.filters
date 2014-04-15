@@ -50,6 +50,9 @@
     <ClInclude Include="canEngineApi.h">
       <Filter>標頭檔</Filter>
     </ClInclude>
+    <ClInclude Include="canEngine_def.h">
+      <Filter>標頭檔</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="canEngine.rc">

@@ -15,6 +15,7 @@ extern "C" {
 DLLEXPORT BOOL WINAPI InitCan(void);
 DLLEXPORT int WINAPI GetCanNo(void);
 DLLEXPORT void WINAPI StringTest(CString*);
+DLLEXPORT HANDLE WINAPI GetTerminalHnd(void);
 
 #ifdef __cplusplus
 }

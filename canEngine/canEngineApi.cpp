@@ -6,6 +6,11 @@
 
 CCanInfo canInfo;
 
+DLLEXPORT HANDLE WINAPI GetTerminalHnd()
+{
+	return INVALID_HANDLE_VALUE;
+}
+
 DLLEXPORT void WINAPI StringTest(CString* name)
 {
 	if (name)
@@ -68,11 +73,38 @@ DLLEXPORT BOOL WINAPI InitCan()
 		CHDSNAPSHOT *pCh = (CHDSNAPSHOT*)canInfo.m_pBuf + idx;
 		l2Con.chName = pCh->ChannelName;
 		l2Con.HasInit = FALSE;
-		if (INIL2_initialize_channel(&l2Con.chHnd, pCh->ChannelName) == 0)
+		if (INIL2_initialize_channel(&l2Con.chHnd, pCh->ChannelName) == 0) {
 			l2Con.HasInit = TRUE;
-
+		}
 		canInfo.m_ListL2Config.AddTail(l2Con);
 	}
+
+#if 1
+	/*	Currently, we only use the first CAN channel */
+	if (!canInfo.m_ListL2Config.IsEmpty()) {
+		l2Con = canInfo.m_ListL2Config.GetHead();
+		if (l2Con.HasInit) {
+			if (canInfo.StartThread(l2Con) == FALSE) {
+				LOG_ERROR("StartThread == FALSE");
+			}
+		} else {
+			LOG_ERROR("CANL2_initialize_fifo_mode l2Con.HasInit = FALSE");
+		}
+	}
+#else
+	POSITION pos = canInfo.m_ListL2Config.GetHeadPosition();
+	while (pos) {
+		l2Con = canInfo.m_ListL2Config.GetAt(pos);
+		if (l2Con.HasInit == TRUE) {
+			if (CANL2_initialize_fifo_mode(l2Con.chHnd, &l2Con.l2conf)) {
+				LOG_ERROR("CANL2_initialize_fifo_mode fail");
+			}
+		}
+
+		canInfo.m_ListL2Config.GetNext(pos);
+	}
+#endif
+
 
 	return TRUE;
 }
