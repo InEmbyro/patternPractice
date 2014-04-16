@@ -1,9 +1,9 @@
 
-// ChildView.cpp : CChildView 類別的實作
+// ChildView.cpp : implementation of the CChildView class
 //
 
 #include "stdafx.h"
-#include "dllTest.h"
+#include "dllTest2.h"
 #include "ChildView.h"
 
 #ifdef _DEBUG
@@ -28,7 +28,7 @@ END_MESSAGE_MAP()
 
 
 
-// CChildView 訊息處理常式
+// CChildView message handlers
 
 BOOL CChildView::PreCreateWindow(CREATESTRUCT& cs) 
 {
@@ -45,10 +45,10 @@ BOOL CChildView::PreCreateWindow(CREATESTRUCT& cs)
 
 void CChildView::OnPaint() 
 {
-	CPaintDC dc(this); // 繪製的裝置內容
+	CPaintDC dc(this); // device context for painting
 	
-	// TODO: 在此加入您的訊息處理常式程式碼
+	// TODO: Add your message handler code here
 	
-	// 不要呼叫描繪訊息的 CWnd::OnPaint()
+	// Do not call CWnd::OnPaint() for painting messages
 }
 

@@ -1,34 +1,34 @@
 
-// ChildView.h : CChildView 類別的介面
+// ChildView.h : interface of the CChildView class
 //
 
 
 #pragma once
 
 
-// CChildView 視窗
+// CChildView window
 
 class CChildView : public CWnd
 {
-// 建構
+// Construction
 public:
 	CChildView();
 
-// 屬性
+// Attributes
 public:
 
-// 作業
+// Operations
 public:
 
-// 覆寫
+// Overrides
 	protected:
 	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
 
-// 程式碼實作
+// Implementation
 public:
 	virtual ~CChildView();
 
-	// 產生的訊息對應函式
+	// Generated message map functions
 protected:
 	afx_msg void OnPaint();
 	DECLARE_MESSAGE_MAP()
