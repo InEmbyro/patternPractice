@@ -1,9 +1,10 @@
 #pragma once
 #include "afxcmn.h"
-
+#include "resource.h"
 
 
 // GridFormChildView ªí³æÀËµø
+class CGridFormThread;
 
 class GridFormChildView : public CFormView
 {
@@ -29,6 +30,7 @@ protected:
 
 	DECLARE_MESSAGE_MAP()
 public:
+	CGridFormThread *_pThread;
 	CListCtrl m_GridList;
 };
 

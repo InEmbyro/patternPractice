@@ -14,7 +14,6 @@
 // See dllTest2.cpp for the implementation of this class
 //
 
-class CGridFormThread;
 class CdllTest2App : public CWinApp
 {
 public:
@@ -26,7 +25,6 @@ public:
 public:
 	virtual BOOL InitInstance();
 	virtual int ExitInstance();
-	CGridFormThread *_pGridForm;
 
 // Implementation
 protected:

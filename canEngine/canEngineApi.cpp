@@ -6,6 +6,11 @@
 
 CCanInfo canInfo;
 
+DLLEXPORT void WINAPI DecRefCount(POSITION *p)
+{
+	canInfo.DecRefCount(*p);
+}
+
 DLLEXPORT HANDLE WINAPI InforEventAcquire(POSITION pos)
 {
 	return canInfo.InforEventGet(pos);

@@ -1,5 +1,5 @@
-1. GridFromView can receive something by ReadFile. However, the pointer is 
-wrong.
+1. RAW data can be transferred to FormViewThread.
+2. In the FormViewThread can draw something in CListCtrl.
 
-Thinking about how to send the pointer WriteFile(..).
+Thinking about~~ How to draw in View is better.
 

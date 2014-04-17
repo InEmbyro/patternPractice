@@ -282,7 +282,7 @@ HANDLE CCanInfo::InforEventGet(POSITION pos)
 
 }
 
-BOOL CCanInfo::FindNextPool(CCanRaw **_p)
+BOOL CCanInfo::FindNextPool(CCanRaw **_p, POSITION *pPos)
 {
 	CCanRaw *p;
 	POSITION pos;
@@ -298,20 +298,34 @@ BOOL CCanInfo::FindNextPool(CCanRaw **_p)
 		if (pos == NULL) {
 			pos = _pRawList.GetHeadPosition();
 		}
-		if (pos == _curRawListPos)
+		if (pos == _curRawListPos) {
+			*pPos = NULL;
 			return FALSE;
+		}
 	} while (1);
 
-	if (pos == NULL)
+	if (pos == NULL) {
 		_curRawListPos =_pRawList.GetHeadPosition();
-	else
+		*pPos = _curRawListPos;
+	} else {
 		_curRawListPos = pos;
+		_pRawList.GetPrev(pos);
+		*pPos = pos;
+	}
 
 	*_p = p;
 	return TRUE;
 }
 
-void CCanInfo::SlotInfo(CCanRaw* _p)
+void CCanInfo::DecRefCount(POSITION _pos)
+{
+	CCanRaw *pR;
+
+	pR = _pRawList.GetAt(_pos);
+	pR->DecRefCount();
+}
+
+void CCanInfo::SlotInfo(POSITION _pos)
 {
 	if (_noteSlot.IsEmpty())
 		return;
@@ -320,13 +334,15 @@ void CCanInfo::SlotInfo(CCanRaw* _p)
 	DWORD cbWriteCount;
 	pos = _noteSlot.GetHeadPosition();
 	SLOT_INFO _sl;
+	POSITION *_pPos;
 
 	while (pos) {
 		_sl = _noteSlot.GetNext(pos);		
 		if (_sl.writeHnd == INVALID_HANDLE_VALUE) {
 			LOG_ERROR("SlotInfo error");
 		} else {
-			WriteFile(_sl.writeHnd, _p, sizeof(_p), &cbWriteCount, NULL);
+			_pPos = &_pos;
+			WriteFile(_sl.writeHnd, _pPos, sizeof(_pPos), &cbWriteCount, NULL);
 			SetEvent(_sl.eventHnd);
 		}
 	}
@@ -340,12 +356,13 @@ UINT CCanInfo::receiveThread(LPVOID pa)
 	int frc = CANL2_RA_NO_DATA;
 	unsigned long diff_time = 0, old_time = 0;
 	CCanRaw *_pR = NULL;
+	POSITION pos;
 
 	while(1) {
 		ret = WaitForMultipleObjects(2, &pThis->_ThreadEvent[0], FALSE, INFINITE);
 		switch (ret - WAIT_OBJECT_0 ) {
 		case 0:
-			if (pThis->FindNextPool(&_pR) == FALSE) {
+			if (pThis->FindNextPool(&_pR, &pos) == FALSE) {
 				LOG_ERROR("RAW MEMEORY POOL IS NULL");
 				break;
 			}	
@@ -359,7 +376,7 @@ UINT CCanInfo::receiveThread(LPVOID pa)
 						break;
 				}
 			} while (frc > 0);
-			pThis->SlotInfo(_pR);
+			pThis->SlotInfo(pos);
 
 			break;
 		case 1:

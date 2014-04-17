@@ -28,8 +28,8 @@ typedef struct {
 class CCanInfo
 {
 	static UINT receiveThread(LPVOID);
-	void		SlotInfo(CCanRaw*);
-	BOOL		FindNextPool(CCanRaw **_p);
+	void		SlotInfo(POSITION);
+	BOOL		FindNextPool(CCanRaw **_p, POSITION *pPos);
 	int			PrepareForIntEvent(MY_L2CONF);
 
 	HANDLE			_ThreadEvent[2];
@@ -48,6 +48,7 @@ public:
 	BOOL		StartThread(MY_L2CONF);
 	HANDLE		MailslotHndGet(POSITION);
 	HANDLE		InforEventGet(POSITION);
+	void		DecRefCount(POSITION);
 
 	int m_CanChNo;
 

@@ -16,6 +16,7 @@ public:
 
 	CList <PARAM_STRUCT, PARAM_STRUCT&> _list;
 	BOOL SetRefCount(unsigned int refCount);
+	void DecRefCount(void);
 	unsigned int GetRefCount(void);
 
 	CCanRaw& operator=(const CCanRaw& other);

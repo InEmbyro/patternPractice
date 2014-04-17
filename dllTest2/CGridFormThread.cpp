@@ -2,10 +2,11 @@
 #include "stdafx.h"
 #include "CGridFormThread.h"
 #include "../canEngine/canEngine_def.h"
-#include "../canEngine/CCanRaw.h"
+#include "../canEngine/canEngineApi.h"
+#include "CGridFormChildView.h"
 
 CGridFormThread::CGridFormThread()
-	:_pThread(NULL), run(FALSE), _mailslotHnd(INVALID_HANDLE_VALUE)
+	:_pThread(NULL), run(FALSE), _mailslotHnd(INVALID_HANDLE_VALUE), _pView(NULL)
 {
 	_infoHnd[0] = INVALID_HANDLE_VALUE;
 	_infoHnd[1] = INVALID_HANDLE_VALUE;
@@ -43,15 +44,19 @@ UINT CGridFormThread::update_thread(LPVOID _p)
 	CGridFormThread* _this = (CGridFormThread*) _p;
 	DWORD ret;
 	DWORD cbRead;
-	LPVOID _pRaw;
-	CCanRaw *pRaw;
+	LPVOID _pVoid;
+	POSITION *_pPos;
+	GridFormChildView *pView = (GridFormChildView*)_this->_pView;
 
 	while (_this->run) {
 		ret = WaitForMultipleObjects(2, _this->_infoHnd, FALSE, INFINITE);
 		switch (ret - WAIT_OBJECT_0) {
 		case 0:
-			ReadFile(_this->_mailslotHnd, &_pRaw, sizeof(CCanRaw), &cbRead, NULL);
-			pRaw = (CCanRaw*)_pRaw;
+			ReadFile(_this->_mailslotHnd, &_pVoid, sizeof(POSITION), &cbRead, NULL);
+			_pPos = (POSITION*)_pVoid;
+			pView->m_GridList.DeleteAllItems();
+			pView->m_GridList.InsertItem(0, _T("3"));
+			DecRefCount(_pPos);
 			break;
 		case 1:
 			_this->run = FALSE;

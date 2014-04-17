@@ -10,13 +10,14 @@
 IMPLEMENT_DYNCREATE(GridFormChildView, CFormView)
 
 GridFormChildView::GridFormChildView()
-	: CFormView(GridFormChildView::IDD)
+	: CFormView(GridFormChildView::IDD), _pThread(NULL)
 {
 
 }
 
 GridFormChildView::~GridFormChildView()
 {
+	delete _pThread;
 }
 
 void GridFormChildView::OnInitialUpdate()

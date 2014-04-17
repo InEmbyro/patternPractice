@@ -30,7 +30,6 @@ END_MESSAGE_MAP()
 // CdllTest2App construction
 CdllTest2App::~CdllTest2App()
 {
-	delete _pGridForm;
 }
 
 CdllTest2App::CdllTest2App()
@@ -95,11 +94,6 @@ BOOL CdllTest2App::InitInstance()
 	pFrame->UpdateWindow();
 
 	InitCan();
-	_pGridForm = new CGridFormThread();
-	if (_pGridForm) {
-		if (!_pGridForm->InitThread())
-			AfxMessageBox(_T("_pGridForm->InitThread"));
-	}
 
 	return TRUE;
 }
@@ -120,9 +114,11 @@ int CdllTest2App::ExitInstance()
 void CdllTest2App::OnFileNew() 
 {
 	CMainFrame* pFrame = STATIC_DOWNCAST(CMainFrame, m_pMainWnd);
+	CGridFormChildFrm *pChildFrm;
 	// create a new MDI child window
-	pFrame->CreateNewChild(
+	pChildFrm = (CGridFormChildFrm*) pFrame->CreateNewChild(
 		RUNTIME_CLASS(CGridFormChildFrm), IDR_dllTest2TYPE, m_hMDIMenu, m_hMDIAccel);
+
 	CString name;
 	name.SetString(_T("\\\\.\\mailslot\\wnc_grid_view"));
 
@@ -132,9 +128,17 @@ void CdllTest2App::OnFileNew()
 		AfxMessageBox(_T("wnc_grid_view mailslot fail"));
 		return;
 	}
-	_pGridForm->SetInfoHandle(InforEventAcquire(pos));
-	_pGridForm->SetMailHandle(MailSlotAcquire(pos));
-	if (!_pGridForm->InitThread())
+
+	pChildFrm->_pView->_pThread = new CGridFormThread();
+	if (!pChildFrm->_pView->_pThread) {
+		AfxMessageBox(_T("_pGridForm->InitThread"));
+		return;
+	}
+
+	pChildFrm->_pView->_pThread->SetInfoHandle(InforEventAcquire(pos));
+	pChildFrm->_pView->_pThread->SetMailHandle(MailSlotAcquire(pos));
+	pChildFrm->_pView->_pThread->_pView = pChildFrm->_pView;
+	if (!pChildFrm->_pView->_pThread->InitThread())
 		AfxMessageBox(_T("_pGridForm->InitThread"));
 
 }

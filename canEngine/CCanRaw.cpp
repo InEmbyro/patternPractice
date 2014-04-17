@@ -17,6 +17,25 @@ CCanRaw& CCanRaw::operator=(const CCanRaw& other)
 	return *this;
 };
 
+void CCanRaw::DecRefCount()
+{
+	DWORD rtn;
+
+	if (_refCountMutex == INVALID_HANDLE_VALUE)
+		return;
+
+	rtn = WaitForSingleObject(_refCountMutex, 1000);
+	switch(rtn - WAIT_OBJECT_0) {
+	case 0:
+		_refCount--;
+		ReleaseMutex(_refCountMutex);
+		break;
+	case WAIT_TIMEOUT:
+		LOG_ERROR("Reference Count MUTEX Fail");
+		break;
+	}
+}
+
 unsigned int CCanRaw::GetRefCount()
 {
 	return _refCount;

@@ -11,6 +11,7 @@ public:
 	BOOL	InitThread(void);
 	void	SetInfoHandle(HANDLE);
 	void	SetMailHandle(HANDLE);
+	LPVOID	_pView;	//pointer related FormView
 
 private:
 	static UINT update_thread(LPVOID);

@@ -19,7 +19,7 @@ DLLEXPORT HANDLE WINAPI GetTerminalHnd(void);
 DLLEXPORT POSITION WINAPI RegisterAcquire(CString slotName);
 DLLEXPORT HANDLE WINAPI MailSlotAcquire(POSITION pos);
 DLLEXPORT HANDLE WINAPI InforEventAcquire(POSITION pos);
-
+DLLEXPORT void WINAPI DecRefCount(POSITION *p);
 #ifdef __cplusplus
 }
 #endif  /* __cplusplus */
