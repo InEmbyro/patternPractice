@@ -1,4 +1,5 @@
-1. Formview with ListContrl is workable now.
+1. GridFromView can receive something by ReadFile. However, the pointer is 
+wrong.
 
-Next, thinking about data process & GUI operation.
+Thinking about how to send the pointer WriteFile(..).
 

@@ -6,10 +6,13 @@
 #include "afxwinappex.h"
 #include "afxdialogex.h"
 #include "dllTest2.h"
+#include "../canEngine/canEngineApi.h"
+
 #include "MainFrm.h"
 
 #include "ChildFrm.h"
 #include "CGridFormChildFrm.h"
+#include "CGridFormThread.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -25,6 +28,10 @@ END_MESSAGE_MAP()
 
 
 // CdllTest2App construction
+CdllTest2App::~CdllTest2App()
+{
+	delete _pGridForm;
+}
 
 CdllTest2App::CdllTest2App()
 {
@@ -87,6 +94,13 @@ BOOL CdllTest2App::InitInstance()
 	pFrame->ShowWindow(m_nCmdShow);
 	pFrame->UpdateWindow();
 
+	InitCan();
+	_pGridForm = new CGridFormThread();
+	if (_pGridForm) {
+		if (!_pGridForm->InitThread())
+			AfxMessageBox(_T("_pGridForm->InitThread"));
+	}
+
 	return TRUE;
 }
 
@@ -109,6 +123,20 @@ void CdllTest2App::OnFileNew()
 	// create a new MDI child window
 	pFrame->CreateNewChild(
 		RUNTIME_CLASS(CGridFormChildFrm), IDR_dllTest2TYPE, m_hMDIMenu, m_hMDIAccel);
+	CString name;
+	name.SetString(_T("\\\\.\\mailslot\\wnc_grid_view"));
+
+	POSITION pos;
+	pos = RegisterAcquire(name);
+	if (pos == NULL) {
+		AfxMessageBox(_T("wnc_grid_view mailslot fail"));
+		return;
+	}
+	_pGridForm->SetInfoHandle(InforEventAcquire(pos));
+	_pGridForm->SetMailHandle(MailSlotAcquire(pos));
+	if (!_pGridForm->InitThread())
+		AfxMessageBox(_T("_pGridForm->InitThread"));
+
 }
 
 // CAboutDlg dialog used for App About

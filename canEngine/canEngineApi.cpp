@@ -6,9 +6,18 @@
 
 CCanInfo canInfo;
 
-DLLEXPORT POSITION WINAPI RegisterAcquire(HANDLE eV)
+DLLEXPORT HANDLE WINAPI InforEventAcquire(POSITION pos)
 {
-	return canInfo.RegEvent(eV);
+	return canInfo.InforEventGet(pos);
+}
+DLLEXPORT HANDLE WINAPI MailSlotAcquire(POSITION pos)
+{
+	return canInfo.MailslotHndGet(pos);
+}
+
+DLLEXPORT POSITION WINAPI RegisterAcquire(CString slotName)
+{
+	return canInfo.SlotReg(slotName);
 }
 
 DLLEXPORT HANDLE WINAPI GetTerminalHnd()

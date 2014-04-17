@@ -7,3 +7,9 @@ class CCanRaw;
 #else
 #define LOG_ERROR(A)
 #endif
+
+typedef struct {
+	HANDLE slotHnd;
+	HANDLE writeHnd;
+	HANDLE eventHnd;
+}SLOT_INFO;

@@ -14,16 +14,19 @@
 // See dllTest2.cpp for the implementation of this class
 //
 
+class CGridFormThread;
 class CdllTest2App : public CWinApp
 {
 public:
 	CdllTest2App();
+	~CdllTest2App();
 
 
 // Overrides
 public:
 	virtual BOOL InitInstance();
 	virtual int ExitInstance();
+	CGridFormThread *_pGridForm;
 
 // Implementation
 protected:

@@ -28,22 +28,26 @@ typedef struct {
 class CCanInfo
 {
 	static UINT receiveThread(LPVOID);
+	void		SlotInfo(CCanRaw*);
+	BOOL		FindNextPool(CCanRaw **_p);
+	int			PrepareForIntEvent(MY_L2CONF);
 
-	void	SetEvent(void);
-	int				PrepareForIntEvent(MY_L2CONF);
 	HANDLE			_ThreadEvent[2];
 	CWinThread*		_pThreadHandle;
 	CAN_HANDLE		_curHandle;
-	CList <HANDLE, HANDLE&> _notedEvt;
-	BOOL		FindNextPool(CCanRaw **_p);
+	CList <SLOT_INFO, SLOT_INFO&> _noteSlot;
 	POSITION	_curRawListPos;
 
 public:
 	CCanInfo();
 	~CCanInfo();
+
+	static const int MSG_LEN_MAX;
 	void		GetDeviceType(int u32DeviceType);
-	POSITION	RegEvent(HANDLE eV);
+	POSITION	SlotReg(CString slotName);
 	BOOL		StartThread(MY_L2CONF);
+	HANDLE		MailslotHndGet(POSITION);
+	HANDLE		InforEventGet(POSITION);
 
 	int m_CanChNo;
 

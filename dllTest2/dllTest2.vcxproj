@@ -55,6 +55,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>$(TargetDir)\canEngine.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>
@@ -101,6 +102,7 @@
   <ItemGroup>
     <ClInclude Include="CGridFormChildFrm.h" />
     <ClInclude Include="CGridFormChildView.h" />
+    <ClInclude Include="CGridFormThread.h" />
     <ClInclude Include="ChildFrm.h" />
     <ClInclude Include="ChildView.h" />
     <ClInclude Include="dllTest2.h" />
@@ -112,6 +114,7 @@
   <ItemGroup>
     <ClCompile Include="CGridFormChildFrm.cpp" />
     <ClCompile Include="CGridFormChildView.cpp" />
+    <ClCompile Include="CGridFormThread.cpp" />
     <ClCompile Include="ChildFrm.cpp" />
     <ClCompile Include="ChildView.cpp" />
     <ClCompile Include="dllTest2.cpp" />

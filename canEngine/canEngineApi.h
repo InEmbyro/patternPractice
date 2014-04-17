@@ -16,7 +16,9 @@ DLLEXPORT BOOL WINAPI InitCan(void);
 DLLEXPORT int WINAPI GetCanNo(void);
 DLLEXPORT void WINAPI StringTest(CString*);
 DLLEXPORT HANDLE WINAPI GetTerminalHnd(void);
-DLLEXPORT POSITION WINAPI RegisterAcquire(HANDLE eventV);
+DLLEXPORT POSITION WINAPI RegisterAcquire(CString slotName);
+DLLEXPORT HANDLE WINAPI MailSlotAcquire(POSITION pos);
+DLLEXPORT HANDLE WINAPI InforEventAcquire(POSITION pos);
 
 #ifdef __cplusplus
 }

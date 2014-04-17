@@ -8,6 +8,7 @@
 #define new DEBUG_NEW
 #endif
 
+const int CCanInfo::MSG_LEN_MAX = 20;
 //
 //TODO: 如果這個 DLL 是動態地對 MFC DLL 連結，
 //		那麼從這個 DLL 匯出的任何會呼叫
@@ -214,28 +215,71 @@ _error:
 	return -1;
 }
 
-POSITION CCanInfo::RegEvent(HANDLE eV)
+HANDLE CCanInfo::MailslotHndGet(POSITION pos)
 {
-	POSITION pos;
+	SLOT_INFO _sl;
 
-	pos = _notedEvt.AddTail(eV);
+	for (int idx = 0; idx < _noteSlot.GetCount(); idx++) {
+		if (pos == _noteSlot.FindIndex(idx)) {
+			_sl = _noteSlot.GetAt(pos);
+			return _sl.slotHnd;
+		}
+	}
+	
+	return INVALID_HANDLE_VALUE;
+}
 
+POSITION CCanInfo::SlotReg(CString eV)
+{
+	POSITION pos = NULL;
+	SLOT_INFO _sl;
+
+	_sl.eventHnd = INVALID_HANDLE_VALUE;
+	_sl.slotHnd = INVALID_HANDLE_VALUE;
+	_sl.writeHnd = INVALID_HANDLE_VALUE;
+
+	_sl.slotHnd = CreateMailslot(eV, MSG_LEN_MAX, MAILSLOT_WAIT_FOREVER,(LPSECURITY_ATTRIBUTES) NULL);
+	if (_sl.slotHnd == INVALID_HANDLE_VALUE)
+		goto _error;
+
+	_sl.writeHnd = CreateFile(eV, GENERIC_WRITE, FILE_SHARE_READ, (LPSECURITY_ATTRIBUTES)NULL, OPEN_EXISTING, 
+		FILE_ATTRIBUTE_NORMAL, (HANDLE)NULL);
+	if (_sl.writeHnd == INVALID_HANDLE_VALUE)
+		goto _error;
+	
+	_sl.eventHnd = CreateEvent(NULL, FALSE, FALSE, NULL);
+	if (_sl.eventHnd == INVALID_HANDLE_VALUE)
+		goto _error;
+	
+	pos = _noteSlot.AddTail(_sl);
+	
+	return pos;
+
+_error:
+	if (_sl.eventHnd != INVALID_HANDLE_VALUE)
+		CloseHandle(_sl.eventHnd);
+	if (_sl.slotHnd != INVALID_HANDLE_VALUE)
+		CloseHandle(_sl.slotHnd);
+	if (_sl.writeHnd != INVALID_HANDLE_VALUE)
+		CloseHandle(_sl.writeHnd);
+	
 	return pos;
 }
 
-void CCanInfo::SetEvent()
+HANDLE CCanInfo::InforEventGet(POSITION pos)
 {
-	POSITION pos;
-	HANDLE hnd;
+	SLOT_INFO _sl;
 
-	if (_notedEvt.IsEmpty())
-		return;
+	for (int idx = 0; idx < _noteSlot.GetCount(); idx++) {
+		if (pos == _noteSlot.FindIndex(idx)) {
+			_sl = _noteSlot.GetAt(pos);
+			return _sl.eventHnd;
+		}
+	}
+	
+	return INVALID_HANDLE_VALUE;
 
-	pos = _notedEvt.GetHeadPosition();
-	do {
-		hnd = _notedEvt.GetNext(pos);
-		::SetEvent(hnd);		
-	} while(pos);
+
 }
 
 BOOL CCanInfo::FindNextPool(CCanRaw **_p)
@@ -247,8 +291,10 @@ BOOL CCanInfo::FindNextPool(CCanRaw **_p)
 
 	do {
 		p = _pRawList.GetNext(pos);
-		if (p->GetRefCount() == 0)
+		if (p->GetRefCount() == 0) {
+			p->_list.RemoveAll();
 			break;
+		}
 		if (pos == NULL) {
 			pos = _pRawList.GetHeadPosition();
 		}
@@ -263,6 +309,27 @@ BOOL CCanInfo::FindNextPool(CCanRaw **_p)
 
 	*_p = p;
 	return TRUE;
+}
+
+void CCanInfo::SlotInfo(CCanRaw* _p)
+{
+	if (_noteSlot.IsEmpty())
+		return;
+
+	POSITION pos;
+	DWORD cbWriteCount;
+	pos = _noteSlot.GetHeadPosition();
+	SLOT_INFO _sl;
+
+	while (pos) {
+		_sl = _noteSlot.GetNext(pos);		
+		if (_sl.writeHnd == INVALID_HANDLE_VALUE) {
+			LOG_ERROR("SlotInfo error");
+		} else {
+			WriteFile(_sl.writeHnd, _p, sizeof(_p), &cbWriteCount, NULL);
+			SetEvent(_sl.eventHnd);
+		}
+	}
 }
 
 UINT CCanInfo::receiveThread(LPVOID pa)
@@ -282,7 +349,7 @@ UINT CCanInfo::receiveThread(LPVOID pa)
 				LOG_ERROR("RAW MEMEORY POOL IS NULL");
 				break;
 			}	
-			_pR->SetRefCount(pThis->_notedEvt.GetCount());
+			_pR->SetRefCount(pThis->_noteSlot.GetCount());
 			do {
 				switch (frc = CANL2_read_ac(pThis->_curHandle, &param)) {
 					case CANL2_RA_DATAFRAME:
@@ -292,7 +359,7 @@ UINT CCanInfo::receiveThread(LPVOID pa)
 						break;
 				}
 			} while (frc > 0);
-			pThis->SetEvent();
+			pThis->SlotInfo(_pR);
 
 			break;
 		case 1:
