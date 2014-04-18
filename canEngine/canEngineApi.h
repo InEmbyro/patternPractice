@@ -20,6 +20,10 @@ DLLEXPORT POSITION WINAPI RegisterAcquire(CString slotName);
 DLLEXPORT HANDLE WINAPI MailSlotAcquire(POSITION pos);
 DLLEXPORT HANDLE WINAPI InforEventAcquire(POSITION pos);
 DLLEXPORT void WINAPI DecRefCount(POSITION *p);
+DLLEXPORT LPVOID WINAPI ReadRawList(POSITION *p);
+DLLEXPORT void WINAPI CloseCan(void);
+DLLEXPORT void WINAPI DeregisterAcquire(POSITION pos);
+
 #ifdef __cplusplus
 }
 #endif  /* __cplusplus */

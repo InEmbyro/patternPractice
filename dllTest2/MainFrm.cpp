@@ -17,6 +17,7 @@ IMPLEMENT_DYNAMIC(CMainFrame, CMDIFrameWnd)
 
 BEGIN_MESSAGE_MAP(CMainFrame, CMDIFrameWnd)
 	ON_WM_CREATE()
+	ON_WM_CLOSE()
 END_MESSAGE_MAP()
 
 static UINT indicators[] =
@@ -79,3 +80,15 @@ void CMainFrame::Dump(CDumpContext& dc) const
 
 
 // CMainFrame message handlers
+
+
+void CMainFrame::OnClose()
+{
+	// TODO: 在此加入您的訊息處理常式程式碼和 (或) 呼叫預設值
+
+	UINT uId = AFX_IDM_FIRST_MDICHILD;
+	for (CWnd *pWnd = GetDescendantWindow(uId); pWnd; pWnd = GetDescendantWindow(++uId)) {
+		pWnd->SendMessage(WM_CLOSE);
+	}
+	CMDIFrameWnd::OnClose();
+}

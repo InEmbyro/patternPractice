@@ -37,6 +37,7 @@ class CCanInfo
 	CAN_HANDLE		_curHandle;
 	CList <SLOT_INFO, SLOT_INFO&> _noteSlot;
 	POSITION	_curRawListPos;
+	BOOL		run;
 
 public:
 	CCanInfo();
@@ -45,10 +46,13 @@ public:
 	static const int MSG_LEN_MAX;
 	void		GetDeviceType(int u32DeviceType);
 	POSITION	SlotReg(CString slotName);
+	void		SlotDereg(POSITION);
 	BOOL		StartThread(MY_L2CONF);
 	HANDLE		MailslotHndGet(POSITION);
 	HANDLE		InforEventGet(POSITION);
 	void		DecRefCount(POSITION);
+	void		TerminatedThread();
+	CList <PARAM_STRUCT, PARAM_STRUCT&>	*ReadRawList(POSITION);
 
 	int m_CanChNo;
 

@@ -4,7 +4,8 @@
 #include "stdafx.h"
 #include "dllTest2.h"
 #include "CGridFormChildFrm.h"
-
+#include "CGridFormThread.h"
+#include "../canEngine/canEngineApi.h"
 
 // CGridFormChildFrm
 
@@ -22,6 +23,8 @@ CGridFormChildFrm::~CGridFormChildFrm()
 
 BEGIN_MESSAGE_MAP(CGridFormChildFrm, CMDIChildWnd)
 	ON_WM_CREATE()
+	ON_WM_CLOSE()
+	ON_WM_DESTROY()
 END_MESSAGE_MAP()
 
 
@@ -44,4 +47,25 @@ int CGridFormChildFrm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	_pView->UpdateData(FALSE);
 
 	return 0;
+}
+
+void CGridFormChildFrm::OnClose()
+{
+	// TODO: 在此加入您的訊息處理常式程式碼和 (或) 呼叫預設值
+	//ShowWindow(SW_HIDE);
+	DeregisterAcquire(rawPos);
+	_pView->CloseAllHnd();
+	_pView->_pThread->TerminateThread();
+	WaitForSingleObject(_pView->_pThread->getConfirmHnd(), 5000);
+
+	Sleep(10);
+	CMDIChildWnd::OnClose();
+}
+
+
+void CGridFormChildFrm::OnDestroy()
+{
+	CMDIChildWnd::OnDestroy();
+
+	// TODO: 在此加入您的訊息處理常式程式碼
 }

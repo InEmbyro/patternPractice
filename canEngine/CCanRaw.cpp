@@ -24,10 +24,13 @@ void CCanRaw::DecRefCount()
 	if (_refCountMutex == INVALID_HANDLE_VALUE)
 		return;
 
-	rtn = WaitForSingleObject(_refCountMutex, 1000);
+	rtn = WaitForSingleObject(_refCountMutex, INFINITE);
 	switch(rtn - WAIT_OBJECT_0) {
 	case 0:
-		_refCount--;
+		if (_refCount == 0)
+			_refCount = 0;
+		else
+			_refCount--;
 		ReleaseMutex(_refCountMutex);
 		break;
 	case WAIT_TIMEOUT:
@@ -48,7 +51,7 @@ BOOL CCanRaw::SetRefCount(unsigned int refCount)
 	if (_refCountMutex == INVALID_HANDLE_VALUE)
 		return FALSE;
 
-	rtn = WaitForSingleObject(_refCountMutex, 1000);
+	rtn = WaitForSingleObject(_refCountMutex, INFINITE);
 	switch(rtn - WAIT_OBJECT_0) {
 	case 0:
 		_refCount = refCount;

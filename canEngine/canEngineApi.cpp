@@ -5,39 +5,63 @@
 #include "../Softing/CANL2.H"
 
 CCanInfo canInfo;
+DLLEXPORT LPVOID WINAPI ReadRawList(POSITION *p)
+{
+	AFX_MANAGE_STATE(AfxGetStaticModuleState());
+	return (LPVOID)canInfo.ReadRawList(*p);
+}
 
 DLLEXPORT void WINAPI DecRefCount(POSITION *p)
 {
+	AFX_MANAGE_STATE(AfxGetStaticModuleState());
 	canInfo.DecRefCount(*p);
 }
 
 DLLEXPORT HANDLE WINAPI InforEventAcquire(POSITION pos)
 {
+	AFX_MANAGE_STATE(AfxGetStaticModuleState());
 	return canInfo.InforEventGet(pos);
 }
 DLLEXPORT HANDLE WINAPI MailSlotAcquire(POSITION pos)
 {
+	AFX_MANAGE_STATE(AfxGetStaticModuleState());
 	return canInfo.MailslotHndGet(pos);
+}
+
+DLLEXPORT void WINAPI DeregisterAcquire(POSITION pos)
+{
+	AFX_MANAGE_STATE(AfxGetStaticModuleState());
+	canInfo.SlotDereg(pos);
 }
 
 DLLEXPORT POSITION WINAPI RegisterAcquire(CString slotName)
 {
+	AFX_MANAGE_STATE(AfxGetStaticModuleState());
 	return canInfo.SlotReg(slotName);
 }
 
 DLLEXPORT HANDLE WINAPI GetTerminalHnd()
 {
+	AFX_MANAGE_STATE(AfxGetStaticModuleState());
 	return INVALID_HANDLE_VALUE;
 }
 
 DLLEXPORT void WINAPI StringTest(CString* name)
 {
+	AFX_MANAGE_STATE(AfxGetStaticModuleState());
 	if (name)
 		name->Insert(0, _T("Hello "));
 }
 DLLEXPORT int WINAPI GetCanNo()
 {
+	AFX_MANAGE_STATE(AfxGetStaticModuleState());
 	return canInfo.m_CanChNo;
+}
+
+DLLEXPORT void WINAPI CloseCan()
+{
+	AFX_MANAGE_STATE(AfxGetStaticModuleState());
+	canInfo.TerminatedThread();
 }
 
 DLLEXPORT BOOL WINAPI InitCan()
@@ -46,7 +70,8 @@ DLLEXPORT BOOL WINAPI InitCan()
 	unsigned long u32NeededBufferSize;
 	unsigned long u32ProvidedBufferSize;
 	unsigned long u32NumOfChannels;
-
+	
+	AFX_MANAGE_STATE(AfxGetStaticModuleState());
 	if (canInfo.m_pBuf != NULL) {
 		return FALSE;
 	}
@@ -98,7 +123,6 @@ DLLEXPORT BOOL WINAPI InitCan()
 		canInfo.m_ListL2Config.AddTail(l2Con);
 	}
 
-#if 1
 	/*	Currently, we only use the first CAN channel */
 	if (!canInfo.m_ListL2Config.IsEmpty()) {
 		l2Con = canInfo.m_ListL2Config.GetHead();
@@ -110,20 +134,6 @@ DLLEXPORT BOOL WINAPI InitCan()
 			LOG_ERROR("CANL2_initialize_fifo_mode l2Con.HasInit = FALSE");
 		}
 	}
-#else
-	POSITION pos = canInfo.m_ListL2Config.GetHeadPosition();
-	while (pos) {
-		l2Con = canInfo.m_ListL2Config.GetAt(pos);
-		if (l2Con.HasInit == TRUE) {
-			if (CANL2_initialize_fifo_mode(l2Con.chHnd, &l2Con.l2conf)) {
-				LOG_ERROR("CANL2_initialize_fifo_mode fail");
-			}
-		}
-
-		canInfo.m_ListL2Config.GetNext(pos);
-	}
-#endif
-
 
 	return TRUE;
 }

@@ -123,6 +123,7 @@ BOOL CCanInfo::StartThread(MY_L2CONF l2con)
 
 	PrepareForIntEvent(l2con);
 
+	run = TRUE;
 	return TRUE;
 }
 void CCanInfo::GetDeviceType(int u32DeviceType)
@@ -165,6 +166,11 @@ void CCanInfo::GetDeviceType(int u32DeviceType)
 		m_CurTypeName.SetString(_T("default"));
 		break;
 	}
+}
+
+void CCanInfo::TerminatedThread()
+{
+	run = FALSE;
 }
 
 int CCanInfo::PrepareForIntEvent(MY_L2CONF l2con)
@@ -317,6 +323,14 @@ BOOL CCanInfo::FindNextPool(CCanRaw **_p, POSITION *pPos)
 	return TRUE;
 }
 
+CList <PARAM_STRUCT, PARAM_STRUCT&>* CCanInfo::ReadRawList(POSITION pos)
+{
+	CCanRaw *pR;
+
+	pR = _pRawList.GetAt(pos);
+	return &(pR->_list);
+}
+
 void CCanInfo::DecRefCount(POSITION _pos)
 {
 	CCanRaw *pR;
@@ -348,6 +362,16 @@ void CCanInfo::SlotInfo(POSITION _pos)
 	}
 }
 
+void CCanInfo::SlotDereg(POSITION pos)
+{
+	SLOT_INFO _sl;
+	_sl = _noteSlot.GetAt(pos);
+	CloseHandle(_sl.eventHnd);
+	CloseHandle(_sl.slotHnd);
+	CloseHandle(_sl.writeHnd);
+	_noteSlot.RemoveAt(pos);
+}
+
 UINT CCanInfo::receiveThread(LPVOID pa)
 {
 	CCanInfo *pThis = (CCanInfo*) pa;
@@ -358,7 +382,7 @@ UINT CCanInfo::receiveThread(LPVOID pa)
 	CCanRaw *_pR = NULL;
 	POSITION pos;
 
-	while(1) {
+	while(pThis->run) {
 		ret = WaitForMultipleObjects(2, &pThis->_ThreadEvent[0], FALSE, INFINITE);
 		switch (ret - WAIT_OBJECT_0 ) {
 		case 0:
@@ -375,6 +399,8 @@ UINT CCanInfo::receiveThread(LPVOID pa)
 					default:
 						break;
 				}
+				if (!pThis->run)
+					break;
 			} while (frc > 0);
 			pThis->SlotInfo(pos);
 

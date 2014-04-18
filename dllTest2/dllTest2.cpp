@@ -138,6 +138,7 @@ void CdllTest2App::OnFileNew()
 	pChildFrm->_pView->_pThread->SetInfoHandle(InforEventAcquire(pos));
 	pChildFrm->_pView->_pThread->SetMailHandle(MailSlotAcquire(pos));
 	pChildFrm->_pView->_pThread->_pView = pChildFrm->_pView;
+	pChildFrm->rawPos = pos;
 	if (!pChildFrm->_pView->_pThread->InitThread())
 		AfxMessageBox(_T("_pGridForm->InitThread"));
 

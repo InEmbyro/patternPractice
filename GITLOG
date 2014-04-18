@@ -1,5 +1,5 @@
-1. RAW data can be transferred to FormViewThread.
-2. In the FormViewThread can draw something in CListCtrl.
+1. The current code can shown the received data normally.
 
-Thinking about~~ How to draw in View is better.
+However, the GUI does not be separated in current architecture.
+Thinking about... how to export MFC class from DLL.
 
