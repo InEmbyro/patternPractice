@@ -5,7 +5,7 @@
 #include "../Softing/CANL2.H"
 #include "../canEngine/canEngine_def.h"
 #include "../canEngine/canEngineApi.h"
-#include "CGridFormChildView.h"
+#include "../formview_dll/formview_dll.h"
 
 CGridFormThread::CGridFormThread()
 	:_pThread(NULL), run(FALSE), _mailslotHnd(INVALID_HANDLE_VALUE), _pView(NULL)

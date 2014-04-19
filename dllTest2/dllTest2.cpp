@@ -5,13 +5,13 @@
 #include "stdafx.h"
 #include "afxwinappex.h"
 #include "afxdialogex.h"
-#include "dllTest2.h"
 #include "../canEngine/canEngineApi.h"
+#include "../formview_dll/formview_dll.h"
+#include "dllTest2.h"
 
 #include "MainFrm.h"
 
 #include "ChildFrm.h"
-#include "CGridFormChildFrm.h"
 #include "CGridFormThread.h"
 
 #ifdef _DEBUG
@@ -113,34 +113,7 @@ int CdllTest2App::ExitInstance()
 
 void CdllTest2App::OnFileNew() 
 {
-	CMainFrame* pFrame = STATIC_DOWNCAST(CMainFrame, m_pMainWnd);
-	CGridFormChildFrm *pChildFrm;
-	// create a new MDI child window
-	pChildFrm = (CGridFormChildFrm*) pFrame->CreateNewChild(
-		RUNTIME_CLASS(CGridFormChildFrm), IDR_dllTest2TYPE, m_hMDIMenu, m_hMDIAccel);
-
-	CString name;
-	name.SetString(_T("\\\\.\\mailslot\\wnc_grid_view"));
-
-	POSITION pos;
-	pos = RegisterAcquire(name);
-	if (pos == NULL) {
-		AfxMessageBox(_T("wnc_grid_view mailslot fail"));
-		return;
-	}
-
-	pChildFrm->_pView->_pThread = new CGridFormThread();
-	if (!pChildFrm->_pView->_pThread) {
-		AfxMessageBox(_T("_pGridForm->InitThread"));
-		return;
-	}
-
-	pChildFrm->_pView->_pThread->SetInfoHandle(InforEventAcquire(pos));
-	pChildFrm->_pView->_pThread->SetMailHandle(MailSlotAcquire(pos));
-	pChildFrm->_pView->_pThread->_pView = pChildFrm->_pView;
-	pChildFrm->rawPos = pos;
-	if (!pChildFrm->_pView->_pThread->InitThread())
-		AfxMessageBox(_T("_pGridForm->InitThread"));
+	InitGridForm();
 
 }
 
@@ -182,6 +155,4 @@ void CdllTest2App::OnAppAbout()
 }
 
 // CdllTest2App message handlers
-
-
 

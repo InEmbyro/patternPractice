@@ -1,5 +1,4 @@
-1. The current code can shown the received data normally.
+1. Formview can be used from MFC extension DLL (formview_dll)
 
-However, the GUI does not be separated in current architecture.
-Thinking about... how to export MFC class from DLL.
-
+Next..
+Think about how to combine formview w/ thread

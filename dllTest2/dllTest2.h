@@ -26,6 +26,7 @@ public:
 	virtual BOOL InitInstance();
 	virtual int ExitInstance();
 
+
 // Implementation
 protected:
 	HMENU  m_hMDIMenu;
