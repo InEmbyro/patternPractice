@@ -5,7 +5,9 @@
 #include <afxwin.h>
 #include <afxdllx.h>
 #include "resource.h"
-#include "CGridFormChildFrm.h"
+#include "formview_dll.h"
+#include "../canEngine/canEngineApi.h"
+#include "CGridFormThread.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -52,7 +54,7 @@ DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved)
 	return 1;   // 確定
 }
 
-extern "C" AFX_EXT_API void WINAPI InitGridForm()
+extern "C" AFX_EXT_API LPVOID WINAPI InitGridForm()
 {
 	// create a new CDynLinkLibrary for this app
 	#pragma warning(push)
@@ -60,11 +62,11 @@ extern "C" AFX_EXT_API void WINAPI InitGridForm()
 	new CDynLinkLibrary(formview_dll);
 	#pragma warning(pop)
 
+	
 	CWinApp* pApp = AfxGetApp();
 	ENSURE(pApp != NULL);
 	CMDIFrameWnd *pFrame = (CMDIFrameWnd*)(pApp->m_pMainWnd);
-	pFrame->CreateNewChild(RUNTIME_CLASS(CGridFormChildFrm), IDR_GRIDMENU);
-
+	return (LPVOID) pFrame->CreateNewChild(RUNTIME_CLASS(CGridFormChildFrm), IDR_GRIDMENU, 0, 0);
 }
 
 // CGridFormChildFrm
@@ -73,16 +75,18 @@ IMPLEMENT_DYNCREATE(CGridFormChildFrm, CMDIChildWnd)
 BEGIN_MESSAGE_MAP(CGridFormChildFrm, CMDIChildWnd)
 	ON_WM_CREATE()
 	ON_WM_CLOSE()
-	ON_WM_DESTROY()
+//	ON_WM_DESTROY()
 END_MESSAGE_MAP()
 
 CGridFormChildFrm::CGridFormChildFrm()
+	:pGridFormThread(NULL)
 {
-
+	pGridFormThread = new CGridFormThread();
 }
 
 CGridFormChildFrm::~CGridFormChildFrm()
 {
+	delete pGridFormThread;
 }
 
 
@@ -111,6 +115,34 @@ int CGridFormChildFrm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		In the function, GridFormChildView::m_hWnd will be assigned */
 	_pView->UpdateData(FALSE);
 
+	if (!pGridFormThread) {
+		AfxMessageBox(_T("_pGridFormThread"));
+		return -1;
+	}
+	
+	CString name;
+	POSITION pos;
+
+	name = GridFormChildView::mailslot;
+	pos = RegisterAcquire(name);
+	if (pos == NULL) {
+		AfxMessageBox(_T("GridFormChildView::mailslot"));
+		return -1;
+	}
+
+	pGridFormThread->_pView = _pView;
+	pGridFormThread->SetInfoHandle(InforEventAcquire(pos));
+	pGridFormThread->SetMailHandle(MailSlotAcquire(pos));
+	rawPos = pos;
+
+	if (!pGridFormThread->InitThread()) {
+		AfxMessageBox(_T("_pGridFormThread->InitThread"));
+		DeregisterAcquire(rawPos);
+		_pView->CloseAllHnd();
+	}
+	_pView->pFormThread = pGridFormThread;
+
+	UpdateData(FALSE);
 	AfxSetResourceHandle(hInstOld);
 	return 0;
 }
@@ -118,25 +150,24 @@ int CGridFormChildFrm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 void CGridFormChildFrm::OnClose()
 {
 	// TODO: 在此加入您的訊息處理常式程式碼和 (或) 呼叫預設值
-	//ShowWindow(SW_HIDE);
-#if 0
+	_pView->pFormThread->TerminateThread();
+	WaitForSingleObject(_pView->pFormThread->getConfirmHnd(), 5000);
 	DeregisterAcquire(rawPos);
 	_pView->CloseAllHnd();
-	_pView->_pThread->TerminateThread();
-	WaitForSingleObject(_pView->_pThread->getConfirmHnd(), 5000);
 
-	Sleep(10);
-#endif
 	CMDIChildWnd::OnClose();
 }
 
 
-void CGridFormChildFrm::OnDestroy()
-{
-	CMDIChildWnd::OnDestroy();
+//void CGridFormChildFrm::OnDestroy()
+//{
+//	CMDIChildWnd::OnDestroy();
+//
+//	// TODO: 在此加入您的訊息處理常式程式碼
+//}
 
-	// TODO: 在此加入您的訊息處理常式程式碼
-}
+
+const char* GridFormChildView::mailslot = "\\\\.\\mailslot\\wnc_grid_view";
 
 // GridFormChildView
 IMPLEMENT_DYNCREATE(GridFormChildView, CFormView)
@@ -146,16 +177,19 @@ BEGIN_MESSAGE_MAP(GridFormChildView, CFormView)
 END_MESSAGE_MAP()
 
 GridFormChildView::GridFormChildView()
-	: CFormView(GridFormChildView::IDD), _pThread(NULL)
+	: CFormView(GridFormChildView::IDD)/* , _pThread(NULL) */
 {
 	_counter = 0;
 	_ListMutex = CreateMutex(NULL, FALSE, NULL);
+	pFormThread = NULL;
 }
 
 GridFormChildView::~GridFormChildView()
 {
-	CloseHandle(_ListMutex);
-//	delete _pThread;
+	if (_ListMutex != INVALID_HANDLE_VALUE) {
+		CloseHandle(_ListMutex);
+		_ListMutex = INVALID_HANDLE_VALUE;
+	}
 }
 
 void GridFormChildView::OnInitialUpdate()
@@ -241,3 +275,4 @@ afx_msg LRESULT GridFormChildView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 	ReleaseMutex(_ListMutex);
 	return 0;
 }
+

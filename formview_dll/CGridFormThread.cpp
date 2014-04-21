@@ -16,6 +16,10 @@ CGridFormThread::CGridFormThread()
 
 CGridFormThread::~CGridFormThread()
 {
+	if (_pThread) {
+		delete _pThread;
+		_pThread = NULL;
+	}
 }
 
 BOOL CGridFormThread::InitThread()
@@ -52,8 +56,13 @@ void CGridFormThread::SetEventTerminateHnd()
 }
 void CGridFormThread::TerminateThread()
 {
-	run = FALSE;
+	SetRunFalse();
 	SetEventTerminateHnd();
+}
+
+void CGridFormThread::SetRunFalse()
+{
+	run = FALSE;
 }
 
 CWinThread* CGridFormThread::GetThread()
@@ -70,10 +79,11 @@ UINT CGridFormThread::update_thread(LPVOID _p)
 	POSITION *_pPos;
 	POSITION dPos;
 	PARAM_STRUCT data;
-	GridFormChildView *pView = (GridFormChildView*)_this->_pView;
+	GridFormChildView *pView = NULL;
 	CList <PARAM_STRUCT, PARAM_STRUCT&>* _pList;
 	CString str;
 
+	pView = (GridFormChildView*)_this->_pView;
 	while (_this->run) {
 		ret = WaitForMultipleObjects(2, _this->_infoHnd, FALSE, INFINITE);
 		switch (ret - WAIT_OBJECT_0) {
@@ -107,7 +117,9 @@ UINT CGridFormThread::update_thread(LPVOID _p)
 
 _exit:
 	SetEvent(_this->_confirmHnd);
-	//_this->_pThread = NULL;
+	/*	When the thread exits, the related pointer (_pThread) will be released by framework.
+		the member of _pThread will be meaningless and should be set to NULL to avoid unpected deleting */
+	_this->_pThread = NULL;
 	return 1;
 }
 

@@ -1,4 +1,6 @@
-1. Formview can be used from MFC extension DLL (formview_dll)
+1. Put formview and the related thread into MFC extension DLL.
 
-Next..
-Think about how to combine formview w/ thread
+Currently, it is workable. However, there is sometimes no data shown in formview.
+
+Next,
+How to show the content of formview and be similar with the SMS does.

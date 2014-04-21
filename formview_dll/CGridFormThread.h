@@ -15,10 +15,10 @@ public:
 	LPVOID	_pView;	//pointer related FormView
 	HANDLE	getConfirmHnd(void);
 	CWinThread* GetThread(void);
+	void	SetRunFalse(void);
 
 private:
 	void	SetEventTerminateHnd(void);
-	void	SetRunFalse(void);
 	static UINT update_thread(LPVOID);
 	CWinThread* _pThread;
 	BOOL	run;

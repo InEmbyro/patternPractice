@@ -10,6 +10,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dllTest2", "dllTest2\dllTes
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "formview_dll", "formview_dll\formview_dll.vcxproj", "{B61DD105-A64B-48FF-817B-69F1ACCADDC8}"
+	ProjectSection(ProjectDependencies) = postProject
+		{219CC137-33A3-4177-B5C1-7E9B269E7034} = {219CC137-33A3-4177-B5C1-7E9B269E7034}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

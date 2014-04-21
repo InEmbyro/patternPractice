@@ -12,7 +12,6 @@
 #include "MainFrm.h"
 
 #include "ChildFrm.h"
-#include "CGridFormThread.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -33,6 +32,7 @@ CdllTest2App::~CdllTest2App()
 }
 
 CdllTest2App::CdllTest2App()
+	:_pGridFormThread(NULL)
 {
 	// TODO: replace application ID string below with unique ID string; recommended
 	// format for string is CompanyName.ProductName.SubProduct.VersionInformation
@@ -95,6 +95,8 @@ BOOL CdllTest2App::InitInstance()
 
 	InitCan();
 
+	afxAmbientActCtx = FALSE;
+
 	return TRUE;
 }
 
@@ -113,8 +115,7 @@ int CdllTest2App::ExitInstance()
 
 void CdllTest2App::OnFileNew() 
 {
-	InitGridForm();
-
+	CGridFormChildFrm *pFrame = (CGridFormChildFrm*)InitGridForm();
 }
 
 // CAboutDlg dialog used for App About

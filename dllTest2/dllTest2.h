@@ -14,6 +14,8 @@
 // See dllTest2.cpp for the implementation of this class
 //
 
+class CGridFormThread;
+
 class CdllTest2App : public CWinApp
 {
 public:
@@ -31,6 +33,7 @@ public:
 protected:
 	HMENU  m_hMDIMenu;
 	HACCEL m_hMDIAccel;
+	CGridFormThread *_pGridFormThread;
 
 public:
 	afx_msg void OnAppAbout();
