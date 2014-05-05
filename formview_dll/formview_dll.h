@@ -52,6 +52,8 @@ public:
 
 protected:
 	afx_msg LRESULT OnUserDraw(WPARAM wParam, LPARAM lParam);
+public:
+	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
 };
 
 

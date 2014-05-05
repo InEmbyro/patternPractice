@@ -1,5 +1,4 @@
-1. The content of gridform has been able to be sorted. But, there is still 
-blink problem.
+1. The listctrl will not flicker.
 
 2. The received message looks like not complete.
 For example, the number of 0x600, 0x601 and 0x6F8 should be the same.

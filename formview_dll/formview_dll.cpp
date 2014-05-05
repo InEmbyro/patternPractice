@@ -174,6 +174,7 @@ IMPLEMENT_DYNCREATE(GridFormChildView, CFormView)
 BEGIN_MESSAGE_MAP(GridFormChildView, CFormView)
 	ON_WM_CLOSE()
 	ON_MESSAGE(WM_USER_DRAW, &GridFormChildView::OnUserDraw)
+	ON_WM_ERASEBKGND()
 END_MESSAGE_MAP()
 
 GridFormChildView::GridFormChildView()
@@ -203,6 +204,7 @@ void GridFormChildView::OnInitialUpdate()
 		m_GridList.InsertColumn(idx++, _T("Data Bytes [7...0]"), LVCFMT_LEFT, 200, 0);
 	}
 	m_GridList._pMap = &_Map;
+	m_GridList.SetExtendedStyle(m_GridList.GetExtendedStyle()|LVS_EX_DOUBLEBUFFER); 
 }
 
 void GridFormChildView::DoDataExchange(CDataExchange* pDX)
@@ -268,7 +270,6 @@ afx_msg LRESULT GridFormChildView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 	pos = _List.GetHeadPosition();
 	idx = 0;
 
-	m_GridList.LockWindowUpdate();
 	while (pos) {
 		data = _List.GetAt(pos);
 		if (_Map.Lookup(data.Ident, pkt)) {
@@ -289,7 +290,6 @@ afx_msg LRESULT GridFormChildView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 		m_GridList.SortItems(&CGridList::CompareFunc, 0);
 	else
 		m_GridList.Invalidate();
-	m_GridList.UnlockWindowUpdate();
 
 	WaitForSingleObject(_ListMutex, INFINITE);
 	_List.RemoveAll();
@@ -297,3 +297,10 @@ afx_msg LRESULT GridFormChildView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
+
+
+BOOL GridFormChildView::OnEraseBkgnd(CDC* pDC)
+{
+	// TODO: 在此加入您的訊息處理常式程式碼和 (或) 呼叫預設值
+	return CWnd::OnEraseBkgnd(pDC);
+}

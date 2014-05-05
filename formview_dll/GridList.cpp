@@ -25,6 +25,8 @@ CGridList::~CGridList()
 
 BEGIN_MESSAGE_MAP(CGridList, CLinkCtrl)
 	ON_NOTIFY_REFLECT(LVN_GETDISPINFO, &CGridList::OnLvnGetdispinfo)
+	ON_NOTIFY_REFLECT(NM_CUSTOMDRAW, &CGridList::OnNMCustomdraw)
+	ON_WM_ERASEBKGND()
 END_MESSAGE_MAP()
 
 
@@ -85,4 +87,39 @@ void CGridList::OnLvnGetdispinfo(NMHDR *pNMHDR, LRESULT *pResult)
 	
 	::lstrcpy(pDispInfo->item.pszText, str);
 	*pResult = 0;
+}
+
+
+void CGridList::OnNMCustomdraw(NMHDR *pNMHDR, LRESULT *pResult)
+{
+	//LPNMCUSTOMDRAW pNMCD = reinterpret_cast<LPNMCUSTOMDRAW>(pNMHDR);
+	// TODO: 在此加入控制項告知處理常式程式碼
+	NMLVCUSTOMDRAW *pNMCD = (NMLVCUSTOMDRAW*)(pNMHDR);
+	*pResult = CDRF_DODEFAULT;
+	
+	switch (pNMCD->nmcd.dwDrawStage) {
+	case CDDS_PREPAINT:
+		*pResult = CDRF_NOTIFYITEMDRAW;
+		break;
+	case CDDS_ITEMPREPAINT:
+	{
+		int rowNumber = pNMCD->nmcd.dwItemSpec;
+		if ((rowNumber % 2) == 0) {
+			COLORREF backgroundColor;
+			backgroundColor = RGB(219, 220, 175);
+			pNMCD->clrTextBk = backgroundColor;
+		}
+	}
+		break;
+	default:
+		break;
+    }
+}
+
+
+BOOL CGridList::OnEraseBkgnd(CDC* pDC)
+{
+	// TODO: 在此加入您的訊息處理常式程式碼和 (或) 呼叫預設值
+	return FALSE;
+	return CListCtrl::OnEraseBkgnd(pDC);
 }
