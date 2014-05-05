@@ -109,6 +109,11 @@ typedef struct  {
                   unsigned long  Time;                        /*Timestamp*/
                 } PARAM_STRUCT;
 
+typedef struct {
+	unsigned long long counter;
+	PARAM_STRUCT param;
+} WPARAM_STRUCT;				
+
 //                 used together with CANL2_initialize_fifo_mode()
 typedef struct 
 {

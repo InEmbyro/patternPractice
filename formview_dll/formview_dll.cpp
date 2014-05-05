@@ -182,6 +182,7 @@ GridFormChildView::GridFormChildView()
 	_counter = 0;
 	_ListMutex = CreateMutex(NULL, FALSE, NULL);
 	pFormThread = NULL;
+	_Map.InitHashTable(0x600);
 }
 
 GridFormChildView::~GridFormChildView()
@@ -201,6 +202,7 @@ void GridFormChildView::OnInitialUpdate()
 		m_GridList.InsertColumn(idx++, _T("Len"), LVCFMT_LEFT, 50, 0);
 		m_GridList.InsertColumn(idx++, _T("Data Bytes [7...0]"), LVCFMT_LEFT, 200, 0);
 	}
+	m_GridList._pMap = &_Map;
 }
 
 void GridFormChildView::DoDataExchange(CDataExchange* pDX)
@@ -242,7 +244,6 @@ void GridFormChildView::OnClose()
 	CFormView::OnClose();
 }
 
-
 afx_msg LRESULT GridFormChildView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 {
 	if (GetSafeHwnd() == NULL)
@@ -251,25 +252,45 @@ afx_msg LRESULT GridFormChildView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 		return 0;
 
 	POSITION pos;
+	WPARAM_STRUCT pkt;
 	PARAM_STRUCT data;
 	CString str;
 	int idx = 0;
 
-	pos = _List.GetHeadPosition();
-	idx = 0;
+	LV_ITEM lvi;
+	lvi.mask = LVIF_PARAM | LVIF_TEXT;
+	lvi.iSubItem = 0;
+	lvi.pszText = LPSTR_TEXTCALLBACK;
+
 	if (_counter == (sizeof(_counter)-1))
 		_counter = 0;
+
+	pos = _List.GetHeadPosition();
+	idx = 0;
+
+	m_GridList.LockWindowUpdate();
 	while (pos) {
-		data = _List.GetNext(pos);
-		if (m_GridList.GetItemCount() > 10)
-			m_GridList.DeleteItem(10);
-		str.Format(_T("%d"), _counter++);
-		m_GridList.InsertItem(idx, str);
-		str.Format(_T("0x%X"), data.Ident);
-		m_GridList.SetItemText(idx, 1, str);
-		str.Format(_T("%d"), data.DataLength);
-		m_GridList.SetItemText(idx, 2, str);
+		data = _List.GetAt(pos);
+		if (_Map.Lookup(data.Ident, pkt)) {
+			pkt.counter++;
+			pkt.param = data;
+			_Map.SetAt(pkt.param.Ident, pkt);
+		} else {
+			pkt.counter = 0;
+			pkt.param = data;
+			_Map.SetAt(pkt.param.Ident, pkt);
+			lvi.iItem = idx++;
+			lvi.lParam = (LPARAM)pkt.param.Ident;
+			m_GridList.InsertItem(&lvi);
+		}
+		_List.GetNext(pos);
 	}
+	if (idx)
+		m_GridList.SortItems(&CGridList::CompareFunc, 0);
+	else
+		m_GridList.Invalidate();
+	m_GridList.UnlockWindowUpdate();
+
 	WaitForSingleObject(_ListMutex, INFINITE);
 	_List.RemoveAll();
 	ReleaseMutex(_ListMutex);

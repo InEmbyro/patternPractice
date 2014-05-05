@@ -77,7 +77,7 @@ CCanInfo::CCanInfo()
 		_ThreadEvent[i] = INVALID_HANDLE_VALUE;
 
 	CCanRaw *_p;
-	int i = 3;
+	int i = 50;
 	while (i--) {
 		_p = new CCanRaw();
 		if (_p) {
@@ -395,6 +395,8 @@ UINT CCanInfo::receiveThread(LPVOID pa)
 				switch (frc = CANL2_read_ac(pThis->_curHandle, &param)) {
 					case CANL2_RA_DATAFRAME:
 						_pR->_list.AddTail(param);
+						if (_pR->_list.GetCount() > 10)
+							goto _nn;
 						break;
 					default:
 						break;
@@ -402,6 +404,7 @@ UINT CCanInfo::receiveThread(LPVOID pa)
 				if (!pThis->run)
 					break;
 			} while (frc > 0);
+_nn:
 			pThis->SlotInfo(pos);
 
 			break;

@@ -4,6 +4,7 @@
 #include "resource.h"
 #include "../Softing/Can_def.h"
 #include "../Softing//CANL2.H"
+#include "GridList.h"
 
 #define	WM_USER_DRAW	(WM_USER + 1)
 
@@ -13,6 +14,7 @@ class CGridFormThread;
 class AFX_EXT_CLASS GridFormChildView : public CFormView
 {
 	DECLARE_DYNCREATE(GridFormChildView)
+	static int CALLBACK CompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort);
 
 	GridFormChildView();           // 動態建立所使用的保護建構函式
 	virtual ~GridFormChildView();
@@ -43,9 +45,11 @@ public:
 
 	void	CloseAllHnd(void);
 
-	CListCtrl m_GridList;
+	CGridList m_GridList;
 	afx_msg void OnClose();
 	CList <PARAM_STRUCT, PARAM_STRUCT&> _List;
+	CMap <unsigned int, unsigned int, WPARAM_STRUCT, WPARAM_STRUCT&> _Map;
+
 protected:
 	afx_msg LRESULT OnUserDraw(WPARAM wParam, LPARAM lParam);
 };
