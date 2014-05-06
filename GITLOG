@@ -1,7 +1,4 @@
-1. The listctrl will not flicker.
+1. The received packets has been shown on gridform w/o losing packets.
+The number of 0x600, 0x601, 0x710 and so on are all consistent.
 
-2. The received message looks like not complete.
-For example, the number of 0x600, 0x601 and 0x6F8 should be the same.
-
-Next, thinking about not copy from List of CanEngine to List of gridform.
 

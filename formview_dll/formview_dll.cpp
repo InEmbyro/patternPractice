@@ -254,6 +254,7 @@ afx_msg LRESULT GridFormChildView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 		return 0;
 
 	POSITION pos;
+	POSITION prePos;
 	WPARAM_STRUCT pkt;
 	PARAM_STRUCT data;
 	CString str;
@@ -284,16 +285,17 @@ afx_msg LRESULT GridFormChildView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 			lvi.lParam = (LPARAM)pkt.param.Ident;
 			m_GridList.InsertItem(&lvi);
 		}
+		prePos = pos;
 		_List.GetNext(pos);
+		WaitForSingleObject(_ListMutex, INFINITE);
+		_List.RemoveAt(prePos);
+		ReleaseMutex(_ListMutex);
 	}
 	if (idx)
 		m_GridList.SortItems(&CGridList::CompareFunc, 0);
 	else
 		m_GridList.Invalidate();
 
-	WaitForSingleObject(_ListMutex, INFINITE);
-	_List.RemoveAll();
-	ReleaseMutex(_ListMutex);
 	return 0;
 }
 
