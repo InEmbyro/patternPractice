@@ -75,8 +75,7 @@ IMPLEMENT_DYNCREATE(CGridFormChildFrm, CMDIChildWnd)
 BEGIN_MESSAGE_MAP(CGridFormChildFrm, CMDIChildWnd)
 	ON_WM_CREATE()
 	ON_WM_CLOSE()
-//	ON_WM_DESTROY()
-//ON_WM_CONTEXTMENU()
+	ON_WM_NCRBUTTONUP()
 END_MESSAGE_MAP()
 
 CGridFormChildFrm::CGridFormChildFrm()
@@ -344,4 +343,23 @@ void GridFormChildView::OnTopCleargrid()
 	ReleaseMutex(_MapMutex);
 	
 	AfxSetResourceHandle(hInstOld);
+}
+
+
+void CGridFormChildFrm::OnNcRButtonUp(UINT nHitTest, CPoint point)
+{
+	// TODO: 在此加入您的訊息處理常式程式碼和 (或) 呼叫預設值
+	HINSTANCE hInstOld = AfxGetResourceHandle();
+	AfxSetResourceHandle(formview_dll.hModule);
+
+	CMenu menu;
+	menu.LoadMenu(IDR_FRM_CONTEXTMENU);
+
+	CMenu* pContextMenu = menu.GetSubMenu(0);
+
+	pContextMenu->TrackPopupMenu (TPM_LEFTALIGN | TPM_LEFTBUTTON |
+            TPM_RIGHTBUTTON, point.x, point.y, AfxGetMainWnd ());
+
+	AfxSetResourceHandle(hInstOld);
+	CMDIChildWnd::OnNcRButtonUp(nHitTest, point);
 }

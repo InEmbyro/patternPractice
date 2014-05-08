@@ -83,6 +83,7 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	afx_msg void OnClose();
+	afx_msg void OnNcRButtonUp(UINT nHitTest, CPoint point);
 };
 
 #undef AFX_DATA

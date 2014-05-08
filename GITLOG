@@ -1,5 +1,4 @@
-1. Once users finished the dragging a divider, the list should be set
-to invalid() so that the CListCtrl view will be redraw. That will avoid
-unexpected drawing.
+1. The contextmenu of childframe can be popped up by catching NCRBUTTONUP 
+message.
 
 Should be tested with CANPro.
