@@ -1,4 +1,4 @@
-1. The received packets has been shown on gridform w/o losing packets.
-The number of 0x600, 0x601, 0x710 and so on are all consistent.
+1. Add the "clear grid" of context menu.
+2. Change the font of gridform to Courier New.
 
 

@@ -32,8 +32,8 @@ public:
 	BOOL Create(LPCTSTR, LPCTSTR, DWORD, const RECT&, CWnd*, UINT, CCreateContext*);
 	void OnInitialUpdate();
 
-	unsigned long long _counter;
 	HANDLE _ListMutex;
+	HANDLE _MapMutex;
 
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV ¤ä´©
@@ -54,6 +54,8 @@ protected:
 	afx_msg LRESULT OnUserDraw(WPARAM wParam, LPARAM lParam);
 public:
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
+	afx_msg void OnContextMenu(CWnd* /*pWnd*/, CPoint /*point*/);
+	afx_msg void OnTopCleargrid();
 };
 
 
@@ -81,7 +83,6 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	afx_msg void OnClose();
-//	afx_msg void OnDestroy();
 };
 
 #undef AFX_DATA

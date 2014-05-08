@@ -76,6 +76,7 @@ BEGIN_MESSAGE_MAP(CGridFormChildFrm, CMDIChildWnd)
 	ON_WM_CREATE()
 	ON_WM_CLOSE()
 //	ON_WM_DESTROY()
+//ON_WM_CONTEXTMENU()
 END_MESSAGE_MAP()
 
 CGridFormChildFrm::CGridFormChildFrm()
@@ -175,13 +176,15 @@ BEGIN_MESSAGE_MAP(GridFormChildView, CFormView)
 	ON_WM_CLOSE()
 	ON_MESSAGE(WM_USER_DRAW, &GridFormChildView::OnUserDraw)
 	ON_WM_ERASEBKGND()
+	ON_WM_CONTEXTMENU()
+	ON_COMMAND(ID_TOP_CLEARGRID, &GridFormChildView::OnTopCleargrid)
 END_MESSAGE_MAP()
 
 GridFormChildView::GridFormChildView()
 	: CFormView(GridFormChildView::IDD)/* , _pThread(NULL) */
 {
-	_counter = 0;
 	_ListMutex = CreateMutex(NULL, FALSE, NULL);
+	_MapMutex = CreateMutex(NULL, FALSE, NULL);
 	pFormThread = NULL;
 	_Map.InitHashTable(0x600);
 }
@@ -198,13 +201,13 @@ void GridFormChildView::OnInitialUpdate()
 {
 	int idx = 0;
 	if (m_GridList.GetSafeHwnd() != NULL) {
-		m_GridList.InsertColumn(idx++, _T("#Msgs"), LVCFMT_LEFT, 50, 0);
-		m_GridList.InsertColumn(idx++, _T("Ident"), LVCFMT_LEFT, 50, 0);
+		m_GridList.InsertColumn(idx++, _T("#Msgs"), LVCFMT_LEFT, 70, 0);
+		m_GridList.InsertColumn(idx++, _T("Ident"), LVCFMT_LEFT, 70, 0);
 		m_GridList.InsertColumn(idx++, _T("Len"), LVCFMT_LEFT, 50, 0);
-		m_GridList.InsertColumn(idx++, _T("Data Bytes [7...0]"), LVCFMT_LEFT, 200, 0);
+		m_GridList.InsertColumn(idx++, _T("Data Bytes [7...0]"), LVCFMT_LEFT, 250, 0);
 	}
 	m_GridList._pMap = &_Map;
-	m_GridList.SetExtendedStyle(m_GridList.GetExtendedStyle()|LVS_EX_DOUBLEBUFFER); 
+	m_GridList.SetExtendedStyle(m_GridList.GetExtendedStyle()|LVS_EX_DOUBLEBUFFER);
 }
 
 void GridFormChildView::DoDataExchange(CDataExchange* pDX)
@@ -265,12 +268,10 @@ afx_msg LRESULT GridFormChildView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 	lvi.iSubItem = 0;
 	lvi.pszText = LPSTR_TEXTCALLBACK;
 
-	if (_counter == (sizeof(_counter)-1))
-		_counter = 0;
-
 	pos = _List.GetHeadPosition();
 	idx = 0;
 
+	WaitForSingleObject(_MapMutex, INFINITE);
 	while (pos) {
 		data = _List.GetAt(pos);
 		if (_Map.Lookup(data.Ident, pkt)) {
@@ -280,6 +281,7 @@ afx_msg LRESULT GridFormChildView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 		} else {
 			pkt.counter = 0;
 			pkt.param = data;
+			WaitForSingleObject(_MapMutex, INFINITE);
 			_Map.SetAt(pkt.param.Ident, pkt);
 			lvi.iItem = idx++;
 			lvi.lParam = (LPARAM)pkt.param.Ident;
@@ -295,6 +297,7 @@ afx_msg LRESULT GridFormChildView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 		m_GridList.SortItems(&CGridList::CompareFunc, 0);
 	else
 		m_GridList.Invalidate();
+	ReleaseMutex(_MapMutex);
 
 	return 0;
 }
@@ -305,4 +308,40 @@ BOOL GridFormChildView::OnEraseBkgnd(CDC* pDC)
 {
 	// TODO: 在此加入您的訊息處理常式程式碼和 (或) 呼叫預設值
 	return CWnd::OnEraseBkgnd(pDC);
+}
+
+
+void GridFormChildView::OnContextMenu(CWnd* pWnd, CPoint point)
+{
+
+	// TODO: 在此加入您的訊息處理常式程式碼
+	HINSTANCE hInstOld = AfxGetResourceHandle();
+	AfxSetResourceHandle(formview_dll.hModule);
+
+	CMenu menu;
+	menu.LoadMenu(IDR_VIEW_CONTEXTMENU);
+
+	CMenu* pContextMenu = menu.GetSubMenu(0);
+
+	pContextMenu->TrackPopupMenu (TPM_LEFTALIGN | TPM_LEFTBUTTON |
+            TPM_RIGHTBUTTON, point.x, point.y, AfxGetMainWnd ());
+
+	AfxSetResourceHandle(hInstOld);
+}
+
+
+
+
+void GridFormChildView::OnTopCleargrid()
+{
+	HINSTANCE hInstOld = AfxGetResourceHandle();
+	AfxSetResourceHandle(formview_dll.hModule);
+	// TODO: 在此加入您的命令處理常式程式碼
+	WaitForSingleObject(_MapMutex, INFINITE);
+	_Map.RemoveAll();
+	m_GridList.DeleteAllItems();
+	m_GridList.Invalidate();
+	ReleaseMutex(_MapMutex);
+	
+	AfxSetResourceHandle(hInstOld);
 }

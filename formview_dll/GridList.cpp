@@ -67,7 +67,7 @@ void CGridList::OnLvnGetdispinfo(NMHDR *pNMHDR, LRESULT *pResult)
 			break;
 #if 1
 		case 1:
-			str.Format(_T("%X"), pkt.param.Ident);
+			str.Format(_T("%2X"), pkt.param.Ident);
 			break;
 		case 2:
 			str.Format(_T("%d"), pkt.param.DataLength);
@@ -94,9 +94,9 @@ void CGridList::OnNMCustomdraw(NMHDR *pNMHDR, LRESULT *pResult)
 {
 	//LPNMCUSTOMDRAW pNMCD = reinterpret_cast<LPNMCUSTOMDRAW>(pNMHDR);
 	// TODO: 在此加入控制項告知處理常式程式碼
-	NMLVCUSTOMDRAW *pNMCD = (NMLVCUSTOMDRAW*)(pNMHDR);
+	NMLVCUSTOMDRAW *pNMCD = reinterpret_cast<LPNMLVCUSTOMDRAW>(pNMHDR);
 	*pResult = CDRF_DODEFAULT;
-	
+
 	switch (pNMCD->nmcd.dwDrawStage) {
 	case CDDS_PREPAINT:
 		*pResult = CDRF_NOTIFYITEMDRAW;
@@ -104,7 +104,7 @@ void CGridList::OnNMCustomdraw(NMHDR *pNMHDR, LRESULT *pResult)
 	case CDDS_ITEMPREPAINT:
 	{
 		int rowNumber = pNMCD->nmcd.dwItemSpec;
-		if ((rowNumber % 2) == 0) {
+		if ((rowNumber & 0x01)) {
 			COLORREF backgroundColor;
 			backgroundColor = RGB(219, 220, 175);
 			pNMCD->clrTextBk = backgroundColor;
@@ -116,10 +116,27 @@ void CGridList::OnNMCustomdraw(NMHDR *pNMHDR, LRESULT *pResult)
     }
 }
 
-
 BOOL CGridList::OnEraseBkgnd(CDC* pDC)
 {
 	// TODO: 在此加入您的訊息處理常式程式碼和 (或) 呼叫預設值
 	return FALSE;
 	return CListCtrl::OnEraseBkgnd(pDC);
+}
+
+void CGridList::PreSubclassWindow()
+{
+
+	// TODO: 在此加入特定的程式碼和 (或) 呼叫基底類別
+	CString str;
+	str = _T("Courier New");
+                                      
+	LOGFONT lf;
+	_curFont = GetFont();
+	_curFont->GetLogFont(&lf);
+
+	lf.lfCharSet = ANSI_CHARSET;
+	wcscpy_s(lf.lfFaceName, str);
+	font_.CreateFontIndirect(&lf);
+	SetFont(&font_);
+	CListCtrl::PreSubclassWindow();
 }
