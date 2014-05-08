@@ -1,4 +1,5 @@
-1. Add the "clear grid" of context menu.
-2. Change the font of gridform to Courier New.
+1. Once users finished the dragging a divider, the list should be set
+to invalid() so that the CListCtrl view will be redraw. That will avoid
+unexpected drawing.
 
-
+Should be tested with CANPro.

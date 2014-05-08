@@ -27,6 +27,8 @@ BEGIN_MESSAGE_MAP(CGridList, CLinkCtrl)
 	ON_NOTIFY_REFLECT(LVN_GETDISPINFO, &CGridList::OnLvnGetdispinfo)
 	ON_NOTIFY_REFLECT(NM_CUSTOMDRAW, &CGridList::OnNMCustomdraw)
 	ON_WM_ERASEBKGND()
+	ON_NOTIFY(HDN_ENDTRACKA, 0, &CGridList::OnHdnEndtrack)
+	ON_NOTIFY(HDN_ENDTRACKW, 0, &CGridList::OnHdnEndtrack)
 END_MESSAGE_MAP()
 
 
@@ -139,4 +141,12 @@ void CGridList::PreSubclassWindow()
 	font_.CreateFontIndirect(&lf);
 	SetFont(&font_);
 	CListCtrl::PreSubclassWindow();
+}
+
+
+void CGridList::OnHdnEndtrack(NMHDR *pNMHDR, LRESULT *pResult)
+{
+	LPNMHEADER phdr = reinterpret_cast<LPNMHEADER>(pNMHDR);
+	Invalidate();
+	*pResult = 0;
 }
