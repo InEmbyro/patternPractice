@@ -8,8 +8,9 @@ class CGridList : public CListCtrl
 	DECLARE_DYNAMIC(CGridList)
 
 public:
-	static int CALLBACK CGridList::CompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort);
+	//static int CALLBACK CGridList::CompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort);
 	static CMap<unsigned int, unsigned int, WPARAM_STRUCT, WPARAM_STRUCT&> *_pMap;
+	static CArray <WPARAM_STRUCT, WPARAM_STRUCT&> *_pArray;
 	CGridList();
 	virtual ~CGridList();
 	CFont font_;

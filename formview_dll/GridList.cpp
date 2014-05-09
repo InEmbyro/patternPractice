@@ -12,6 +12,7 @@
 
 IMPLEMENT_DYNAMIC(CGridList, CLinkCtrl)
 CMap<unsigned int, unsigned int, WPARAM_STRUCT, WPARAM_STRUCT&> *CGridList::_pMap;
+CArray <WPARAM_STRUCT, WPARAM_STRUCT&> *CGridList::_pArray;
 
 CGridList::CGridList()
 {
@@ -36,19 +37,19 @@ END_MESSAGE_MAP()
 // CGridList 訊息處理常式
 
 
-int CALLBACK CGridList::CompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort)
-{
-	unsigned long p1 = (unsigned long)lParam1;
-	unsigned long p2 = (unsigned long)lParam2;
-	int rtn = 0;
-
-	if (p1 > p2)
-		rtn = 1;
-	else if (p1 < p2)
-		rtn = -1;
-
-	return rtn;
-}
+//int CALLBACK CGridList::CompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort)
+//{
+//	unsigned long p1 = (unsigned long)lParam1;
+//	unsigned long p2 = (unsigned long)lParam2;
+//	int rtn = 0;
+//
+//	if (p1 > p2)
+//		rtn = 1;
+//	else if (p1 < p2)
+//		rtn = -1;
+//
+//	return rtn;
+//}
 
 
 
@@ -57,17 +58,19 @@ void CGridList::OnLvnGetdispinfo(NMHDR *pNMHDR, LRESULT *pResult)
 	NMLVDISPINFO *pDispInfo = reinterpret_cast<NMLVDISPINFO*>(pNMHDR);
 	// TODO: 在此加入控制項告知處理常式程式碼
 	WPARAM_STRUCT pkt;
-	unsigned long Ident;
+	int Ident;
 	CString str;
 
+	memset(&pkt, 0x00, sizeof(WPARAM_STRUCT));
 	if (pDispInfo->item.mask & LVIF_TEXT) {
-		Ident = (unsigned long)pDispInfo->item.lParam;
-		_pMap->Lookup(Ident, pkt);
+		Ident = (unsigned long)pDispInfo->item.iItem;
+		if (Ident >= _pArray->GetSize())
+			goto __error;
+		pkt = _pArray->GetAt(Ident);
 		switch (pDispInfo->item.iSubItem) {
 		case 0:
 			str.Format(_T("%d"), pkt.counter);
 			break;
-#if 1
 		case 1:
 			str.Format(_T("%2X"), pkt.param.Ident);
 			break;
@@ -80,13 +83,12 @@ void CGridList::OnLvnGetdispinfo(NMHDR *pNMHDR, LRESULT *pResult)
 				str.AppendFormat(_T("%02X:"), pkt.param.RCV_data[j]);
 			str.TrimRight(_T(":"));
 			break;
-#endif
 		default:
 			str = "";
 			break;
 		}
 	}
-	
+__error:	
 	::lstrcpy(pDispInfo->item.pszText, str);
 	*pResult = 0;
 }
@@ -147,6 +149,13 @@ void CGridList::PreSubclassWindow()
 void CGridList::OnHdnEndtrack(NMHDR *pNMHDR, LRESULT *pResult)
 {
 	LPNMHEADER phdr = reinterpret_cast<LPNMHEADER>(pNMHDR);
-	Invalidate();
 	*pResult = 0;
 }
+
+
+//void CGridList::OnSize(UINT nType, int cx, int cy)
+//{
+//	CListCtrl::OnSize(nType, cx, cy);
+//
+//	// TODO: 在此加入您的訊息處理常式程式碼
+//}

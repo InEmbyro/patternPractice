@@ -158,15 +158,6 @@ void CGridFormChildFrm::OnClose()
 	CMDIChildWnd::OnClose();
 }
 
-
-//void CGridFormChildFrm::OnDestroy()
-//{
-//	CMDIChildWnd::OnDestroy();
-//
-//	// TODO: 在此加入您的訊息處理常式程式碼
-//}
-
-
 const char* GridFormChildView::mailslot = "\\\\.\\mailslot\\wnc_grid_view";
 
 // GridFormChildView
@@ -177,6 +168,7 @@ BEGIN_MESSAGE_MAP(GridFormChildView, CFormView)
 	ON_WM_ERASEBKGND()
 	ON_WM_CONTEXTMENU()
 	ON_COMMAND(ID_TOP_CLEARGRID, &GridFormChildView::OnTopCleargrid)
+//	ON_WM_SIZE()
 END_MESSAGE_MAP()
 
 GridFormChildView::GridFormChildView()
@@ -184,6 +176,7 @@ GridFormChildView::GridFormChildView()
 {
 	_ListMutex = CreateMutex(NULL, FALSE, NULL);
 	_MapMutex = CreateMutex(NULL, FALSE, NULL);
+	_ArrayMutex = CreateMutex(NULL, FALSE, NULL);
 	pFormThread = NULL;
 	_Map.InitHashTable(0x600);
 }
@@ -206,7 +199,9 @@ void GridFormChildView::OnInitialUpdate()
 		m_GridList.InsertColumn(idx++, _T("Data Bytes [7...0]"), LVCFMT_LEFT, 250, 0);
 	}
 	m_GridList._pMap = &_Map;
+	m_GridList._pArray = &_Array;
 	m_GridList.SetExtendedStyle(m_GridList.GetExtendedStyle()|LVS_EX_DOUBLEBUFFER);
+	m_GridList.SetItemCount(200);
 }
 
 void GridFormChildView::DoDataExchange(CDataExchange* pDX)
@@ -278,13 +273,11 @@ afx_msg LRESULT GridFormChildView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 			pkt.param = data;
 			_Map.SetAt(pkt.param.Ident, pkt);
 		} else {
+			idx++;
 			pkt.counter = 0;
 			pkt.param = data;
 			WaitForSingleObject(_MapMutex, INFINITE);
 			_Map.SetAt(pkt.param.Ident, pkt);
-			lvi.iItem = idx++;
-			lvi.lParam = (LPARAM)pkt.param.Ident;
-			m_GridList.InsertItem(&lvi);
 		}
 		prePos = pos;
 		_List.GetNext(pos);
@@ -292,15 +285,35 @@ afx_msg LRESULT GridFormChildView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 		_List.RemoveAt(prePos);
 		ReleaseMutex(_ListMutex);
 	}
-	if (idx)
-		m_GridList.SortItems(&CGridList::CompareFunc, 0);
-	else
-		m_GridList.Invalidate();
+
+	unsigned int jj;
+	WaitForSingleObject(_ArrayMutex, INFINITE);
+	_Array.RemoveAll();
+	ReleaseMutex(_ArrayMutex);
+	pos = _Map.GetStartPosition();
+	while (pos) {
+		_Map.GetNextAssoc(pos, jj, pkt);
+		WaitForSingleObject(_ArrayMutex, INFINITE);
+		_Array.Add(pkt);
+		ReleaseMutex(_ArrayMutex);
+	}
+	WPARAM_STRUCT *pD = _Array.GetData();
+	qsort(pD, _Array.GetSize(), sizeof(WPARAM_STRUCT), (GENERICCOMPAREFN)Compare);
+	m_GridList.Invalidate();
 	ReleaseMutex(_MapMutex);
 
 	return 0;
 }
 
+int __cdecl GridFormChildView::Compare(const WPARAM_STRUCT * p1, const WPARAM_STRUCT * p2)
+{
+	if (p1->param.Ident > p2->param.Ident)
+		return 1;
+	else if (p1->param.Ident < p2->param.Ident)
+		return -1;
+	else
+		return 0;
+}
 
 
 BOOL GridFormChildView::OnEraseBkgnd(CDC* pDC)
@@ -323,7 +336,7 @@ void GridFormChildView::OnContextMenu(CWnd* pWnd, CPoint point)
 	CMenu* pContextMenu = menu.GetSubMenu(0);
 
 	pContextMenu->TrackPopupMenu (TPM_LEFTALIGN | TPM_LEFTBUTTON |
-            TPM_RIGHTBUTTON, point.x, point.y, AfxGetMainWnd ());
+		TPM_RIGHTBUTTON, point.x, point.y, AfxGetApp()->GetMainWnd());
 
 	AfxSetResourceHandle(hInstOld);
 }
@@ -338,9 +351,13 @@ void GridFormChildView::OnTopCleargrid()
 	// TODO: 在此加入您的命令處理常式程式碼
 	WaitForSingleObject(_MapMutex, INFINITE);
 	_Map.RemoveAll();
-	m_GridList.DeleteAllItems();
-	m_GridList.Invalidate();
 	ReleaseMutex(_MapMutex);
+
+	WaitForSingleObject(_MapMutex, INFINITE);
+	_Array.RemoveAll();
+	ReleaseMutex(_ArrayMutex);
+
+	m_GridList.Invalidate();
 	
 	AfxSetResourceHandle(hInstOld);
 }
@@ -358,8 +375,22 @@ void CGridFormChildFrm::OnNcRButtonUp(UINT nHitTest, CPoint point)
 	CMenu* pContextMenu = menu.GetSubMenu(0);
 
 	pContextMenu->TrackPopupMenu (TPM_LEFTALIGN | TPM_LEFTBUTTON |
-            TPM_RIGHTBUTTON, point.x, point.y, AfxGetMainWnd ());
-
+		TPM_RIGHTBUTTON, point.x, point.y, (CWnd*)GetParentFrame());
 	AfxSetResourceHandle(hInstOld);
 	CMDIChildWnd::OnNcRButtonUp(nHitTest, point);
 }
+
+
+
+//void GridFormChildView::OnSize(UINT nType, int cx, int cy)
+//{
+//	CFormView::OnSize(nType, cx, cy);
+//	CRect rect;
+//
+//	GetClientRect(&rect);
+//	CWnd* pParentFrame = m_GridList.GetParentFrame(); 
+//	m_GridList.MoveWindow(0, 0, rect.Width(), rect.Height());
+//
+//
+//	// TODO: 在此加入您的訊息處理常式程式碼
+//}

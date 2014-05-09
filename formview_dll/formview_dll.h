@@ -6,7 +6,10 @@
 #include "../Softing//CANL2.H"
 #include "GridList.h"
 
+typedef int (__cdecl *GENERICCOMPAREFN)(const void * elem1, const void * elem2);
+
 #define	WM_USER_DRAW	(WM_USER + 1)
+
 
 extern "C" AFX_EXT_API LPVOID WINAPI InitGridForm();
 
@@ -14,7 +17,8 @@ class CGridFormThread;
 class AFX_EXT_CLASS GridFormChildView : public CFormView
 {
 	DECLARE_DYNCREATE(GridFormChildView)
-	static int CALLBACK CompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort);
+	//static int CALLBACK CompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort);
+	static int __cdecl Compare(const WPARAM_STRUCT * p1, const WPARAM_STRUCT * p2);
 
 	GridFormChildView();           // 動態建立所使用的保護建構函式
 	virtual ~GridFormChildView();
@@ -34,6 +38,7 @@ public:
 
 	HANDLE _ListMutex;
 	HANDLE _MapMutex;
+	HANDLE _ArrayMutex;
 
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV 支援
@@ -48,6 +53,8 @@ public:
 	CGridList m_GridList;
 	afx_msg void OnClose();
 	CList <PARAM_STRUCT, PARAM_STRUCT&> _List;
+	CList<WPARAM_STRUCT, WPARAM_STRUCT&> _ListBack;
+	CArray <WPARAM_STRUCT, WPARAM_STRUCT&> _Array;
 	CMap <unsigned int, unsigned int, WPARAM_STRUCT, WPARAM_STRUCT&> _Map;
 
 protected:
