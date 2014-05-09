@@ -161,24 +161,29 @@ void CGridFormChildFrm::OnClose()
 const char* GridFormChildView::mailslot = "\\\\.\\mailslot\\wnc_grid_view";
 
 // GridFormChildView
-IMPLEMENT_DYNCREATE(GridFormChildView, CFormView)
-BEGIN_MESSAGE_MAP(GridFormChildView, CFormView)
+IMPLEMENT_DYNCREATE(GridFormChildView, CListView)
+BEGIN_MESSAGE_MAP(GridFormChildView, CListView)
 	ON_WM_CLOSE()
 	ON_MESSAGE(WM_USER_DRAW, &GridFormChildView::OnUserDraw)
 	ON_WM_ERASEBKGND()
 	ON_WM_CONTEXTMENU()
 	ON_COMMAND(ID_TOP_CLEARGRID, &GridFormChildView::OnTopCleargrid)
-//	ON_WM_SIZE()
+	ON_NOTIFY_REFLECT(NM_CUSTOMDRAW, &GridFormChildView::OnNMCustomdraw)
+	ON_NOTIFY_REFLECT(LVN_GETDISPINFO, &GridFormChildView::OnLvnGetdispinfo)
+	//ON_WM_PAINT()
+	ON_WM_SIZE()
+	ON_NOTIFY(HDN_BEGINTRACKA, 0, &GridFormChildView::OnHdnBegintrack)
+	ON_NOTIFY(HDN_BEGINTRACKW, 0, &GridFormChildView::OnHdnBegintrack)
 END_MESSAGE_MAP()
 
 GridFormChildView::GridFormChildView()
-	: CFormView(GridFormChildView::IDD)/* , _pThread(NULL) */
 {
 	_ListMutex = CreateMutex(NULL, FALSE, NULL);
 	_MapMutex = CreateMutex(NULL, FALSE, NULL);
 	_ArrayMutex = CreateMutex(NULL, FALSE, NULL);
 	pFormThread = NULL;
 	_Map.InitHashTable(0x600);
+	m_brush.CreateSolidBrush(RGB(150, 150, 150));
 }
 
 GridFormChildView::~GridFormChildView()
@@ -192,27 +197,37 @@ GridFormChildView::~GridFormChildView()
 void GridFormChildView::OnInitialUpdate()
 {
 	int idx = 0;
-	if (m_GridList.GetSafeHwnd() != NULL) {
-		m_GridList.InsertColumn(idx++, _T("#Msgs"), LVCFMT_LEFT, 70, 0);
-		m_GridList.InsertColumn(idx++, _T("Ident"), LVCFMT_LEFT, 70, 0);
-		m_GridList.InsertColumn(idx++, _T("Len"), LVCFMT_LEFT, 50, 0);
-		m_GridList.InsertColumn(idx++, _T("Data Bytes [7...0]"), LVCFMT_LEFT, 250, 0);
+	CListCtrl &list = GetListCtrl();
+
+	CString str;
+	str = _T("Courier New");
+	LOGFONT lf;
+	_pCurFont = GetFont();
+	_pCurFont->GetLogFont(&lf);
+
+	lf.lfCharSet = ANSI_CHARSET;
+	wcscpy_s(lf.lfFaceName, str);
+	font_.CreateFontIndirect(&lf);
+	list.SetFont(&font_);
+
+	if (list.GetSafeHwnd() != NULL) {
+		list.InsertColumn(idx++, _T("#Msgs"), LVCFMT_LEFT, 70, 0);
+		list.InsertColumn(idx++, _T("Ident"), LVCFMT_LEFT, 70, 0);
+		list.InsertColumn(idx++, _T("Len"), LVCFMT_LEFT, 50, 0);
+		list.InsertColumn(idx++, _T("Data Bytes [7...0]"), LVCFMT_LEFT, 250, 0);
 	}
-	m_GridList._pMap = &_Map;
-	m_GridList._pArray = &_Array;
-	m_GridList.SetExtendedStyle(m_GridList.GetExtendedStyle()|LVS_EX_DOUBLEBUFFER);
-	m_GridList.SetItemCount(200);
+	list.SetExtendedStyle(list.GetExtendedStyle()|LVS_EX_DOUBLEBUFFER);
+	list.SetItemCountEx(200);
 }
 
 void GridFormChildView::DoDataExchange(CDataExchange* pDX)
 {
-	CFormView::DoDataExchange(pDX);
-	DDX_Control(pDX, IDC_GRIDLIST, m_GridList);
+	CListView::DoDataExchange(pDX);
 }
 
 BOOL GridFormChildView::Create(LPCTSTR p1, LPCTSTR p2, DWORD p3, const RECT& p4, CWnd* p5, UINT p6, CCreateContext*p7)
 {
-	return CFormView::Create(p1, p2, p3, p4, p5, p6, p7);
+	return CListView::Create(p1, p2, p3, p4, p5, p6, p7);
 }
 
 // GridFormChildView 診斷
@@ -220,27 +235,27 @@ BOOL GridFormChildView::Create(LPCTSTR p1, LPCTSTR p2, DWORD p3, const RECT& p4,
 #ifdef _DEBUG
 void GridFormChildView::AssertValid() const
 {
-	CFormView::AssertValid();
+	CListView::AssertValid();
 }
 
 #ifndef _WIN32_WCE
 void GridFormChildView::Dump(CDumpContext& dc) const
 {
-	CFormView::Dump(dc);
+	CListView::Dump(dc);
 }
 #endif
 #endif //_DEBUG
 
 void GridFormChildView::CloseAllHnd()
 {
-	::SendMessage(m_GridList.m_hWnd, WM_CLOSE, 0, 0);
+//	::SendMessage(m_GridList.m_hWnd, WM_CLOSE, 0, 0);
 }
 
 void GridFormChildView::OnClose()
 {
 	// TODO: 在此加入您的訊息處理常式程式碼和 (或) 呼叫預設值
 
-	CFormView::OnClose();
+	CListView::OnClose();
 }
 
 afx_msg LRESULT GridFormChildView::OnUserDraw(WPARAM wParam, LPARAM lParam)
@@ -299,7 +314,9 @@ afx_msg LRESULT GridFormChildView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 	}
 	WPARAM_STRUCT *pD = _Array.GetData();
 	qsort(pD, _Array.GetSize(), sizeof(WPARAM_STRUCT), (GENERICCOMPAREFN)Compare);
-	m_GridList.Invalidate();
+	CListCtrl &list = GetListCtrl();
+	list.GetItemCount();
+	list.Invalidate();
 	ReleaseMutex(_MapMutex);
 
 	return 0;
@@ -319,6 +336,7 @@ int __cdecl GridFormChildView::Compare(const WPARAM_STRUCT * p1, const WPARAM_ST
 BOOL GridFormChildView::OnEraseBkgnd(CDC* pDC)
 {
 	// TODO: 在此加入您的訊息處理常式程式碼和 (或) 呼叫預設值
+	return FALSE;
 	return CWnd::OnEraseBkgnd(pDC);
 }
 
@@ -341,9 +359,6 @@ void GridFormChildView::OnContextMenu(CWnd* pWnd, CPoint point)
 	AfxSetResourceHandle(hInstOld);
 }
 
-
-
-
 void GridFormChildView::OnTopCleargrid()
 {
 	HINSTANCE hInstOld = AfxGetResourceHandle();
@@ -357,7 +372,7 @@ void GridFormChildView::OnTopCleargrid()
 	_Array.RemoveAll();
 	ReleaseMutex(_ArrayMutex);
 
-	m_GridList.Invalidate();
+	GetListCtrl().Invalidate();
 	
 	AfxSetResourceHandle(hInstOld);
 }
@@ -394,3 +409,113 @@ void CGridFormChildFrm::OnNcRButtonUp(UINT nHitTest, CPoint point)
 //
 //	// TODO: 在此加入您的訊息處理常式程式碼
 //}
+
+
+void GridFormChildView::OnNMCustomdraw(NMHDR *pNMHDR, LRESULT *pResult)
+{
+	NMLVCUSTOMDRAW *pNMCD = reinterpret_cast<LPNMLVCUSTOMDRAW>(pNMHDR);
+	*pResult = CDRF_DODEFAULT;
+
+	switch (pNMCD->nmcd.dwDrawStage) {
+	case CDDS_PREPAINT:
+		*pResult = CDRF_NOTIFYITEMDRAW;
+		break;
+	case CDDS_ITEMPREPAINT:
+	{
+		int rowNumber = pNMCD->nmcd.dwItemSpec;
+		if ((rowNumber & 0x01)) {
+			COLORREF backgroundColor;
+			backgroundColor = RGB(219, 220, 175);
+			pNMCD->clrTextBk = backgroundColor;
+		}
+	}
+		break;
+	default:
+		break;
+    }
+}
+
+
+void GridFormChildView::OnLvnGetdispinfo(NMHDR *pNMHDR, LRESULT *pResult)
+{
+	NMLVDISPINFO *pDispInfo = reinterpret_cast<NMLVDISPINFO*>(pNMHDR);
+	// TODO: 在此加入控制項告知處理常式程式碼
+	WPARAM_STRUCT pkt;
+	int Ident;
+	CString str;
+
+	memset(&pkt, 0x00, sizeof(WPARAM_STRUCT));
+	if (pDispInfo->item.mask & LVIF_TEXT) {
+		Ident = (unsigned long)pDispInfo->item.iItem;
+		if (Ident >= _Array.GetSize()) {
+			goto __error;
+		}
+		pkt = _Array.GetAt(Ident);
+		switch (pDispInfo->item.iSubItem) {
+		case 0:
+			str.Format(_T("%d"), pkt.counter);
+			break;
+		case 1:
+			str.Format(_T("%2X"), pkt.param.Ident);
+			break;
+		case 2:
+			str.Format(_T("%d"), pkt.param.DataLength);
+			break;
+		case 3:
+			str = "";
+			for (int j = pkt.param.DataLength - 1; j >= 0; j--)
+				str.AppendFormat(_T("%02X:"), pkt.param.RCV_data[j]);
+			str.TrimRight(_T(":"));
+			break;
+		default:
+			str = "";
+			break;
+		}
+	}
+__error:	
+	::lstrcpy(pDispInfo->item.pszText, str);
+	*pResult = 0;
+}
+
+
+BOOL GridFormChildView::PreCreateWindow(CREATESTRUCT& cs)
+{
+	// TODO: 在此加入特定的程式碼和 (或) 呼叫基底類別
+	cs.style &= ~LVS_TYPEMASK;
+	cs.style |= LVS_REPORT;
+	cs.style |= LVS_OWNERDATA;
+
+	return CListView::PreCreateWindow(cs);
+}
+
+
+void GridFormChildView::OnSize(UINT nType, int cx, int cy)
+{
+	CListView::OnSize(nType, cx, cy);
+	// TODO: 在此加入您的訊息處理常式程式碼
+	CPaintDC dc(this); // device context for painting
+
+	CRect rect;
+	CBitmap bitmap;
+	CBitmap *pOldBmp;
+	CDC	dcMem;
+
+	//fill background color
+	GetClientRect(rect);
+	dcMem.CreateCompatibleDC(&dc);
+	bitmap.CreateCompatibleBitmap(&dc, rect.Width(), rect.Height());
+	pOldBmp = dcMem.SelectObject(&bitmap);
+	//
+	dcMem.FillRect(rect, &m_brush);
+	//
+	GetClientRect(rect);
+	dc.BitBlt(rect.left, rect.top, rect.Width(), rect.Height(), &dcMem, rect.left, rect.top, SRCCOPY);
+	dcMem.SelectObject(pOldBmp);
+}
+
+void GridFormChildView::OnHdnBegintrack(NMHDR *pNMHDR, LRESULT *pResult)
+{
+	LPNMHEADER phdr = reinterpret_cast<LPNMHEADER>(pNMHDR);
+	// TODO: 在此加入控制項告知處理常式程式碼
+	*pResult = TRUE;
+}

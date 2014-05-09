@@ -1,2 +1,2 @@
-1. Using virtual list instead of SetItem.
-2. Remove the compare function of grid.
+1. Change to CListView and remove GridListCtrl.
+
