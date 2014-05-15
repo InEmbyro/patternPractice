@@ -36,4 +36,5 @@ public:
 	CTreeCtrl _tree;
 	CGridformSetListCtrl _list;
 	afx_msg void OnTvnSelchangedTreeProperty(NMHDR *pNMHDR, LRESULT *pResult);
+//	afx_msg void OnNMClickListProperty(NMHDR *pNMHDR, LRESULT *pResult);
 };

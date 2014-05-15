@@ -74,6 +74,7 @@ BOOL CGridformSet::OnInitDialog()
 	_list.GetClientRect(&rect);
 	_list.InsertColumn(0, _T("Param"), LVCFMT_LEFT, rect.Width() / 2);
 	_list.InsertColumn(1, _T(" "), LVCFMT_LEFT, rect.Width() / 2);
+	ListView_SetExtendedListViewStyle(_list.m_hWnd, LVS_EX_FULLROWSELECT );
 	//ListView_SetExtendedListViewStyle(_list.m_hWnd, LVS_EX_GRIDLINES);
 
 	return TRUE;  // return TRUE unless you set the focus to a control
@@ -109,13 +110,28 @@ void CGridformSet::OnTvnSelchangedTreeProperty(NMHDR *pNMHDR, LRESULT *pResult)
 	} else if (newTree == m_hFilter) {
 		_list.DeleteAllItems();
 		str.LoadString(IDS_FILTER_ACTIVE);
-		_list.InsertItem(jj++, str);
+		_list.InsertItem(jj, str);
+		_list.SetItemText(jj, 1, _T("No"));
+		
+		jj++;
 		str.LoadString(IDS_FILTER_IDENTIFIER);
-		_list.InsertItem(jj++, str);
+		_list.InsertItem(jj, str);
+		_list.SetItemText(jj, 1, _T(" "));
+
+		jj++;
 		str.LoadString(IDS_FILTER_MODE);
-		_list.InsertItem(jj++, str);
+		_list.InsertItem(jj, str);
+		_list.SetItemText(jj, 1, _T("Show only filtered"));
 	}
 
 	*pResult = 0;
 }
 
+
+
+//void CGridformSet::OnNMClickListProperty(NMHDR *pNMHDR, LRESULT *pResult)
+//{
+//	LPNMITEMACTIVATE pNMItemActivate = reinterpret_cast<LPNMITEMACTIVATE>(pNMHDR);
+//	// TODO: 在此加入控制項告知處理常式程式碼
+//	*pResult = 0;
+//}

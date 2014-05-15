@@ -15,6 +15,9 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	afx_msg void OnHdnBegintrack(NMHDR *pNMHDR, LRESULT *pResult);
+	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
+
+	CComboBox m_box;
 };
 
 
