@@ -8,6 +8,7 @@
 #include "formview_dll.h"
 #include "../canEngine/canEngineApi.h"
 #include "CGridFormThread.h"
+#include "GridformSet.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -76,6 +77,7 @@ BEGIN_MESSAGE_MAP(CGridFormChildFrm, CMDIChildWnd)
 	ON_WM_CREATE()
 	ON_WM_CLOSE()
 	ON_WM_NCRBUTTONUP()
+	ON_COMMAND(ID_TOP_SETTING, &CGridFormChildFrm::OnTopSetting)
 END_MESSAGE_MAP()
 
 CGridFormChildFrm::CGridFormChildFrm()
@@ -88,9 +90,6 @@ CGridFormChildFrm::~CGridFormChildFrm()
 {
 	delete pGridFormThread;
 }
-
-
-
 
 // CGridFormChildFrm 訊息處理常式
 
@@ -170,7 +169,6 @@ BEGIN_MESSAGE_MAP(GridFormChildView, CListView)
 	ON_COMMAND(ID_TOP_CLEARGRID, &GridFormChildView::OnTopCleargrid)
 	ON_NOTIFY_REFLECT(NM_CUSTOMDRAW, &GridFormChildView::OnNMCustomdraw)
 	ON_NOTIFY_REFLECT(LVN_GETDISPINFO, &GridFormChildView::OnLvnGetdispinfo)
-	//ON_WM_PAINT()
 	ON_WM_SIZE()
 	ON_NOTIFY(HDN_BEGINTRACKA, 0, &GridFormChildView::OnHdnBegintrack)
 	ON_NOTIFY(HDN_BEGINTRACKW, 0, &GridFormChildView::OnHdnBegintrack)
@@ -395,22 +393,6 @@ void CGridFormChildFrm::OnNcRButtonUp(UINT nHitTest, CPoint point)
 	CMDIChildWnd::OnNcRButtonUp(nHitTest, point);
 }
 
-
-
-//void GridFormChildView::OnSize(UINT nType, int cx, int cy)
-//{
-//	CFormView::OnSize(nType, cx, cy);
-//	CRect rect;
-//
-//	GetClientRect(&rect);
-//	CWnd* pParentFrame = m_GridList.GetParentFrame(); 
-//	m_GridList.MoveWindow(0, 0, rect.Width(), rect.Height());
-//
-//
-//	// TODO: 在此加入您的訊息處理常式程式碼
-//}
-
-
 void GridFormChildView::OnNMCustomdraw(NMHDR *pNMHDR, LRESULT *pResult)
 {
 	NMLVCUSTOMDRAW *pNMCD = reinterpret_cast<LPNMLVCUSTOMDRAW>(pNMHDR);
@@ -518,4 +500,13 @@ void GridFormChildView::OnHdnBegintrack(NMHDR *pNMHDR, LRESULT *pResult)
 	LPNMHEADER phdr = reinterpret_cast<LPNMHEADER>(pNMHDR);
 	// TODO: 在此加入控制項告知處理常式程式碼
 	*pResult = TRUE;
+}
+
+void CGridFormChildFrm::OnTopSetting()
+{
+	// TODO: 在此加入您的命令處理常式程式碼
+	CGridformSet dlg(this);
+
+	dlg.DoModal();
+	
 }

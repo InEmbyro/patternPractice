@@ -33,6 +33,12 @@
     <ClCompile Include="CGridFormThread.cpp">
       <Filter>原始程式檔</Filter>
     </ClCompile>
+    <ClCompile Include="GridformSet.cpp">
+      <Filter>原始程式檔</Filter>
+    </ClCompile>
+    <ClCompile Include="GridformSetListCtrl.cpp">
+      <Filter>原始程式檔</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -48,6 +54,12 @@
       <Filter>標頭檔</Filter>
     </ClInclude>
     <ClInclude Include="CGridFormThread.h">
+      <Filter>標頭檔</Filter>
+    </ClInclude>
+    <ClInclude Include="GridformSet.h">
+      <Filter>標頭檔</Filter>
+    </ClInclude>
+    <ClInclude Include="GridformSetListCtrl.h">
       <Filter>標頭檔</Filter>
     </ClInclude>
   </ItemGroup>

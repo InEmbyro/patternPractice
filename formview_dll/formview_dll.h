@@ -103,6 +103,7 @@ protected:
 public:
 	afx_msg void OnClose();
 	afx_msg void OnNcRButtonUp(UINT nHitTest, CPoint point);
+	afx_msg void OnTopSetting();
 };
 
 #undef AFX_DATA
