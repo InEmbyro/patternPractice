@@ -102,6 +102,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CGridFormThread.cpp" />
+    <ClCompile Include="ComboBoxList.cpp" />
     <ClCompile Include="formview_dll.cpp" />
     <ClCompile Include="GridformSet.cpp" />
     <ClCompile Include="GridformSetListCtrl.cpp" />
@@ -112,6 +113,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CGridFormThread.h" />
+    <ClInclude Include="ComboBoxList.h" />
     <ClInclude Include="formview_dll.h" />
     <ClInclude Include="GridformSet.h" />
     <ClInclude Include="GridformSetListCtrl.h" />

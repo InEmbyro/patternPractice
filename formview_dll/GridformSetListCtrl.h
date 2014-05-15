@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ComboBoxList.h"
 
 // CGridformSetListCtrl
 
@@ -17,7 +18,7 @@ public:
 	afx_msg void OnHdnBegintrack(NMHDR *pNMHDR, LRESULT *pResult);
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 
-	CComboBox m_box;
+	CComboBoxList m_box;
 };
 
 

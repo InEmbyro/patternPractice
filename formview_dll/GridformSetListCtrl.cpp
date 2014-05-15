@@ -58,8 +58,13 @@ void CGridformSetListCtrl::OnLButtonDown(UINT nFlags, CPoint point)
 		GetClientRect(&rect);
 		if (point.x >= (rect.Width() / 2))
 			info.iSubItem = 1;
-		else
-			info.iSubItem = 0;
+		else {
+			CListCtrl::OnLButtonDown(nFlags, point);
+			return;
+		}
+	} else {
+		CListCtrl::OnLButtonDown(nFlags, point);
+		return;
 	}
 	CListCtrl::OnLButtonDown(nFlags, point);
 
@@ -70,10 +75,15 @@ void CGridformSetListCtrl::OnLButtonDown(UINT nFlags, CPoint point)
 	}
 	DWORD style = WS_BORDER | WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL | ES_AUTOVSCROLL | CBS_DROPDOWNLIST | CBS_DISABLENOSCROLL;
 	rect.bottom = rect.bottom + (rect.Height() * 5);
+	if (m_box.m_hWnd != NULL) {
+		m_box.GetParent()->SetFocus();
+		m_box.SendMessage(WM_CLOSE);
+	}
 	m_box.Create(style, rect, this, 0);
 	m_box.AddString(_T("01"));
 	m_box.AddString(_T("02"));
 	m_box.AddString(_T("03"));
+	m_box.SetCurSel(0);
 
 
 }
