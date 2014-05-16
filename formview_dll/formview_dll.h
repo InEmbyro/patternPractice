@@ -36,6 +36,7 @@ public:
 
 	BOOL Create(LPCTSTR, LPCTSTR, DWORD, const RECT&, CWnd*, UINT, CCreateContext*);
 	void OnInitialUpdate();
+	void ResetArray();
 
 	HANDLE _ListMutex;
 	HANDLE _MapMutex;
@@ -102,8 +103,10 @@ public:
 	POSITION	rawPos;
 	CGridFormChildFrm* pMyself;
 	GRID_MODE GetGridMode() { return m_gridMode; }
+	unsigned int GetGridRows() { return m_gridRow; }
 private:
 	GRID_MODE	m_gridMode;
+	unsigned int m_gridRow;
 
 protected:
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);

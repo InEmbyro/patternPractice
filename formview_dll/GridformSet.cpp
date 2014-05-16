@@ -32,8 +32,9 @@ void CGridformSet::DoDataExchange(CDataExchange* pDX)
 BEGIN_MESSAGE_MAP(CGridformSet, CDialog)
 	ON_BN_CLICKED(IDOK, &CGridformSet::OnBnClickedOk)
 	ON_NOTIFY(TVN_SELCHANGED, IDC_TREE_PROPERTY, &CGridformSet::OnTvnSelchangedTreeProperty)
-	ON_MESSAGE(WM_DISAPLY_MODE, &CGridformSet::OnDisaplyMode)
+	ON_MESSAGE(WM_DISPLAY_MODE, &CGridformSet::OnDisaplyMode)
 	ON_MESSAGE(WM_CONFIG_GET_SEL, &CGridformSet::OnConfigGetSel)
+	ON_MESSAGE(WM_DISPLAY_ROWS, &CGridformSet::OnDisplayRows)
 END_MESSAGE_MAP()
 
 
@@ -65,6 +66,8 @@ BOOL CGridformSet::OnInitDialog()
 	str.LoadString(IDS_DISPLAY_GRID);
 	m_hGridMode = _tree.InsertItem(str); 
 	str.LoadString(IDS_DISPLAYMODE);
+	_tree.InsertItem(str, m_hGridMode);
+	str.LoadString(IDS_NUMBER_OF_GRID_ROWS);
 	_tree.InsertItem(str, m_hGridMode);
 	TreeView_Expand(_tree.m_hWnd, m_hGridMode, TVE_EXPAND);
 	
@@ -110,7 +113,7 @@ void CGridformSet::OnTvnSelchangedTreeProperty(NMHDR *pNMHDR, LRESULT *pResult)
 		_list.SetContentIdx(DISPLAY_MODE);
 	else if (newTree == m_hFilter)
 		_list.SetContentIdx(FILTER);
-	_list.SetFocus();
+	_list.ShowListContent(_list.GetContentIdx());
 
 	*pResult = 0;
 }
@@ -119,20 +122,29 @@ void CGridformSet::OnTvnSelchangedTreeProperty(NMHDR *pNMHDR, LRESULT *pResult)
 
 afx_msg LRESULT CGridformSet::OnDisaplyMode(WPARAM wParam, LPARAM lParam)
 {
-	m_gridMode = (GRID_MODE)lParam;
+	m_dispMode.mode = (GRID_MODE)lParam;
 	return 0;
 }
 
 
 afx_msg LRESULT CGridformSet::OnConfigGetSel(WPARAM wParam, LPARAM lParam)
 {
-	switch ((COMBOBOX_CONTENT)wParam) {
-	case C_DISPLAY_MODE:
-		*((int*)lParam) = (int)m_gridMode;
+	void *p = NULL;
+
+	switch ((LIST_CONTENT)wParam) {
+	case DISPLAY_MODE:
+		p = (void*)lParam;
+		*((DISPLAY_MODE_SET*)p) = m_dispMode;
 		break;
 	default:
-		*((int*)lParam) = 0;
 		break;
 	}
+	return 0;
+}
+
+
+afx_msg LRESULT CGridformSet::OnDisplayRows(WPARAM wParam, LPARAM lParam)
+{
+	m_dispMode.rows = (unsigned int)lParam;
 	return 0;
 }

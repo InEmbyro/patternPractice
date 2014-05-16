@@ -42,6 +42,9 @@
     <ClCompile Include="ComboBoxList.cpp">
       <Filter>原始程式檔</Filter>
     </ClCompile>
+    <ClCompile Include="CEditList.cpp">
+      <Filter>原始程式檔</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -69,6 +72,9 @@
       <Filter>標頭檔</Filter>
     </ClInclude>
     <ClInclude Include="confDef.h">
+      <Filter>標頭檔</Filter>
+    </ClInclude>
+    <ClInclude Include="CEditList.h">
       <Filter>標頭檔</Filter>
     </ClInclude>
   </ItemGroup>

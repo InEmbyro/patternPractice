@@ -81,7 +81,7 @@ BEGIN_MESSAGE_MAP(CGridFormChildFrm, CMDIChildWnd)
 END_MESSAGE_MAP()
 
 CGridFormChildFrm::CGridFormChildFrm()
-	:pGridFormThread(NULL), m_gridMode(IDENT_MODE)
+	:pGridFormThread(NULL), m_gridMode(IDENT_MODE), m_gridRow(100)
 {
 	pGridFormThread = new CGridFormThread();
 }
@@ -264,12 +264,14 @@ void GridFormChildView::ShowInBuffer()
 	POSITION prePos;
 	PARAM_STRUCT data;
 	WPARAM_STRUCT pkt;
+	unsigned int size = 0;
 
 	pos = _List.GetHeadPosition();
-
+	CGridFormChildFrm *pF = (CGridFormChildFrm*)GetParent();
+	size = pF->GetGridRows();
 	while (pos) {
 		data = _List.GetAt(pos);
-		if (_Array.GetSize() > 100) {
+		if (_Array.GetSize() > size) {
 			WaitForSingleObject(_ArrayMutex, INFINITE);
 			_Array.RemoveAt(0);
 			ReleaseMutex(_ArrayMutex);
@@ -552,12 +554,26 @@ void GridFormChildView::OnHdnBegintrack(NMHDR *pNMHDR, LRESULT *pResult)
 	*pResult = TRUE;
 }
 
+void GridFormChildView::ResetArray()
+{
+	WaitForSingleObject(_ArrayMutex, INFINITE);
+	_Array.RemoveAll();
+	ReleaseMutex(_ArrayMutex);
+}
+
 void CGridFormChildFrm::OnTopSetting()
 {
 	// TODO: 在此加入您的命令處理常式程式碼
 	CGridformSet dlg(this);
 
 	dlg.SetGridMode(m_gridMode);
-	dlg.DoModal();
-	m_gridMode = dlg.GetGridMode();
+	dlg.SetGridRows(m_gridRow);
+	if (dlg.DoModal() == IDOK) {
+		m_gridMode = dlg.GetGridMode();
+		if (m_gridRow != dlg.GetGridRows()) {
+			/* Need to reset array in order to re-draw gridform */
+			_pView->ResetArray();
+			m_gridRow = dlg.GetGridRows();
+		}
+	}
 }

@@ -48,6 +48,11 @@ void CGridformSetListCtrl::OnLButtonDown(UINT nFlags, CPoint point)
 	LVHITTESTINFO info;
 	CRect rect;
 
+	if (m_box.m_hWnd != NULL)
+		m_box.SendMessage(WM_CLOSE);
+	if (m_edit.m_hWnd != NULL)
+		m_edit.SendMessage(WM_CLOSE);
+
 	memset((void*)&info, 0x00, sizeof(LVHITTESTINFO));
 	info.pt = point;
 	ListView_HitTest(m_hWnd, &info);
@@ -79,7 +84,9 @@ void CGridformSetListCtrl::OnLButtonDown(UINT nFlags, CPoint point)
 	drawinfo.item = info.iItem;
 	drawinfo.subitem;
 	drawinfo.conIdx = m_contentIdx;
-	m_box.ShowInPlaceCombo(&drawinfo);
+	if (!m_box.ShowInPlaceCombo(&drawinfo)) {
+		m_edit.ShowInPlaceEdit(&drawinfo);
+	}
 }
 
 void CGridformSetListCtrl::CloseShownComboBox()
@@ -100,15 +107,21 @@ void CGridformSetListCtrl::ShowListContent(LIST_CONTENT idx)
 	case DISPLAY_MODE:
 		str.LoadString(IDS_DISPLAYMODE);
 		InsertItem(0, str);
-		GetParent()->SendMessage(WM_CONFIG_GET_SEL, (WPARAM)C_DISPLAY_MODE, (LPARAM)&j);
-		if (j == 0) {
+		DISPLAY_MODE_SET info;
+		GetParent()->SendMessage(WM_CONFIG_GET_SEL, (WPARAM)DISPLAY_MODE, (LPARAM)&info);
+		if (info.mode == 0) {
 			str.SetString(_T("Buffer Mode"));
-		} else if (j == 1) {
+		} else if (info.mode == 1) {
 			str.SetString(_T("Ident Mode"));
 		} else {
 			str = "";
 		}
 		SetItemText(0, 1, str);
+
+		str.LoadString(IDS_NUMBER_OF_GRID_ROWS);
+		InsertItem(1, str);
+		str.Format(_T("%d"), info.rows);
+		SetItemText(1, 1, str);
 		break;
 	case FILTER:
 		str.LoadString(IDS_FILTER_ACTIVE);
@@ -138,7 +151,10 @@ afx_msg LRESULT CGridformSetListCtrl::OnConfigUpdate(WPARAM wParam, LPARAM lPara
 
 	switch (c)	{
 	case C_DISPLAY_MODE:
-		GetParent()->SendMessage(WM_DISAPLY_MODE, 0, lParam);
+		GetParent()->SendMessage(WM_DISPLAY_MODE, 0, lParam);
+		break;
+	case C_DISPLAY_ROWS:
+		GetParent()->SendMessage(WM_DISPLAY_ROWS, 0, lParam);
 		break;
 	default:
 		break;

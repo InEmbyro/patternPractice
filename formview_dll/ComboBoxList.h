@@ -11,7 +11,7 @@ class CComboBoxList : public CComboBox
 public:
 	CComboBoxList();
 	virtual ~CComboBoxList();
-	void	ShowInPlaceCombo(LPCOMBODRAWINFO);
+	BOOL	ShowInPlaceCombo(LPCOMBODRAWINFO);
 
 	CStringList m_ItemList;
 
@@ -21,6 +21,7 @@ protected:
 public:
 	afx_msg void OnKillFocus(CWnd* pNewWnd);
 	afx_msg void OnCbnCloseup();
+	virtual BOOL PreTranslateMessage(MSG* pMsg);
 };
 
 

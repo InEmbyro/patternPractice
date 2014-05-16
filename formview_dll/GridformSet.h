@@ -12,13 +12,15 @@ class CGridformSet : public CDialog
 public:
 	CGridformSet(CWnd* pParent = NULL);   // 標準建構函式
 	virtual ~CGridformSet();
-	GRID_MODE GetGridMode() { return m_gridMode; }
-	void SetGridMode(GRID_MODE idx) { m_gridMode = idx; }
+	GRID_MODE GetGridMode() { return m_dispMode.mode; }
+	void SetGridMode(GRID_MODE idx) { m_dispMode.mode = idx; }
+	unsigned GetGridRows() { return m_dispMode.rows; }
+	void SetGridRows(unsigned int row) { m_dispMode.rows = row; }
 
 // 對話方塊資料
 	enum { IDD = IDD_DLG_GRIDSETTING };
 private:
-	GRID_MODE	m_gridMode;
+	DISPLAY_MODE_SET	m_dispMode;	
 	HTREEITEM	m_hGridMode;
 	HTREEITEM	m_hFilter;
 	HTREEITEM ExpandItem(HTREEITEM node);
@@ -38,4 +40,5 @@ public:
 protected:
 	afx_msg LRESULT OnDisaplyMode(WPARAM wParam, LPARAM lParam);
 	afx_msg LRESULT OnConfigGetSel(WPARAM wParam, LPARAM lParam);
+	afx_msg LRESULT OnDisplayRows(WPARAM wParam, LPARAM lParam);
 };
