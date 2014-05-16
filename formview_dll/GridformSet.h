@@ -12,6 +12,8 @@ class CGridformSet : public CDialog
 public:
 	CGridformSet(CWnd* pParent = NULL);   // 標準建構函式
 	virtual ~CGridformSet();
+	GRID_MODE GetGridMode() { return m_gridMode; }
+	void SetGridMode(GRID_MODE idx) { m_gridMode = idx; }
 
 // 對話方塊資料
 	enum { IDD = IDD_DLG_GRIDSETTING };

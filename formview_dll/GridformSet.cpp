@@ -12,7 +12,7 @@
 IMPLEMENT_DYNAMIC(CGridformSet, CDialog)
 
 CGridformSet::CGridformSet(CWnd* pParent /*=NULL*/)
-	: CDialog(CGridformSet::IDD, pParent), m_gridMode(IDENT_MODE)
+	: CDialog(CGridformSet::IDD, pParent)
 {
 
 }

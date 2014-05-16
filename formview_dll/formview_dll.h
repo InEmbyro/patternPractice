@@ -4,6 +4,7 @@
 #include "resource.h"
 #include "../Softing/Can_def.h"
 #include "../Softing//CANL2.H"
+#include "confDef.h"
 
 typedef int (__cdecl *GENERICCOMPAREFN)(const void * elem1, const void * elem2);
 
@@ -47,6 +48,10 @@ protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV ¤ä´©
 
 	DECLARE_MESSAGE_MAP()
+
+private:
+	void ShowInIdent();
+	void ShowInBuffer();
 
 public:
 	static const char* mailslot;
@@ -96,6 +101,9 @@ public:
 	GridFormChildView *_pView;
 	POSITION	rawPos;
 	CGridFormChildFrm* pMyself;
+	GRID_MODE GetGridMode() { return m_gridMode; }
+private:
+	GRID_MODE	m_gridMode;
 
 protected:
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);

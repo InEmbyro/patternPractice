@@ -1,4 +1,2 @@
-Only for display mode, the setting can be set and shown correctly.
-
-Next, try to combine the setting and grid showing.
+1. Gridform can show data in IDENT or BUFFER mode based on the setting.
 

@@ -81,7 +81,7 @@ BEGIN_MESSAGE_MAP(CGridFormChildFrm, CMDIChildWnd)
 END_MESSAGE_MAP()
 
 CGridFormChildFrm::CGridFormChildFrm()
-	:pGridFormThread(NULL)
+	:pGridFormThread(NULL), m_gridMode(IDENT_MODE)
 {
 	pGridFormThread = new CGridFormThread();
 }
@@ -212,8 +212,10 @@ void GridFormChildView::OnInitialUpdate()
 		list.InsertColumn(idx++, _T("#Msgs"), LVCFMT_LEFT, 70, 0);
 		list.InsertColumn(idx++, _T("Ident"), LVCFMT_LEFT, 70, 0);
 		list.InsertColumn(idx++, _T("Len"), LVCFMT_LEFT, 50, 0);
-		list.InsertColumn(idx++, _T("Data Bytes [7...0]"), LVCFMT_LEFT, 250, 0);
+		list.InsertColumn(idx++, _T("Data Bytes [7...0]"), LVCFMT_LEFT, 200, 0);
+		list.InsertColumn(idx++, _T("CAN Time"), LVCFMT_CENTER, 100, 0);
 	}
+
 	list.SetExtendedStyle(list.GetExtendedStyle()|LVS_EX_DOUBLEBUFFER);
 	list.SetItemCountEx(200);
 }
@@ -256,24 +258,47 @@ void GridFormChildView::OnClose()
 	CListView::OnClose();
 }
 
-afx_msg LRESULT GridFormChildView::OnUserDraw(WPARAM wParam, LPARAM lParam)
+void GridFormChildView::ShowInBuffer()
 {
-	if (GetSafeHwnd() == NULL)
-		return 0;
-	if (_List.IsEmpty())
-		return 0;
+	POSITION pos;
+	POSITION prePos;
+	PARAM_STRUCT data;
+	WPARAM_STRUCT pkt;
 
+	pos = _List.GetHeadPosition();
+
+	while (pos) {
+		data = _List.GetAt(pos);
+		if (_Array.GetSize() > 100) {
+			WaitForSingleObject(_ArrayMutex, INFINITE);
+			_Array.RemoveAt(0);
+			ReleaseMutex(_ArrayMutex);
+		}
+
+		pkt.counter = 1;
+		pkt.param = data;
+		WaitForSingleObject(_ArrayMutex, INFINITE);
+		_Array.Add(pkt);
+		ReleaseMutex(_ArrayMutex);
+		prePos = pos;
+		_List.GetNext(pos);
+		WaitForSingleObject(_ListMutex, INFINITE);
+		_List.RemoveAt(prePos);
+		ReleaseMutex(_ListMutex);
+	}
+
+	CListCtrl &list = GetListCtrl();
+	list.Invalidate();
+}
+
+void GridFormChildView::ShowInIdent()
+{
 	POSITION pos;
 	POSITION prePos;
 	WPARAM_STRUCT pkt;
 	PARAM_STRUCT data;
 	CString str;
 	int idx = 0;
-
-	LV_ITEM lvi;
-	lvi.mask = LVIF_PARAM | LVIF_TEXT;
-	lvi.iSubItem = 0;
-	lvi.pszText = LPSTR_TEXTCALLBACK;
 
 	pos = _List.GetHeadPosition();
 	idx = 0;
@@ -294,6 +319,7 @@ afx_msg LRESULT GridFormChildView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 		}
 		prePos = pos;
 		_List.GetNext(pos);
+
 		WaitForSingleObject(_ListMutex, INFINITE);
 		_List.RemoveAt(prePos);
 		ReleaseMutex(_ListMutex);
@@ -316,7 +342,22 @@ afx_msg LRESULT GridFormChildView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 	list.GetItemCount();
 	list.Invalidate();
 	ReleaseMutex(_MapMutex);
+}
 
+afx_msg LRESULT GridFormChildView::OnUserDraw(WPARAM wParam, LPARAM lParam)
+{
+	if (GetSafeHwnd() == NULL)
+		return 0;
+	if (_List.IsEmpty())
+		return 0;
+
+	CGridFormChildFrm *pF = (CGridFormChildFrm*)GetParent();
+
+	if (pF->GetGridMode() == IDENT_MODE) {
+		ShowInIdent();
+	} else if (pF->GetGridMode() == BUFFER_MODE) {
+		ShowInBuffer();
+	}
 	return 0;
 }
 
@@ -425,6 +466,7 @@ void GridFormChildView::OnLvnGetdispinfo(NMHDR *pNMHDR, LRESULT *pResult)
 	WPARAM_STRUCT pkt;
 	int Ident;
 	CString str;
+	CGridFormChildFrm *pF = (CGridFormChildFrm*)GetParent();
 
 	memset(&pkt, 0x00, sizeof(WPARAM_STRUCT));
 	if (pDispInfo->item.mask & LVIF_TEXT) {
@@ -432,13 +474,17 @@ void GridFormChildView::OnLvnGetdispinfo(NMHDR *pNMHDR, LRESULT *pResult)
 		if (Ident >= _Array.GetSize()) {
 			goto __error;
 		}
-		pkt = _Array.GetAt(Ident);
+		if (pF->GetGridMode() == IDENT_MODE) {
+			pkt = _Array.GetAt(Ident);
+		} else if (pF->GetGridMode() == BUFFER_MODE) {
+			pkt = _Array.GetAt(_Array.GetSize() - Ident - 1);
+		}
 		switch (pDispInfo->item.iSubItem) {
 		case 0:
 			str.Format(_T("%d"), pkt.counter);
 			break;
 		case 1:
-			str.Format(_T("%2X"), pkt.param.Ident);
+			str.Format(_T("%X"), pkt.param.Ident);
 			break;
 		case 2:
 			str.Format(_T("%d"), pkt.param.DataLength);
@@ -449,11 +495,15 @@ void GridFormChildView::OnLvnGetdispinfo(NMHDR *pNMHDR, LRESULT *pResult)
 				str.AppendFormat(_T("%02X:"), pkt.param.RCV_data[j]);
 			str.TrimRight(_T(":"));
 			break;
+		case 4:
+			str.Format(_T("%ld"), pkt.param.Time);
+			break;
 		default:
 			str = "";
 			break;
 		}
 	}
+
 __error:	
 	::lstrcpy(pDispInfo->item.pszText, str);
 	*pResult = 0;
@@ -507,6 +557,7 @@ void CGridFormChildFrm::OnTopSetting()
 	// TODO: 在此加入您的命令處理常式程式碼
 	CGridformSet dlg(this);
 
+	dlg.SetGridMode(m_gridMode);
 	dlg.DoModal();
-	
+	m_gridMode = dlg.GetGridMode();
 }
