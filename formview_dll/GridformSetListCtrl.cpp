@@ -11,6 +11,7 @@
 IMPLEMENT_DYNAMIC(CGridformSetListCtrl, CListCtrl)
 
 CGridformSetListCtrl::CGridformSetListCtrl()
+	:m_contentIdx(DISPLAY_MODE)
 {
 
 }
@@ -25,15 +26,12 @@ BEGIN_MESSAGE_MAP(CGridformSetListCtrl, CListCtrl)
 	ON_NOTIFY(HDN_BEGINTRACKW, 0, &CGridformSetListCtrl::OnHdnBegintrack)
 	ON_WM_LBUTTONUP()
 	ON_WM_LBUTTONDOWN()
+	ON_MESSAGE(WM_CONFIG_UPDATE, &CGridformSetListCtrl::OnConfigUpdate)
+	ON_MESSAGE(WM_CONFIG_GET_SEL, &CGridformSetListCtrl::OnConfigGetSel)
+	ON_WM_SETFOCUS()
 END_MESSAGE_MAP()
 
-
-
 // CGridformSetListCtrl 訊息處理常式
-
-
-
-
 void CGridformSetListCtrl::OnHdnBegintrack(NMHDR *pNMHDR, LRESULT *pResult)
 {
 	LPNMHEADER phdr = reinterpret_cast<LPNMHEADER>(pNMHDR);
@@ -73,18 +71,92 @@ void CGridformSetListCtrl::OnLButtonDown(UINT nFlags, CPoint point)
 	if (info.iSubItem == 1) {
 		rect.left = GetColumnWidth(info.iSubItem);
 	}
-	DWORD style = WS_BORDER | WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL | ES_AUTOVSCROLL | CBS_DROPDOWNLIST | CBS_DISABLENOSCROLL;
 	rect.bottom = rect.bottom + (rect.Height() * 5);
-	if (m_box.m_hWnd != NULL) {
-		m_box.GetParent()->SetFocus();
-		m_box.SendMessage(WM_CLOSE);
-	}
-	m_box.Create(style, rect, this, 0);
-	m_box.AddString(_T("01"));
-	m_box.AddString(_T("02"));
-	m_box.AddString(_T("03"));
-	m_box.SetCurSel(0);
 
-
+	COMBODRAWINFO drawinfo;
+	drawinfo.pParent = this;
+	drawinfo.rect = rect;
+	drawinfo.item = info.iItem;
+	drawinfo.subitem;
+	drawinfo.conIdx = m_contentIdx;
+	m_box.ShowInPlaceCombo(&drawinfo);
 }
 
+void CGridformSetListCtrl::CloseShownComboBox()
+{
+	if (m_box.m_hWnd)
+		m_box.SendMessage(WM_CLOSE);
+}
+
+void CGridformSetListCtrl::ShowListContent(LIST_CONTENT idx)
+{
+	CString str;
+	int j = 0;
+
+	DeleteAllItems();
+	m_contentIdx = idx;
+
+	switch (idx) {
+	case DISPLAY_MODE:
+		str.LoadString(IDS_DISPLAYMODE);
+		InsertItem(0, str);
+		GetParent()->SendMessage(WM_CONFIG_GET_SEL, (WPARAM)C_DISPLAY_MODE, (LPARAM)&j);
+		if (j == 0) {
+			str.SetString(_T("Buffer Mode"));
+		} else if (j == 1) {
+			str.SetString(_T("Ident Mode"));
+		} else {
+			str = "";
+		}
+		SetItemText(0, 1, str);
+		break;
+	case FILTER:
+		str.LoadString(IDS_FILTER_ACTIVE);
+		InsertItem(j, str);
+		SetItemText(j, 1, _T("No (example)"));
+
+		j++;
+		str.LoadString(IDS_FILTER_IDENTIFIER);
+		InsertItem(j, str);
+		SetItemText(j, 1, _T(" (example)"));
+
+		j++;
+		str.LoadString(IDS_FILTER_MODE);
+		InsertItem(j, str);
+		SetItemText(j, 1, _T("Show only filtered (example)"));
+		break;
+	default:
+		m_contentIdx = DISPLAY_MODE;
+		break;
+	}
+}
+
+
+afx_msg LRESULT CGridformSetListCtrl::OnConfigUpdate(WPARAM wParam, LPARAM lParam)
+{
+	COMBOBOX_CONTENT c = (COMBOBOX_CONTENT) wParam;
+
+	switch (c)	{
+	case C_DISPLAY_MODE:
+		GetParent()->SendMessage(WM_DISAPLY_MODE, 0, lParam);
+		break;
+	default:
+		break;
+	}
+	return 0;
+}
+
+
+afx_msg LRESULT CGridformSetListCtrl::OnConfigGetSel(WPARAM wParam, LPARAM lParam)
+{
+	return GetParent()->SendMessage(WM_CONFIG_GET_SEL, wParam, lParam);
+}
+
+
+void CGridformSetListCtrl::OnSetFocus(CWnd* pOldWnd)
+{
+	CListCtrl::OnSetFocus(pOldWnd);
+
+	ShowListContent(m_contentIdx);
+	// TODO: 在此加入您的訊息處理常式程式碼
+}

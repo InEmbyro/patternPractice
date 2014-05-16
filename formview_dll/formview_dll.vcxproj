@@ -114,6 +114,7 @@
   <ItemGroup>
     <ClInclude Include="CGridFormThread.h" />
     <ClInclude Include="ComboBoxList.h" />
+    <ClInclude Include="confDef.h" />
     <ClInclude Include="formview_dll.h" />
     <ClInclude Include="GridformSet.h" />
     <ClInclude Include="GridformSetListCtrl.h" />

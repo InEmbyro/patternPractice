@@ -1,12 +1,8 @@
 #pragma once
 #include "afxcmn.h"
+#include "confDef.h"
 #include "GridformSetListCtrl.h"
 
-typedef enum {
-	ERROR_MODE = 0x113FF,
-	BUFFER_MODE,
-	IDENT_MODE,
-} GRID_MODE;
 // CGridformSet ¹ï¸Ü¤è¶ô
 
 class CGridformSet : public CDialog
@@ -37,4 +33,7 @@ public:
 	CGridformSetListCtrl _list;
 	afx_msg void OnTvnSelchangedTreeProperty(NMHDR *pNMHDR, LRESULT *pResult);
 //	afx_msg void OnNMClickListProperty(NMHDR *pNMHDR, LRESULT *pResult);
+protected:
+	afx_msg LRESULT OnDisaplyMode(WPARAM wParam, LPARAM lParam);
+	afx_msg LRESULT OnConfigGetSel(WPARAM wParam, LPARAM lParam);
 };

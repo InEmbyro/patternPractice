@@ -32,6 +32,8 @@ void CGridformSet::DoDataExchange(CDataExchange* pDX)
 BEGIN_MESSAGE_MAP(CGridformSet, CDialog)
 	ON_BN_CLICKED(IDOK, &CGridformSet::OnBnClickedOk)
 	ON_NOTIFY(TVN_SELCHANGED, IDC_TREE_PROPERTY, &CGridformSet::OnTvnSelchangedTreeProperty)
+	ON_MESSAGE(WM_DISAPLY_MODE, &CGridformSet::OnDisaplyMode)
+	ON_MESSAGE(WM_CONFIG_GET_SEL, &CGridformSet::OnConfigGetSel)
 END_MESSAGE_MAP()
 
 
@@ -51,6 +53,15 @@ BOOL CGridformSet::OnInitDialog()
 	CString str;
 
 	// TODO:  在此加入額外的初始化
+	//List
+	CRect rect;
+	_list.GetClientRect(&rect);
+	_list.InsertColumn(0, _T("Param"), LVCFMT_LEFT, rect.Width() / 2);
+	_list.InsertColumn(1, _T(" "), LVCFMT_LEFT, rect.Width() / 2);
+	ListView_SetExtendedListViewStyle(_list.m_hWnd, LVS_EX_FULLROWSELECT );
+	//ListView_SetExtendedListViewStyle(_list.m_hWnd, LVS_EX_GRIDLINES);
+
+	//tree
 	str.LoadString(IDS_DISPLAY_GRID);
 	m_hGridMode = _tree.InsertItem(str); 
 	str.LoadString(IDS_DISPLAYMODE);
@@ -68,14 +79,6 @@ BOOL CGridformSet::OnInitDialog()
 	_tree.SendMessage(TVM_EXPAND, (WPARAM)TVE_EXPAND, (LPARAM)m_hFilter);
 	_tree.ModifyStyle(0, TVS_HASLINES | TVS_HASBUTTONS | TVS_LINESATROOT );
 	TreeView_SelectItem(_tree.m_hWnd, m_hGridMode);
-
-	//List
-	CRect rect;
-	_list.GetClientRect(&rect);
-	_list.InsertColumn(0, _T("Param"), LVCFMT_LEFT, rect.Width() / 2);
-	_list.InsertColumn(1, _T(" "), LVCFMT_LEFT, rect.Width() / 2);
-	ListView_SetExtendedListViewStyle(_list.m_hWnd, LVS_EX_FULLROWSELECT );
-	//ListView_SetExtendedListViewStyle(_list.m_hWnd, LVS_EX_GRIDLINES);
 
 	return TRUE;  // return TRUE unless you set the focus to a control
 	// EXCEPTION: OCX 屬性頁應傳回 FALSE
@@ -101,37 +104,35 @@ void CGridformSet::OnTvnSelchangedTreeProperty(NMHDR *pNMHDR, LRESULT *pResult)
 		hTree = TreeView_GetParent(_tree.m_hWnd, newTree);
 	}
 
-	int jj = 0;
-	CString str;
-	if (newTree == m_hGridMode) {
-		_list.DeleteAllItems();
-		str.LoadString(IDS_DISPLAYMODE);
-		_list.InsertItem(0, str);
-	} else if (newTree == m_hFilter) {
-		_list.DeleteAllItems();
-		str.LoadString(IDS_FILTER_ACTIVE);
-		_list.InsertItem(jj, str);
-		_list.SetItemText(jj, 1, _T("No"));
-		
-		jj++;
-		str.LoadString(IDS_FILTER_IDENTIFIER);
-		_list.InsertItem(jj, str);
-		_list.SetItemText(jj, 1, _T(" "));
-
-		jj++;
-		str.LoadString(IDS_FILTER_MODE);
-		_list.InsertItem(jj, str);
-		_list.SetItemText(jj, 1, _T("Show only filtered"));
-	}
+	/* all shown combo-box should be closed first */
+	_list.CloseShownComboBox();
+	if (newTree == m_hGridMode)
+		_list.SetContentIdx(DISPLAY_MODE);
+	else if (newTree == m_hFilter)
+		_list.SetContentIdx(FILTER);
+	_list.SetFocus();
 
 	*pResult = 0;
 }
 
 
 
-//void CGridformSet::OnNMClickListProperty(NMHDR *pNMHDR, LRESULT *pResult)
-//{
-//	LPNMITEMACTIVATE pNMItemActivate = reinterpret_cast<LPNMITEMACTIVATE>(pNMHDR);
-//	// TODO: 在此加入控制項告知處理常式程式碼
-//	*pResult = 0;
-//}
+afx_msg LRESULT CGridformSet::OnDisaplyMode(WPARAM wParam, LPARAM lParam)
+{
+	m_gridMode = (GRID_MODE)lParam;
+	return 0;
+}
+
+
+afx_msg LRESULT CGridformSet::OnConfigGetSel(WPARAM wParam, LPARAM lParam)
+{
+	switch ((COMBOBOX_CONTENT)wParam) {
+	case C_DISPLAY_MODE:
+		*((int*)lParam) = (int)m_gridMode;
+		break;
+	default:
+		*((int*)lParam) = 0;
+		break;
+	}
+	return 0;
+}

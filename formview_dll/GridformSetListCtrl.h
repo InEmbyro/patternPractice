@@ -1,5 +1,6 @@
 #pragma once
 
+#include "confDef.h"
 #include "ComboBoxList.h"
 
 // CGridformSetListCtrl
@@ -11,6 +12,12 @@ class CGridformSetListCtrl : public CListCtrl
 public:
 	CGridformSetListCtrl();
 	virtual ~CGridformSetListCtrl();
+	void ShowListContent(LIST_CONTENT idx);
+	void CloseShownComboBox(void);
+	void SetContentIdx(LIST_CONTENT idx) { m_contentIdx = idx; }
+
+private:
+	LIST_CONTENT m_contentIdx;
 
 protected:
 	DECLARE_MESSAGE_MAP()
@@ -19,6 +26,11 @@ public:
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 
 	CComboBoxList m_box;
+protected:
+	afx_msg LRESULT OnConfigUpdate(WPARAM wParam, LPARAM lParam);
+	afx_msg LRESULT OnConfigGetSel(WPARAM wParam, LPARAM lParam);
+public:
+	afx_msg void OnSetFocus(CWnd* pOldWnd);
 };
 
 
