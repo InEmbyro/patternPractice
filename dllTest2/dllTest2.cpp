@@ -7,6 +7,7 @@
 #include "afxdialogex.h"
 #include "../canEngine/canEngineApi.h"
 #include "../formview_dll/formview_dll.h"
+#include "../birdview/birdview.h"
 #include "dllTest2.h"
 
 #include "MainFrm.h"
@@ -23,6 +24,7 @@
 BEGIN_MESSAGE_MAP(CdllTest2App, CWinApp)
 	ON_COMMAND(ID_APP_ABOUT, &CdllTest2App::OnAppAbout)
 	ON_COMMAND(ID_FILE_NEW, &CdllTest2App::OnFileNew)
+	ON_COMMAND(ID_FILE_BIRDVIEW, &CdllTest2App::OnFileBirdview)
 END_MESSAGE_MAP()
 
 
@@ -157,3 +159,10 @@ void CdllTest2App::OnAppAbout()
 
 // CdllTest2App message handlers
 
+
+
+void CdllTest2App::OnFileBirdview()
+{
+	CBirdviewFrm *pFrame = (CBirdviewFrm*)InitBirdviewForm();
+	// TODO: 在此加入您的命令處理常式程式碼
+}
