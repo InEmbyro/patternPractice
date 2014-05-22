@@ -1,20 +1,20 @@
 
 #include "stdafx.h"
-#include "CGridFormThread.h"
+#include "CReceiveThread.h"
 #include "../Softing/Can_def.h"
 #include "../Softing/CANL2.H"
 #include "../canEngine/canEngine_def.h"
 #include "../canEngine/canEngineApi.h"
-#include "formview_dll.h"
+#include "birdview.h"
 
-CGridFormThread::CGridFormThread()
+CReceiveThread::CReceiveThread()
 	:_pThread(NULL), run(FALSE), _mailslotHnd(INVALID_HANDLE_VALUE), _pView(NULL)
 {
 	_infoHnd[0] = INVALID_HANDLE_VALUE;
 	_infoHnd[1] = INVALID_HANDLE_VALUE;
 }
 
-CGridFormThread::~CGridFormThread()
+CReceiveThread::~CReceiveThread()
 {
 	if (_pThread) {
 		delete _pThread;
@@ -22,7 +22,7 @@ CGridFormThread::~CGridFormThread()
 	}
 }
 
-BOOL CGridFormThread::InitThread()
+BOOL CReceiveThread::InitThread()
 {
 	_pThread = AfxBeginThread(update_thread, this);
 	if (_pThread == NULL) {
@@ -35,55 +35,56 @@ BOOL CGridFormThread::InitThread()
 	return TRUE;
 }
 
-void CGridFormThread::SetInfoHandle(HANDLE hnd)
+void CReceiveThread::SetInfoHandle(HANDLE hnd)
 {
 	_infoHnd[0] = hnd;
 }
 
-void CGridFormThread::SetMailHandle(HANDLE hnd)
+void CReceiveThread::SetMailHandle(HANDLE hnd)
 {
 	_mailslotHnd = hnd;
 }
 
-HANDLE CGridFormThread::getConfirmHnd()
+HANDLE CReceiveThread::getConfirmHnd()
 {
 	return _confirmHnd;
 }
 
-void CGridFormThread::SetEventTerminateHnd()
+void CReceiveThread::SetEventTerminateHnd()
 {
 	SetEvent(_infoHnd[1]);
 }
-void CGridFormThread::TerminateThread()
+void CReceiveThread::TerminateThread()
 {
 	SetRunFalse();
 	SetEventTerminateHnd();
 }
 
-void CGridFormThread::SetRunFalse()
+void CReceiveThread::SetRunFalse()
 {
 	run = FALSE;
 }
 
-CWinThread* CGridFormThread::GetThread()
+CWinThread* CReceiveThread::GetThread()
 {
 	return _pThread;
 }
 
-UINT CGridFormThread::update_thread(LPVOID _p)
+UINT CReceiveThread::update_thread(LPVOID _p)
 {
-	CGridFormThread* _this = (CGridFormThread*) _p;
+	CReceiveThread* _this = (CReceiveThread*) _p;
 	DWORD ret;
 	DWORD cbRead;
 	LPVOID _pVoid;
 	POSITION *_pPos;
 	POSITION dPos;
 	PARAM_STRUCT data;
-	GridFormChildView *pView = NULL;
+	CBirdviewView *pView = NULL;
 	CList <PARAM_STRUCT, PARAM_STRUCT&>* _pList;
 	CString str;
+	unsigned long fakeKey;
 
-	pView = (GridFormChildView*)_this->_pView;
+	pView = (CBirdviewView*)_this->_pView;
 	while (_this->run) {
 		ret = WaitForMultipleObjects(2, _this->_infoHnd, FALSE, INFINITE);
 		switch (ret - WAIT_OBJECT_0) {
@@ -95,7 +96,8 @@ UINT CGridFormThread::update_thread(LPVOID _p)
 			WaitForSingleObject(pView->_ListMutex, INFINITE);
 			while (dPos) {
 				data = _pList->GetNext(dPos);
-				pView->_List.AddTail(data);
+				if (pView->_ReceiveMap.Lookup(data.Ident, fakeKey))
+					pView->_List.AddTail(data);
 				if (!_this->run) {
 					DecRefCount(_pPos);
 					ReleaseMutex(pView->_ListMutex);
@@ -103,9 +105,9 @@ UINT CGridFormThread::update_thread(LPVOID _p)
 					goto _exit;
 				}
 			}
-			DecRefCount(_pPos);
 			ReleaseMutex(pView->_ListMutex);
 			pView->PostMessage(WM_USER_DRAW, 0, 0);
+			DecRefCount(_pPos);
 			break;
 		default:
 		case 1:

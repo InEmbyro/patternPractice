@@ -16,13 +16,13 @@ DLLEXPORT BOOL WINAPI InitCan(void);
 DLLEXPORT int WINAPI GetCanNo(void);
 DLLEXPORT void WINAPI StringTest(CString*);
 DLLEXPORT HANDLE WINAPI GetTerminalHnd(void);
-DLLEXPORT POSITION WINAPI RegisterAcquire(CString slotName);
+DLLEXPORT POSITION WINAPI RegisterAcquire(CString slotName, unsigned int slotKey);
 DLLEXPORT HANDLE WINAPI MailSlotAcquire(POSITION pos);
 DLLEXPORT HANDLE WINAPI InforEventAcquire(POSITION pos);
 DLLEXPORT void WINAPI DecRefCount(POSITION *p);
 DLLEXPORT LPVOID WINAPI ReadRawList(POSITION *p);
 DLLEXPORT void WINAPI CloseCan(void);
-DLLEXPORT void WINAPI DeregisterAcquire(POSITION pos);
+DLLEXPORT void WINAPI DeregisterAcquire(POSITION pos, unsigned int slotKey);
 
 #ifdef __cplusplus
 }

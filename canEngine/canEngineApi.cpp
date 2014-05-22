@@ -28,16 +28,16 @@ DLLEXPORT HANDLE WINAPI MailSlotAcquire(POSITION pos)
 	return canInfo.MailslotHndGet(pos);
 }
 
-DLLEXPORT void WINAPI DeregisterAcquire(POSITION pos)
+DLLEXPORT void WINAPI DeregisterAcquire(POSITION pos, unsigned int slotKey)
 {
 	AFX_MANAGE_STATE(AfxGetStaticModuleState());
-	canInfo.SlotDereg(pos);
+	canInfo.SlotDereg(pos, slotKey);
 }
 
-DLLEXPORT POSITION WINAPI RegisterAcquire(CString slotName)
+DLLEXPORT POSITION WINAPI RegisterAcquire(CString slotName, unsigned int slotKey)
 {
 	AFX_MANAGE_STATE(AfxGetStaticModuleState());
-	return canInfo.SlotReg(slotName);
+	return canInfo.SlotReg(slotName, slotKey);
 }
 
 DLLEXPORT HANDLE WINAPI GetTerminalHnd()

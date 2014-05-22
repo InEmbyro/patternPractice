@@ -30,6 +30,9 @@
     <ClCompile Include="stdafx.cpp">
       <Filter>原始程式檔</Filter>
     </ClCompile>
+    <ClCompile Include="CReceiveThread.cpp">
+      <Filter>原始程式檔</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -42,6 +45,9 @@
       <Filter>標頭檔</Filter>
     </ClInclude>
     <ClInclude Include="birdview.h">
+      <Filter>標頭檔</Filter>
+    </ClInclude>
+    <ClInclude Include="CReceiveThread.h">
       <Filter>標頭檔</Filter>
     </ClInclude>
   </ItemGroup>

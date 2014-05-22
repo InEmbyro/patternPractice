@@ -40,13 +40,14 @@ class CCanInfo
 	BOOL		run;
 
 public:
+	HANDLE	_noteSlotMutex;
 	CCanInfo();
 	~CCanInfo();
 
 	static const int MSG_LEN_MAX;
 	void		GetDeviceType(int u32DeviceType);
-	POSITION	SlotReg(CString slotName);
-	void		SlotDereg(POSITION);
+	POSITION	SlotReg(CString slotName, unsigned int slotKey);
+	void		SlotDereg(POSITION, unsigned int slotKey);
 	BOOL		StartThread(MY_L2CONF);
 	HANDLE		MailslotHndGet(POSITION);
 	HANDLE		InforEventGet(POSITION);

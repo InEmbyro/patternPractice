@@ -1,5 +1,2 @@
-1. Add the birdview DLL project.
-2. dllTest2 can use Ctrl+I to create a new child-form-view.
-
-Next, create a thread to get the received CAN packets.
+1. Birdview can recieve the packet, but the reference count has some problems.
 

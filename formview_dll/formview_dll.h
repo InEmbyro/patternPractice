@@ -1,7 +1,7 @@
 #pragma once
 
 #include "stdafx.h"
-#include "resource.h"
+#include "../formview_dll/resource.h"
 #include "../Softing/Can_def.h"
 #include "../Softing//CANL2.H"
 #include "confDef.h"
@@ -56,6 +56,7 @@ private:
 
 public:
 	static const char* mailslot;
+	static const unsigned int slotKey;
 
 	void	CloseAllHnd(void);
 

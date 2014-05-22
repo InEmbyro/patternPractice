@@ -1,22 +1,37 @@
 #pragma once
 
 #include "stdafx.h"
+#include "resource.h"
+#include "../Softing/Can_def.h"
+#include "../Softing/CANL2.H"
+
+#define	WM_USER_DRAW	(WM_USER + 1)
+
 extern "C" AFX_EXT_API LPVOID WINAPI InitBirdviewForm(void);
 
-#pragma once
 
 
 // CBirdviewView 檢視
-
+class CReceiveThread;
 class CBirdviewView : public CView
 {
 	DECLARE_DYNCREATE(CBirdviewView)
+	static const char* mailslot;
+	static const unsigned int slotKey;
 
 	CBirdviewView();           // 動態建立所使用的保護建構函式
 	virtual ~CBirdviewView();
 
+	CReceiveThread *pRcvThread;
 public:
 	virtual void OnDraw(CDC* pDC);      // 覆寫以描繪此檢視
+	HANDLE _ListMutex;
+	HANDLE _MapMutex;
+
+	CList <PARAM_STRUCT, PARAM_STRUCT&> _List;
+	CMap <unsigned long, unsigned long, unsigned long, unsigned long&> _ReceiveMap;
+
+
 #ifdef _DEBUG
 	virtual void AssertValid() const;
 #ifndef _WIN32_WCE
@@ -26,6 +41,7 @@ public:
 
 protected:
 	DECLARE_MESSAGE_MAP()
+	afx_msg LRESULT OnUserDraw(WPARAM wParam, LPARAM lParam);
 };
 
 #pragma once
@@ -36,6 +52,8 @@ protected:
 class AFX_EXT_CLASS CBirdviewFrm : public CMDIChildWnd
 {
 	DECLARE_DYNCREATE(CBirdviewFrm)
+	CReceiveThread *pRcvThread;
+
 protected:
 	CBirdviewFrm();           // 動態建立所使用的保護建構函式
 	virtual ~CBirdviewFrm();
@@ -45,6 +63,9 @@ protected:
 
 public:
 	CBirdviewView *_pView;
+	POSITION	rawPos;
+
 public:
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
+	afx_msg void OnClose();
 };

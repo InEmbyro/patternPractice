@@ -123,7 +123,7 @@ int CGridFormChildFrm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	POSITION pos;
 
 	name = GridFormChildView::mailslot;
-	pos = RegisterAcquire(name);
+	pos = RegisterAcquire(name, GridFormChildView::slotKey);
 	if (pos == NULL) {
 		AfxMessageBox(_T("GridFormChildView::mailslot"));
 		return -1;
@@ -136,7 +136,7 @@ int CGridFormChildFrm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	if (!pGridFormThread->InitThread()) {
 		AfxMessageBox(_T("_pGridFormThread->InitThread"));
-		DeregisterAcquire(rawPos);
+		DeregisterAcquire(rawPos, _pView->slotKey);
 		_pView->CloseAllHnd();
 	}
 	_pView->pFormThread = pGridFormThread;
@@ -151,13 +151,14 @@ void CGridFormChildFrm::OnClose()
 	// TODO: 在此加入您的訊息處理常式程式碼和 (或) 呼叫預設值
 	_pView->pFormThread->TerminateThread();
 	WaitForSingleObject(_pView->pFormThread->getConfirmHnd(), 5000);
-	DeregisterAcquire(rawPos);
+	DeregisterAcquire(rawPos, _pView->slotKey);
 	_pView->CloseAllHnd();
 
 	CMDIChildWnd::OnClose();
 }
 
 const char* GridFormChildView::mailslot = "\\\\.\\mailslot\\wnc_grid_view";
+const unsigned int GridFormChildView::slotKey = 0x02;
 
 // GridFormChildView
 IMPLEMENT_DYNCREATE(GridFormChildView, CListView)

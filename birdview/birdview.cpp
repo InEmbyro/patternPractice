@@ -7,6 +7,8 @@
 #include <afxdllx.h>
 #include "resource.h"
 #include "birdview.h"
+#include "CReceiveThread.h"
+#include "../canEngine/canEngineApi.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -64,7 +66,7 @@ extern "C" AFX_EXT_API LPVOID WINAPI InitBirdviewForm()
 	CWinApp* pApp = AfxGetApp();
 	ENSURE(pApp != NULL);
 	CMDIFrameWnd *pFrame = (CMDIFrameWnd*)(pApp->m_pMainWnd);
-	return (LPVOID) pFrame->CreateNewChild(RUNTIME_CLASS(CBirdviewFrm), IDR_MENU1, 0, 0);
+	return (LPVOID) pFrame->CreateNewChild(RUNTIME_CLASS(CBirdviewFrm), IDR_MENU2, 0, 0);
 }
 
 
@@ -72,12 +74,14 @@ extern "C" AFX_EXT_API LPVOID WINAPI InitBirdviewForm()
 IMPLEMENT_DYNCREATE(CBirdviewFrm, CMDIChildWnd)
 
 CBirdviewFrm::CBirdviewFrm()
+	:pRcvThread(NULL)
 {
-
+	pRcvThread = new CReceiveThread();
 }
 
 CBirdviewFrm::~CBirdviewFrm()
 {
+	delete pRcvThread;
 }
 
 
@@ -101,6 +105,34 @@ int CBirdviewFrm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		In the function, GridFormChildView::m_hWnd will be assigned */
 	_pView->UpdateData(FALSE);
 
+	if (!pRcvThread) {
+		AfxMessageBox(_T("!pRcvThread"));
+		return -1;
+	}
+	
+	CString name;
+	POSITION pos;
+
+	name = CBirdviewView::mailslot;
+	pos = RegisterAcquire(name, CBirdviewView::slotKey);
+	if (pos == NULL) {
+		AfxMessageBox(_T("GridFormChildView::mailslot"));
+		return -1;
+	}
+
+	pRcvThread->_pView = _pView;
+	pRcvThread->SetInfoHandle(InforEventAcquire(pos));
+	pRcvThread->SetMailHandle(MailSlotAcquire(pos));
+	rawPos = pos;
+
+	if (!pRcvThread->InitThread()) {
+		AfxMessageBox(_T("_pGridFormThread->InitThread"));
+		DeregisterAcquire(rawPos, CBirdviewView::slotKey);
+	}
+	_pView->pRcvThread = pRcvThread;
+
+	UpdateData(FALSE);
+
 	AfxSetResourceHandle(hInstOld);
 	return 0;
 }
@@ -108,19 +140,34 @@ int CBirdviewFrm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 BEGIN_MESSAGE_MAP(CBirdviewFrm, CMDIChildWnd)
 	ON_WM_CREATE()
+	ON_WM_CLOSE()
 END_MESSAGE_MAP()
 
 
 // CBirdviewFrm 訊息處理常式
 
+unsigned long rcvIdent[] = {
+	0x401, 0x402, 
+	0x610, 0x611, 0x612, 0x613, 0x614, 0x615, 0x616, 0x617, 0x618, 0x619, 0x620,
+	0x00};
 
 // CBirdviewView
 
 IMPLEMENT_DYNCREATE(CBirdviewView, CView)
+const char* CBirdviewView::mailslot = "\\\\.\\mailslot\\wnc_bird_view";
+const unsigned int CBirdviewView::slotKey = 0x01;
 
 CBirdviewView::CBirdviewView()
+	:pRcvThread(NULL)
 {
+	_ListMutex = CreateMutex(NULL, FALSE, NULL);
+	_ReceiveMap.InitHashTable(100);
 
+	int idx = 0;
+	unsigned long pkt;
+	do {
+		_ReceiveMap.SetAt(rcvIdent[idx++], pkt);
+	} while (rcvIdent[idx] != 0x00);
 }
 
 CBirdviewView::~CBirdviewView()
@@ -128,6 +175,7 @@ CBirdviewView::~CBirdviewView()
 }
 
 BEGIN_MESSAGE_MAP(CBirdviewView, CView)
+	ON_MESSAGE(WM_USER_DRAW, &CBirdviewView::OnUserDraw)
 END_MESSAGE_MAP()
 
 
@@ -158,3 +206,36 @@ void CBirdviewView::Dump(CDumpContext& dc) const
 
 
 // CBirdviewView 訊息處理常式
+
+
+afx_msg LRESULT CBirdviewView::OnUserDraw(WPARAM wParam, LPARAM lParam)
+{
+	PARAM_STRUCT data;
+
+	if (GetSafeHwnd() == NULL)
+		return 0;
+	if (_List.IsEmpty())
+		return 0;
+
+	POSITION pos;
+	pos = _List.GetHeadPosition();
+	while (pos) {
+		data = _List.GetHead();
+		WaitForSingleObject(_ListMutex, INFINITE);
+		_List.RemoveHead();
+		ReleaseMutex(_ListMutex);
+		pos = _List.GetHeadPosition();
+	}
+	return 0;
+}
+
+
+void CBirdviewFrm::OnClose()
+{
+	// TODO: 在此加入您的訊息處理常式程式碼和 (或) 呼叫預設值
+	_pView->pRcvThread->TerminateThread();
+	WaitForSingleObject(_pView->pRcvThread->getConfirmHnd(), 5000);
+	DeregisterAcquire(rawPos, CBirdviewView::slotKey);
+
+	CMDIChildWnd::OnClose();
+}

@@ -77,7 +77,7 @@ CCanInfo::CCanInfo()
 		_ThreadEvent[i] = INVALID_HANDLE_VALUE;
 
 	CCanRaw *_p;
-	int i = 50;
+	int i = 10;
 	while (i--) {
 		_p = new CCanRaw();
 		if (_p) {
@@ -86,6 +86,8 @@ CCanInfo::CCanInfo()
 	}
 	if (!_pRawList.IsEmpty())
 		_curRawListPos = _pRawList.GetHeadPosition();
+
+	_noteSlotMutex = CreateMutex(NULL, FALSE, NULL);
 }
 
 CCanInfo::~CCanInfo()
@@ -235,7 +237,7 @@ HANDLE CCanInfo::MailslotHndGet(POSITION pos)
 	return INVALID_HANDLE_VALUE;
 }
 
-POSITION CCanInfo::SlotReg(CString eV)
+POSITION CCanInfo::SlotReg(CString eV, unsigned int slotKey)
 {
 	POSITION pos = NULL;
 	SLOT_INFO _sl;
@@ -257,8 +259,25 @@ POSITION CCanInfo::SlotReg(CString eV)
 	if (_sl.eventHnd == INVALID_HANDLE_VALUE)
 		goto _error;
 	
+	/* all RawList must be assign a idxKey to identify slot */
+	CCanRaw *pRaw = _pRawList.GetHead();
+	unsigned int fakeKey;
+	if (pRaw->idxKey.Lookup(slotKey, fakeKey)) {
+		/* An new register slotKey should not be found in idxKey */
+		goto _error;
+	}
+	WaitForSingleObject(_noteSlotMutex, INFINITE);
 	pos = _noteSlot.AddTail(_sl);
-	
+	ReleaseMutex(_noteSlotMutex);
+
+	POSITION rawPos;
+	rawPos = _pRawList.GetHeadPosition();
+	while (rawPos) {
+		pRaw = _pRawList.GetNext(rawPos);
+		WaitForSingleObject(pRaw->_refCountMutex, INFINITE);
+		pRaw->idxKey.SetAt(slotKey, slotKey);
+		ReleaseMutex(pRaw->_refCountMutex);
+	}
 	return pos;
 
 _error:
@@ -269,7 +288,7 @@ _error:
 	if (_sl.writeHnd != INVALID_HANDLE_VALUE)
 		CloseHandle(_sl.writeHnd);
 	
-	return pos;
+	return NULL;
 }
 
 HANDLE CCanInfo::InforEventGet(POSITION pos)
@@ -298,7 +317,9 @@ BOOL CCanInfo::FindNextPool(CCanRaw **_p, POSITION *pPos)
 	do {
 		p = _pRawList.GetNext(pos);
 		if (p->GetRefCount() == 0) {
+			WaitForSingleObject(p->_listMutex, INFINITE);
 			p->_list.RemoveAll();
+			ReleaseMutex(p->_listMutex);
 			break;
 		}
 		if (pos == NULL) {
@@ -362,14 +383,32 @@ void CCanInfo::SlotInfo(POSITION _pos)
 	}
 }
 
-void CCanInfo::SlotDereg(POSITION pos)
+void CCanInfo::SlotDereg(POSITION pos, unsigned int slotKey)
 {
 	SLOT_INFO _sl;
 	_sl = _noteSlot.GetAt(pos);
 	CloseHandle(_sl.eventHnd);
 	CloseHandle(_sl.slotHnd);
 	CloseHandle(_sl.writeHnd);
+	WaitForSingleObject(_noteSlotMutex, INFINITE);
 	_noteSlot.RemoveAt(pos);
+	ReleaseMutex(_noteSlotMutex);
+
+	POSITION rawPos;
+	CCanRaw *pRaw;
+	rawPos = _pRawList.GetHeadPosition();
+	unsigned int fakeKey;
+	while (rawPos) {
+		pRaw = _pRawList.GetNext(rawPos);
+		if (pRaw->idxKey.Lookup(slotKey, fakeKey)) {
+			WaitForSingleObject(pRaw->_refCountMutex, INFINITE);
+			pRaw->idxKey.RemoveKey(slotKey);
+			if (pRaw->_refCount != 0)
+				pRaw->_refCount--;
+			ReleaseMutex(pRaw->_refCountMutex);
+		}
+	}
+	pRaw = NULL;
 }
 
 UINT CCanInfo::receiveThread(LPVOID pa)
@@ -389,12 +428,14 @@ UINT CCanInfo::receiveThread(LPVOID pa)
 			if (pThis->FindNextPool(&_pR, &pos) == FALSE) {
 				LOG_ERROR("RAW MEMEORY POOL IS NULL");
 				break;
-			}	
+			}
+			WaitForSingleObject(pThis->_noteSlotMutex, INFINITE);
 			_pR->SetRefCount(pThis->_noteSlot.GetCount());
+			ReleaseMutex(pThis->_noteSlotMutex);
 			do {
 				switch (frc = CANL2_read_ac(pThis->_curHandle, &param)) {
 					case CANL2_RA_DATAFRAME:
-						_pR->_list.AddTail(param);
+						_pR->ListAddTail(&param);
 						break;
 					default:
 						break;
