@@ -1,5 +1,4 @@
-1. Using mailslot scheme to dec the reference counter avoids wrong reference counter.
-That will be more stab, but problem still occurs.
+1. Change the setRefCount to different position.
 
-Next, try to use CMap to be reference counter.
+Continuously try to over 10 times, the frooze scenario didn't happen
 

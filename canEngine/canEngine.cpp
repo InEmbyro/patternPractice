@@ -77,7 +77,7 @@ CCanInfo::CCanInfo()
 		_ThreadEvent[i] = INVALID_HANDLE_VALUE;
 
 	CCanRaw *_p;
-	int i = 10;
+	int i = 50;
 	while (i--) {
 		_p = new CCanRaw();
 		if (_p) {
@@ -397,8 +397,11 @@ void CCanInfo::SlotInfo(POSITION _pos)
 	pos = _noteSlot.GetHeadPosition();
 	SLOT_INFO _sl;
 	POSITION *_pPos;
+	CCanRaw *pRaw;
 
+	pRaw = _pRawList.GetAt(_pos);
 	WaitForSingleObject(_noteSlotMutex, INFINITE);
+	pRaw->SetRefCount(_noteSlot.GetCount());
 	while (pos) {
 		_sl = _noteSlot.GetNext(pos);		
 		if (_sl.writeHnd == INVALID_HANDLE_VALUE) {
@@ -472,9 +475,6 @@ UINT CCanInfo::receiveThread(LPVOID pa)
 				LOG_ERROR("RAW MEMEORY POOL IS NULL");
 				break;
 			}
-			WaitForSingleObject(pThis->_noteSlotMutex, INFINITE);
-			_pR->SetRefCount(pThis->_noteSlot.GetCount());
-			ReleaseMutex(pThis->_noteSlotMutex);
 			do {
 				switch (frc = CANL2_read_ac(pThis->_curHandle, &param)) {
 					case CANL2_RA_DATAFRAME:
