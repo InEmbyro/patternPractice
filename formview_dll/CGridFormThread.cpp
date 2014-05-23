@@ -112,13 +112,13 @@ UINT CGridFormThread::update_thread(LPVOID _p)
 				data = _pList->GetNext(dPos);
 				pView->_List.AddTail(data);
 				if (!_this->run) {
-					_this->InforDec(*_pPos);
+					DecRefCount(_pPos);
 					ReleaseMutex(pView->_ListMutex);
 					pView->SendMessage(WM_USER_DRAW, 0, 0);
 					goto _exit;
 				}
 			}
-			_this->InforDec(*_pPos);
+			DecRefCount(_pPos);
 			ReleaseMutex(pView->_ListMutex);
 			pView->PostMessage(WM_USER_DRAW, 0, 0);
 			break;

@@ -95,8 +95,7 @@ UINT CReceiveThread::update_thread(LPVOID _p)
 	CBirdviewView *pView = NULL;
 	CList <PARAM_STRUCT, PARAM_STRUCT&>* _pList;
 	unsigned long fakeKey;
-	_this->_decmailslotHnd = CreateFile(_this->decmailslotName, GENERIC_WRITE, FILE_SHARE_READ, (LPSECURITY_ATTRIBUTES)NULL, OPEN_EXISTING, 
-		FILE_ATTRIBUTE_NORMAL, (HANDLE)NULL);
+	int idx = 0;
 
 	pView = (CBirdviewView*)_this->_pView;
 	while (_this->run) {
@@ -106,22 +105,24 @@ UINT CReceiveThread::update_thread(LPVOID _p)
 			ReadFile(_this->_mailslotHnd, &_pVoid, sizeof(POSITION), &cbRead, NULL);
 			_pPos = (POSITION*)_pVoid;
 			_pList = (CList <PARAM_STRUCT, PARAM_STRUCT&>*)ReadRawList(_pPos);
-			dPos = _pList->GetHeadPosition();
+			idx = 0;
+			dPos = _pList->FindIndex(idx++);
 			WaitForSingleObject(pView->_ListMutex, INFINITE);
 			while (dPos) {
-				data = _pList->GetNext(dPos);
+				data = _pList->GetAt(dPos);
 				if (pView->_ReceiveMap.Lookup(data.Ident, fakeKey))
 					pView->_List.AddTail(data);
 				if (!_this->run) {
-					_this->InforDec(*_pPos);
+					DecRefCount(_pPos);
 					ReleaseMutex(pView->_ListMutex);
 					pView->SendMessage(WM_USER_DRAW, 0, 0);
 					goto _exit;
 				}
+				dPos = _pList->FindIndex(idx++);
 			}
 			ReleaseMutex(pView->_ListMutex);
 			pView->PostMessage(WM_USER_DRAW, 0, 0);
-			_this->InforDec(*_pPos);
+			DecRefCount(_pPos);
 			break;
 		default:
 		case 1:

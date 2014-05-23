@@ -41,10 +41,10 @@ class CCanInfo
 	CList <SLOT_INFO, SLOT_INFO&> _noteSlot;
 	POSITION	_curRawListPos;
 	BOOL		run;
-	HANDLE		_decMailslot;	//used in infor canEngine to reduce the reference counter
+	//HANDLE		_decMailslot;	//used in infor canEngine to reduce the reference counter
 
 public:
-	static const char* _dereferenceSlotName;
+	//static const char* _dereferenceSlotName;
 	HANDLE	_noteSlotMutex;
 	CCanInfo();
 	~CCanInfo();
@@ -54,14 +54,14 @@ public:
 	POSITION	SlotReg(CString slotName, unsigned int slotKey);
 	void		SlotDereg(POSITION, unsigned int slotKey);
 	BOOL		StartThread(MY_L2CONF);
-	BOOL		StartDecThread(void);
+	//BOOL		StartDecThread(void);
 	HANDLE		MailslotHndGet(POSITION);
 	HANDLE		InforEventGet(POSITION);
-	HANDLE		DecrefGet(void);
+	//HANDLE		DecrefGet(void);
 	void		DecRefCount(POSITION);
 	void		TerminatedThread();
 	CList <PARAM_STRUCT, PARAM_STRUCT&>	*ReadRawList(POSITION);
-	const char*	GetDecMailslotName(void);
+	//const char*	GetDecMailslotName(void);
 
 	int m_CanChNo;
 

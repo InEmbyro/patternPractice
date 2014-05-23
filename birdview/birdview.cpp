@@ -123,11 +123,10 @@ int CBirdviewFrm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	pRcvThread->_pView = _pView;
 	pRcvThread->SetInfoHandle(InforEventAcquire(pos));
 	pRcvThread->SetMailHandle(MailSlotAcquire(pos));
-	pRcvThread->SetDecMailslotName(GetDecMailslotName());
 	rawPos = pos;
 
 	if (!pRcvThread->InitThread()) {
-		AfxMessageBox(_T("_pGridFormThread->InitThread"));
+		AfxMessageBox(_T("pRcvThread->InitThread"));
 		DeregisterAcquire(rawPos, CBirdviewView::slotKey);
 	}
 	_pView->pRcvThread = pRcvThread;

@@ -8,7 +8,7 @@
 #define new DEBUG_NEW
 #endif
 
-const char* CCanInfo::_dereferenceSlotName = "\\\\.\\mailslot\\wnc_canEngine_decref";
+//const char* CCanInfo::_dereferenceSlotName = "\\\\.\\mailslot\\wnc_canEngine_decref";
 const int CCanInfo::MSG_LEN_MAX = 20;
 //
 //TODO: 如果這個 DLL 是動態地對 MFC DLL 連結，
@@ -88,20 +88,20 @@ CCanInfo::CCanInfo()
 		_curRawListPos = _pRawList.GetHeadPosition();
 
 	_noteSlotMutex = CreateMutex(NULL, FALSE, NULL);
-	CString eV;
-	eV = CCanInfo::_dereferenceSlotName;
-	_decMailslot = CreateMailslot(eV, MSG_LEN_MAX, MAILSLOT_WAIT_FOREVER,(LPSECURITY_ATTRIBUTES) NULL);
+	//CString eV;
+	//eV = CCanInfo::_dereferenceSlotName;
+	//_decMailslot = CreateMailslot(eV, MSG_LEN_MAX, MAILSLOT_WAIT_FOREVER,(LPSECURITY_ATTRIBUTES) NULL);
 }
+//
+//const char* CCanInfo::GetDecMailslotName()
+//{
+//	return CCanInfo::_dereferenceSlotName;
+//}
 
-const char* CCanInfo::GetDecMailslotName()
-{
-	return CCanInfo::_dereferenceSlotName;
-}
-
-HANDLE CCanInfo::DecrefGet()
-{
-	return _decMailslot;
-}
+//HANDLE CCanInfo::DecrefGet()
+//{
+//	return _decMailslot;
+//}
 
 CCanInfo::~CCanInfo()
 {
@@ -126,18 +126,18 @@ CCanInfo::~CCanInfo()
 	while ((pos = _pRawList.GetHeadPosition()))
 		delete _pRawList.RemoveHead();
 
-	CloseHandle(_decMailslot);
+	//CloseHandle(_decMailslot);
 }
 
-BOOL CCanInfo::StartDecThread()
-{
-	if ((_pDecrefHandle = AfxBeginThread(decrefThread, this)) == NULL) {
-		LOG_ERROR("_pDecrefHandle = NULL");
-		return FALSE;
-	}
-
-	return TRUE;
-}
+//BOOL CCanInfo::StartDecThread()
+//{
+//	if ((_pDecrefHandle = AfxBeginThread(decrefThread, this)) == NULL) {
+//		LOG_ERROR("_pDecrefHandle = NULL");
+//		return FALSE;
+//	}
+//
+//	return TRUE;
+//}
 
 BOOL CCanInfo::StartThread(MY_L2CONF l2con)
 {
@@ -443,19 +443,19 @@ void CCanInfo::SlotDereg(POSITION pos, unsigned int slotKey)
 	pRaw = NULL;
 }
 
-UINT CCanInfo::decrefThread(LPVOID pa)
-{
-	CCanInfo *_this = (CCanInfo*) pa;
-	HANDLE decMailslot = INVALID_HANDLE_VALUE;
-	POSITION pos;
-	DWORD	cbRead;
-	
-	while(_this->run) {
-		ReadFile(_this->_decMailslot, &pos, sizeof(pos), &cbRead, NULL);
-		_this->DecRefCount(pos);
-	}
-	return 0;
-}
+//UINT CCanInfo::decrefThread(LPVOID pa)
+//{
+//	CCanInfo *_this = (CCanInfo*) pa;
+//	HANDLE decMailslot = INVALID_HANDLE_VALUE;
+//	POSITION pos;
+//	DWORD	cbRead;
+//	
+//	while(_this->run) {
+//		ReadFile(_this->_decMailslot, &pos, sizeof(pos), &cbRead, NULL);
+//		_this->DecRefCount(pos);
+//	}
+//	return 0;
+//}
 
 UINT CCanInfo::receiveThread(LPVOID pa)
 {
@@ -466,6 +466,7 @@ UINT CCanInfo::receiveThread(LPVOID pa)
 	unsigned long diff_time = 0, old_time = 0;
 	CCanRaw *_pR = NULL;
 	POSITION pos;
+	DWORD listCount = 0;
 
 	while(pThis->run) {
 		ret = WaitForMultipleObjects(2, &pThis->_ThreadEvent[0], FALSE, INFINITE);
@@ -475,6 +476,7 @@ UINT CCanInfo::receiveThread(LPVOID pa)
 				LOG_ERROR("RAW MEMEORY POOL IS NULL");
 				break;
 			}
+			listCount = 0;
 			do {
 				switch (frc = CANL2_read_ac(pThis->_curHandle, &param)) {
 					case CANL2_RA_DATAFRAME:
@@ -485,6 +487,8 @@ UINT CCanInfo::receiveThread(LPVOID pa)
 				}
 				if (!pThis->run)
 					break;
+				if (listCount++ >= 10)
+					break;
 			} while (frc > 0);
 			pThis->SlotInfo(pos);
 
@@ -494,6 +498,7 @@ UINT CCanInfo::receiveThread(LPVOID pa)
 			goto __exit;
 			break;
 		}
+		Sleep(0);
 	}
 
 __exit:

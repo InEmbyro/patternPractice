@@ -132,7 +132,6 @@ int CGridFormChildFrm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	pGridFormThread->_pView = _pView;
 	pGridFormThread->SetInfoHandle(InforEventAcquire(pos));
 	pGridFormThread->SetMailHandle(MailSlotAcquire(pos));
-	pGridFormThread->SetDecMailslotName(GetDecMailslotName());
 	rawPos = pos;
 
 	if (!pGridFormThread->InitThread()) {
@@ -315,7 +314,6 @@ void GridFormChildView::ShowInIdent()
 			pkt.param = data;
 			_Map.SetAt(pkt.param.Ident, pkt);
 		} else {
-			idx++;
 			pkt.counter = 0;
 			pkt.param = data;
 			WaitForSingleObject(_MapMutex, INFINITE);

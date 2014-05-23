@@ -1,4 +1,8 @@
-1. Change the setRefCount to different position.
+1. Modify the method from GetNext to FindIndex, due to the pos might be invalid
+in unknown case.
+2. Modify the property of Release project to ensure the release version can be 
+built.
 
-Continuously try to over 10 times, the frooze scenario didn't happen
+Try to more than 50 times to open Birdview and off continueously. The froze 
+issue didn't happen.
 
