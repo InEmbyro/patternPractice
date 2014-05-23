@@ -272,7 +272,7 @@ void GridFormChildView::ShowInBuffer()
 	size = pF->GetGridRows();
 	while (pos) {
 		data = _List.GetAt(pos);
-		if (_Array.GetSize() > size) {
+		if (_Array.GetSize() >= size) {
 			WaitForSingleObject(_ArrayMutex, INFINITE);
 			_Array.RemoveAt(0);
 			ReleaseMutex(_ArrayMutex);
@@ -565,15 +565,24 @@ void CGridFormChildFrm::OnTopSetting()
 {
 	// TODO: 在此加入您的命令處理常式程式碼
 	CGridformSet dlg(this);
+	BOOL reset = FALSE;
 
 	dlg.SetGridMode(m_gridMode);
 	dlg.SetGridRows(m_gridRow);
 	if (dlg.DoModal() == IDOK) {
-		m_gridMode = dlg.GetGridMode();
+		if (m_gridRow != dlg.GetGridMode()) {
+			m_gridMode = dlg.GetGridMode();
+			reset = TRUE;
+		}
 		if (m_gridRow != dlg.GetGridRows()) {
+			m_gridRow = dlg.GetGridRows();
+			if (m_gridRow == 0)
+				m_gridRow = 1;
+			reset = TRUE;
+		}
+		if (reset) {
 			/* Need to reset array in order to re-draw gridform */
 			_pView->ResetArray();
-			m_gridRow = dlg.GetGridRows();
 		}
 	}
 }

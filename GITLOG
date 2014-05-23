@@ -1,8 +1,4 @@
-1. Modify the method from GetNext to FindIndex, due to the pos might be invalid
-in unknown case.
-2. Modify the property of Release project to ensure the release version can be 
-built.
-
-Try to more than 50 times to open Birdview and off continueously. The froze 
-issue didn't happen.
+1. Bug fixing.
+ - The number of grid row cannot be zero.
+ - The number of the shown grid row will be more than the desizred.
 
