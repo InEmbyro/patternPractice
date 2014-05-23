@@ -70,6 +70,20 @@ CWinThread* CGridFormThread::GetThread()
 	return _pThread;
 }
 
+
+void CGridFormThread::SetDecMailslotName(const char* name)
+{
+	decmailslotName = name;
+}
+
+void CGridFormThread::InforDec(POSITION _pos)
+{
+	DWORD cbWriteCount;
+
+	WriteFile(_decmailslotHnd, &_pos, sizeof(_pos), &cbWriteCount, NULL);
+
+}
+
 UINT CGridFormThread::update_thread(LPVOID _p)
 {
 	CGridFormThread* _this = (CGridFormThread*) _p;
@@ -81,7 +95,8 @@ UINT CGridFormThread::update_thread(LPVOID _p)
 	PARAM_STRUCT data;
 	GridFormChildView *pView = NULL;
 	CList <PARAM_STRUCT, PARAM_STRUCT&>* _pList;
-	CString str;
+	_this->_decmailslotHnd = CreateFile(_this->decmailslotName, GENERIC_WRITE, FILE_SHARE_READ, (LPSECURITY_ATTRIBUTES)NULL, OPEN_EXISTING, 
+		FILE_ATTRIBUTE_NORMAL, (HANDLE)NULL);
 
 	pView = (GridFormChildView*)_this->_pView;
 	while (_this->run) {
@@ -97,13 +112,13 @@ UINT CGridFormThread::update_thread(LPVOID _p)
 				data = _pList->GetNext(dPos);
 				pView->_List.AddTail(data);
 				if (!_this->run) {
-					DecRefCount(_pPos);
+					_this->InforDec(*_pPos);
 					ReleaseMutex(pView->_ListMutex);
 					pView->SendMessage(WM_USER_DRAW, 0, 0);
 					goto _exit;
 				}
 			}
-			DecRefCount(_pPos);
+			_this->InforDec(*_pPos);
 			ReleaseMutex(pView->_ListMutex);
 			pView->PostMessage(WM_USER_DRAW, 0, 0);
 			break;

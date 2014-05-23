@@ -8,6 +8,7 @@
 #define new DEBUG_NEW
 #endif
 
+const char* CCanInfo::_dereferenceSlotName = "\\\\.\\mailslot\\wnc_canEngine_decref";
 const int CCanInfo::MSG_LEN_MAX = 20;
 //
 //TODO: 如果這個 DLL 是動態地對 MFC DLL 連結，
@@ -71,7 +72,6 @@ BOOL CcanEngineApp::InitInstance()
 CCanInfo::CCanInfo()
 	:m_pBuf(NULL)
 {
-
 	_pThreadHandle = NULL;
 	for (int i = 0; i < 2; i++)
 		_ThreadEvent[i] = INVALID_HANDLE_VALUE;
@@ -88,6 +88,19 @@ CCanInfo::CCanInfo()
 		_curRawListPos = _pRawList.GetHeadPosition();
 
 	_noteSlotMutex = CreateMutex(NULL, FALSE, NULL);
+	CString eV;
+	eV = CCanInfo::_dereferenceSlotName;
+	_decMailslot = CreateMailslot(eV, MSG_LEN_MAX, MAILSLOT_WAIT_FOREVER,(LPSECURITY_ATTRIBUTES) NULL);
+}
+
+const char* CCanInfo::GetDecMailslotName()
+{
+	return CCanInfo::_dereferenceSlotName;
+}
+
+HANDLE CCanInfo::DecrefGet()
+{
+	return _decMailslot;
 }
 
 CCanInfo::~CCanInfo()
@@ -113,6 +126,17 @@ CCanInfo::~CCanInfo()
 	while ((pos = _pRawList.GetHeadPosition()))
 		delete _pRawList.RemoveHead();
 
+	CloseHandle(_decMailslot);
+}
+
+BOOL CCanInfo::StartDecThread()
+{
+	if ((_pDecrefHandle = AfxBeginThread(decrefThread, this)) == NULL) {
+		LOG_ERROR("_pDecrefHandle = NULL");
+		return FALSE;
+	}
+
+	return TRUE;
 }
 
 BOOL CCanInfo::StartThread(MY_L2CONF l2con)
@@ -204,6 +228,7 @@ int CCanInfo::PrepareForIntEvent(MY_L2CONF l2con)
 		goto _error;
 	}
 
+
 	return 0;
 
 _error:
@@ -227,13 +252,15 @@ HANDLE CCanInfo::MailslotHndGet(POSITION pos)
 {
 	SLOT_INFO _sl;
 
+	WaitForSingleObject(_noteSlotMutex, INFINITE);
 	for (int idx = 0; idx < _noteSlot.GetCount(); idx++) {
 		if (pos == _noteSlot.FindIndex(idx)) {
 			_sl = _noteSlot.GetAt(pos);
+			ReleaseMutex(_noteSlotMutex);
 			return _sl.slotHnd;
 		}
 	}
-	
+	ReleaseMutex(_noteSlotMutex);
 	return INVALID_HANDLE_VALUE;
 }
 
@@ -316,7 +343,7 @@ BOOL CCanInfo::FindNextPool(CCanRaw **_p, POSITION *pPos)
 
 	do {
 		p = _pRawList.GetNext(pos);
-		if (p->GetRefCount() == 0) {
+ 		if (p->GetRefCount() == 0) {
 			WaitForSingleObject(p->_listMutex, INFINITE);
 			p->_list.RemoveAll();
 			ReleaseMutex(p->_listMutex);
@@ -371,6 +398,7 @@ void CCanInfo::SlotInfo(POSITION _pos)
 	SLOT_INFO _sl;
 	POSITION *_pPos;
 
+	WaitForSingleObject(_noteSlotMutex, INFINITE);
 	while (pos) {
 		_sl = _noteSlot.GetNext(pos);		
 		if (_sl.writeHnd == INVALID_HANDLE_VALUE) {
@@ -381,6 +409,7 @@ void CCanInfo::SlotInfo(POSITION _pos)
 			SetEvent(_sl.eventHnd);
 		}
 	}
+	ReleaseMutex(_noteSlotMutex);
 }
 
 void CCanInfo::SlotDereg(POSITION pos, unsigned int slotKey)
@@ -409,6 +438,20 @@ void CCanInfo::SlotDereg(POSITION pos, unsigned int slotKey)
 		}
 	}
 	pRaw = NULL;
+}
+
+UINT CCanInfo::decrefThread(LPVOID pa)
+{
+	CCanInfo *_this = (CCanInfo*) pa;
+	HANDLE decMailslot = INVALID_HANDLE_VALUE;
+	POSITION pos;
+	DWORD	cbRead;
+	
+	while(_this->run) {
+		ReadFile(_this->_decMailslot, &pos, sizeof(pos), &cbRead, NULL);
+		_this->DecRefCount(pos);
+	}
+	return 0;
 }
 
 UINT CCanInfo::receiveThread(LPVOID pa)

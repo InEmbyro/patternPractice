@@ -132,6 +132,7 @@ int CGridFormChildFrm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	pGridFormThread->_pView = _pView;
 	pGridFormThread->SetInfoHandle(InforEventAcquire(pos));
 	pGridFormThread->SetMailHandle(MailSlotAcquire(pos));
+	pGridFormThread->SetDecMailslotName(GetDecMailslotName());
 	rawPos = pos;
 
 	if (!pGridFormThread->InitThread()) {

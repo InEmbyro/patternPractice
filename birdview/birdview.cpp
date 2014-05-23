@@ -123,6 +123,7 @@ int CBirdviewFrm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	pRcvThread->_pView = _pView;
 	pRcvThread->SetInfoHandle(InforEventAcquire(pos));
 	pRcvThread->SetMailHandle(MailSlotAcquire(pos));
+	pRcvThread->SetDecMailslotName(GetDecMailslotName());
 	rawPos = pos;
 
 	if (!pRcvThread->InitThread()) {

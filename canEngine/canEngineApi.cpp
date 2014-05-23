@@ -28,10 +28,36 @@ DLLEXPORT HANDLE WINAPI MailSlotAcquire(POSITION pos)
 	return canInfo.MailslotHndGet(pos);
 }
 
+DLLEXPORT const char* WINAPI GetDecMailslotName()
+{
+	return canInfo.GetDecMailslotName();
+}
+
+DLLEXPORT void WINAPI DecMailslot(POSITION _pos)
+{
+	HANDLE mail;
+	CString str;
+	DWORD cbWriteCount;
+
+	str = canInfo.GetDecMailslotName();
+	mail = CreateFile(str, GENERIC_WRITE, FILE_SHARE_READ, (LPSECURITY_ATTRIBUTES)NULL, OPEN_EXISTING, 
+		FILE_ATTRIBUTE_NORMAL, (HANDLE)NULL);
+	
+	WriteFile(mail, &_pos, sizeof(_pos), &cbWriteCount, NULL);
+	CloseHandle(mail);
+
+	return ;
+}
 DLLEXPORT void WINAPI DeregisterAcquire(POSITION pos, unsigned int slotKey)
 {
 	AFX_MANAGE_STATE(AfxGetStaticModuleState());
 	canInfo.SlotDereg(pos, slotKey);
+}
+
+DLLEXPORT HANDLE WINAPI DecRef(unsigned int slotKey)
+{
+	AFX_MANAGE_STATE(AfxGetStaticModuleState());
+	return canInfo.DecrefGet();
 }
 
 DLLEXPORT POSITION WINAPI RegisterAcquire(CString slotName, unsigned int slotKey)
@@ -129,6 +155,9 @@ DLLEXPORT BOOL WINAPI InitCan()
 		if (l2Con.HasInit) {
 			if (canInfo.StartThread(l2Con) == FALSE) {
 				LOG_ERROR("StartThread == FALSE");
+			}
+			if (canInfo.StartDecThread() == FALSE) {
+				LOG_ERROR("StartDecThread == FALSE");
 			}
 		} else {
 			LOG_ERROR("CANL2_initialize_fifo_mode l2Con.HasInit = FALSE");

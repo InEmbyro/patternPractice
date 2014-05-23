@@ -70,6 +70,19 @@ CWinThread* CReceiveThread::GetThread()
 	return _pThread;
 }
 
+void CReceiveThread::SetDecMailslotName(const char* name)
+{
+	decmailslotName = name;
+}
+
+void CReceiveThread::InforDec(POSITION _pos)
+{
+	DWORD cbWriteCount;
+
+	WriteFile(_decmailslotHnd, &_pos, sizeof(_pos), &cbWriteCount, NULL);
+
+}
+
 UINT CReceiveThread::update_thread(LPVOID _p)
 {
 	CReceiveThread* _this = (CReceiveThread*) _p;
@@ -81,8 +94,9 @@ UINT CReceiveThread::update_thread(LPVOID _p)
 	PARAM_STRUCT data;
 	CBirdviewView *pView = NULL;
 	CList <PARAM_STRUCT, PARAM_STRUCT&>* _pList;
-	CString str;
 	unsigned long fakeKey;
+	_this->_decmailslotHnd = CreateFile(_this->decmailslotName, GENERIC_WRITE, FILE_SHARE_READ, (LPSECURITY_ATTRIBUTES)NULL, OPEN_EXISTING, 
+		FILE_ATTRIBUTE_NORMAL, (HANDLE)NULL);
 
 	pView = (CBirdviewView*)_this->_pView;
 	while (_this->run) {
@@ -99,7 +113,7 @@ UINT CReceiveThread::update_thread(LPVOID _p)
 				if (pView->_ReceiveMap.Lookup(data.Ident, fakeKey))
 					pView->_List.AddTail(data);
 				if (!_this->run) {
-					DecRefCount(_pPos);
+					_this->InforDec(*_pPos);
 					ReleaseMutex(pView->_ListMutex);
 					pView->SendMessage(WM_USER_DRAW, 0, 0);
 					goto _exit;
@@ -107,7 +121,7 @@ UINT CReceiveThread::update_thread(LPVOID _p)
 			}
 			ReleaseMutex(pView->_ListMutex);
 			pView->PostMessage(WM_USER_DRAW, 0, 0);
-			DecRefCount(_pPos);
+			_this->InforDec(*_pPos);
 			break;
 		default:
 		case 1:

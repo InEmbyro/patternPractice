@@ -1,2 +1,5 @@
-1. Birdview can recieve the packet, but the reference count has some problems.
+1. Using mailslot scheme to dec the reference counter avoids wrong reference counter.
+That will be more stab, but problem still occurs.
+
+Next, try to use CMap to be reference counter.
 
