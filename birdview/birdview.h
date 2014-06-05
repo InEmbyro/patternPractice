@@ -21,10 +21,14 @@ class CBirdviewView : public CView
 
 	CBirdviewView();           // 動態建立所使用的保護建構函式
 	virtual ~CBirdviewView();
+	void DrawCarLine(CDC *pDc);
+	void SetOrigin(CDC *pDc, BOOL action, int x_offset = 0, int y_offset = 0);
+	CArray <CPoint, CPoint&> _Array;
 
 	CReceiveThread *pRcvThread;
+	int count;
+
 public:
-	virtual void OnDraw(CDC* pDC);      // 覆寫以描繪此檢視
 	HANDLE _ListMutex;
 	HANDLE _MapMutex;
 
@@ -42,6 +46,9 @@ public:
 protected:
 	DECLARE_MESSAGE_MAP()
 	afx_msg LRESULT OnUserDraw(WPARAM wParam, LPARAM lParam);
+public:
+	afx_msg void OnPaint();
+	virtual void OnDraw(CDC* /*pDC*/);
 };
 
 #pragma once

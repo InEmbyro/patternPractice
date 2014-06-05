@@ -1,4 +1,4 @@
-1. Bug fixing.
- - The number of grid row cannot be zero.
- - The number of the shown grid row will be more than the desizred.
+1. Birdview can show raw objects now. However, it seems not very good to see.
+
+Next, considering user CAN_analyzer method to show the bridview.
 

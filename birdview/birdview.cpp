@@ -5,14 +5,20 @@
 #include "stdafx.h"
 #include <afxwin.h>
 #include <afxdllx.h>
+#include <math.h>
 #include "resource.h"
 #include "birdview.h"
 #include "CReceiveThread.h"
 #include "../canEngine/canEngineApi.h"
 
+
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
+
+#define CAR_WIDTH	20	//2 meter
+#define CAR_LENGTH	45	//4.5m
+#define Y_OFFSET	10
 
 static AFX_EXTENSION_MODULE birdviewDLL = { NULL, NULL };
 
@@ -158,7 +164,7 @@ const char* CBirdviewView::mailslot = "\\\\.\\mailslot\\wnc_bird_view";
 const unsigned int CBirdviewView::slotKey = 0x01;
 
 CBirdviewView::CBirdviewView()
-	:pRcvThread(NULL)
+	:pRcvThread(NULL), count(0)
 {
 	_ListMutex = CreateMutex(NULL, FALSE, NULL);
 	_ReceiveMap.InitHashTable(100);
@@ -176,17 +182,8 @@ CBirdviewView::~CBirdviewView()
 
 BEGIN_MESSAGE_MAP(CBirdviewView, CView)
 	ON_MESSAGE(WM_USER_DRAW, &CBirdviewView::OnUserDraw)
+//ON_WM_PAINT()
 END_MESSAGE_MAP()
-
-
-// CBirdviewView 描繪
-
-void CBirdviewView::OnDraw(CDC* pDC)
-{
-	CDocument* pDoc = GetDocument();
-	// TODO: 在此加入描繪程式碼
-}
-
 
 // CBirdviewView 診斷
 
@@ -211,24 +208,121 @@ void CBirdviewView::Dump(CDumpContext& dc) const
 afx_msg LRESULT CBirdviewView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 {
 	PARAM_STRUCT data;
+	CPoint pnt;
+	float range;
+	int temp;
+	float theta;
 
 	if (GetSafeHwnd() == NULL)
 		return 0;
 	if (_List.IsEmpty())
 		return 0;
 
+	/* Create a compatible dc & bmp to avoid flickering */
+	CClientDC dc(this);	/* acquire device context */
+	CRect rect;
+	GetClientRect(&rect);
+
+	/* Prepare Pen for drawing object */
+	CPen pen, *pOldPen;
+	pen.CreatePen(PS_SOLID, 3, RGB(0, 200, 0));
+	CBrush brush, *pOldBrush;
+	brush.CreateSolidBrush(RGB(0, 200, 0));
+
+	CDC dcMem;
+	dcMem.CreateCompatibleDC(&dc);
+
+	CBitmap bmp;
+	CBitmap *pOldBmp = NULL;
+	bmp.CreateCompatibleBitmap(&dc, rect.Width(), rect.Height());
+	pOldBmp = dcMem.SelectObject(&bmp);
+	DrawCarLine(&dcMem);
+
 	POSITION pos;
 	pos = _List.GetHeadPosition();
+	/* Assign pen, brush etc.. */
+	pOldPen = dcMem.SelectObject(&pen);
+	pOldBrush = dcMem.SelectObject(&brush);
+
+	SetOrigin(&dcMem, TRUE, 0, Y_OFFSET + CAR_LENGTH);
 	while (pos) {
 		data = _List.GetHead();
 		WaitForSingleObject(_ListMutex, INFINITE);
+		/* Only try raw first */
+		if (data.Ident == 0x401 && data.DataLength == 8) {
+			temp = data.RCV_data[4] & 0x01;
+			temp = (temp << 8) + data.RCV_data[3];
+			temp = (temp << 7) + ((data.RCV_data[2] & 0xFE) >> 1);
+			range = temp * 0.01;
+			temp = data.RCV_data[2] & 0x01;
+			temp = (temp << 8) + data.RCV_data[1];
+			temp = (temp << 2) + ((data.RCV_data[0] & 0xC0) >> 6);
+			theta = (temp - 1024) * 0.16;
+#define PI	3.1416
+			pnt.x = range * sin(theta * PI / 180) * 10;
+			pnt.y = range * cos(theta * PI / 180) * 10;
+#define OBJECT_SIZE	5
+			dcMem.Ellipse(pnt.x, pnt.y, pnt.x + OBJECT_SIZE, pnt.y + OBJECT_SIZE);
+		}
 		_List.RemoveHead();
 		ReleaseMutex(_ListMutex);
 		pos = _List.GetHeadPosition();
 	}
+	SetOrigin(&dcMem, FALSE);
+	dcMem.SelectObject(pOldPen);
+	dcMem.SelectObject(pOldBrush);
+	brush.DeleteObject();
+	pen.DeleteObject();
+
+	//
+	GetClientRect(&rect);
+	dc.BitBlt(0, 0, rect.Width(), rect.Height(), &dcMem, 0, 0, SRCCOPY);
+	dcMem.SelectObject(pOldBmp);
+	bmp.DeleteObject();
+	dcMem.DeleteDC();
+
 	return 0;
 }
 
+void CBirdviewView::SetOrigin(CDC *pDc, BOOL action, int x_off, int y_off)
+{
+	if (action == TRUE) {
+		CRect rect;
+		GetClientRect(&rect);
+		pDc->SetViewportOrg((rect.Width() / 2) + x_off, y_off);
+	} else {
+		pDc->SetViewportOrg(0, 0);
+	}
+}
+
+void CBirdviewView::DrawCarLine(CDC *pDc)
+{
+	/* Set bk mode to TRANSAPRENT and draw bk color */
+	CRect rect;
+	GetClientRect(&rect);
+	pDc->SetBkMode(TRANSPARENT);
+	pDc->FillSolidRect(rect, RGB(0, 0, 0));
+
+	/* Set the origin point to the center of the client area */
+	SetOrigin(pDc, TRUE, 0, Y_OFFSET);
+
+	/* draw horizatal & vertical line for reference */
+	CPen pen;
+	pen.CreatePen(PS_SOLID, 1, RGB(192, 192, 192));
+	CPen *pOldPen = pDc->SelectObject(&pen);
+
+	pDc->MoveTo(-rect.Width() / 2, 0);
+	pDc->LineTo(rect.Width() / 2, 0);
+	pDc->MoveTo(0, -Y_OFFSET);
+	pDc->LineTo(0, rect.Height() - Y_OFFSET);
+	pDc->SelectObject(pOldPen);
+	pen.DeleteObject();
+
+	/* Draw Car */
+	pDc->FillSolidRect(-(CAR_WIDTH / 2), 0, CAR_WIDTH, CAR_LENGTH, RGB(222, 0, 0));
+	SetOrigin(pDc, FALSE);
+	return;
+}
 
 void CBirdviewFrm::OnClose()
 {
@@ -238,4 +332,18 @@ void CBirdviewFrm::OnClose()
 	DeregisterAcquire(rawPos, CBirdviewView::slotKey);
 
 	CMDIChildWnd::OnClose();
+}
+
+
+void CBirdviewView::OnPaint()
+{
+	CPaintDC dc(this); // device context for painting
+	// TODO: 在此加入您的訊息處理常式程式碼
+	// 不要呼叫圖片訊息的 CView::OnPaint()
+}
+
+
+void CBirdviewView::OnDraw(CDC* /*pDC*/)
+{
+	// TODO: 在此加入特定的程式碼和 (或) 呼叫基底類別
 }
