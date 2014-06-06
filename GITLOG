@@ -1,4 +1,6 @@
-1. Birdview can show raw objects now. However, it seems not very good to see.
+1. The raw object of both Master and Slave can be shown in birdview. However, 
+it is not cycle aligment.
 
-Next, considering user CAN_analyzer method to show the bridview.
+Next, consider dispatch the raw object of each sensor to different buffers and 
+try to show aligned data.
 

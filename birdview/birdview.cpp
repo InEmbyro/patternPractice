@@ -16,8 +16,13 @@
 #define new DEBUG_NEW
 #endif
 
-#define CAR_WIDTH	20	//2 meter
-#define CAR_LENGTH	45	//4.5m
+#define PI	3.1416
+#define RAD_CONVER	(PI / 180)
+#define SCALE	20
+#define OBJECT_SIZE	10
+
+#define CAR_WIDTH	(2 * SCALE)		//2 meter
+#define CAR_LENGTH	(4.5 * SCALE)	//4.5m
 #define Y_OFFSET	10
 
 static AFX_EXTENSION_MODULE birdviewDLL = { NULL, NULL };
@@ -153,8 +158,9 @@ END_MESSAGE_MAP()
 // CBirdviewFrm 訊息處理常式
 
 unsigned long rcvIdent[] = {
-	0x401, 0x402, 
-	0x610, 0x611, 0x612, 0x613, 0x614, 0x615, 0x616, 0x617, 0x618, 0x619, 0x620,
+	0x400, 0x401, 0x402,
+	0x410, 0x411, 0x412,
+	0x601, 0x610, 0x611, 0x612, 0x613, 0x614, 0x615, 0x616, 0x617, 0x618, 0x619, 0x620,
 	0x00};
 
 // CBirdviewView
@@ -164,7 +170,7 @@ const char* CBirdviewView::mailslot = "\\\\.\\mailslot\\wnc_bird_view";
 const unsigned int CBirdviewView::slotKey = 0x01;
 
 CBirdviewView::CBirdviewView()
-	:pRcvThread(NULL), count(0)
+	:pRcvThread(NULL)
 {
 	_ListMutex = CreateMutex(NULL, FALSE, NULL);
 	_ReceiveMap.InitHashTable(100);
@@ -208,10 +214,11 @@ void CBirdviewView::Dump(CDumpContext& dc) const
 afx_msg LRESULT CBirdviewView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 {
 	PARAM_STRUCT data;
+	RAW_OBJECT_STRUCT raw;
 	CPoint pnt;
-	float range;
-	int temp;
-	float theta;
+	CString str;
+	double temp;
+	int angle;
 
 	if (GetSafeHwnd() == NULL)
 		return 0;
@@ -223,65 +230,122 @@ afx_msg LRESULT CBirdviewView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 	CRect rect;
 	GetClientRect(&rect);
 
-	/* Prepare Pen for drawing object */
-	CPen pen, *pOldPen;
-	pen.CreatePen(PS_SOLID, 3, RGB(0, 200, 0));
-	CBrush brush, *pOldBrush;
-	brush.CreateSolidBrush(RGB(0, 200, 0));
-
 	CDC dcMem;
 	dcMem.CreateCompatibleDC(&dc);
+
+	/* Prepare Pen for drawing object */
+	CPen pen, *pOldPen;
+	CBrush	*pOldBrush = NULL;
+	CBrush	*pBrush = CBrush::FromHandle((HBRUSH)GetStockObject(NULL_BRUSH));
+	CFont font;
+	CFont *pOldFont;
+	font.CreatePointFont(90, _T("Arial"));
+	pOldFont = dcMem.SelectObject(&font);
+	dcMem.SetTextColor(RGB(255, 255, 255));
 
 	CBitmap bmp;
 	CBitmap *pOldBmp = NULL;
 	bmp.CreateCompatibleBitmap(&dc, rect.Width(), rect.Height());
 	pOldBmp = dcMem.SelectObject(&bmp);
+	pOldBrush = dcMem.SelectObject(pBrush);
 	DrawCarLine(&dcMem);
 
 	POSITION pos;
 	pos = _List.GetHeadPosition();
 	/* Assign pen, brush etc.. */
 	pOldPen = dcMem.SelectObject(&pen);
-	pOldBrush = dcMem.SelectObject(&brush);
 
 	SetOrigin(&dcMem, TRUE, 0, Y_OFFSET + CAR_LENGTH);
 	while (pos) {
 		data = _List.GetHead();
 		WaitForSingleObject(_ListMutex, INFINITE);
 		/* Only try raw first */
-		if (data.Ident == 0x401 && data.DataLength == 8) {
-			temp = data.RCV_data[4] & 0x01;
-			temp = (temp << 8) + data.RCV_data[3];
-			temp = (temp << 7) + ((data.RCV_data[2] & 0xFE) >> 1);
-			range = temp * 0.01;
-			temp = data.RCV_data[2] & 0x01;
-			temp = (temp << 8) + data.RCV_data[1];
-			temp = (temp << 2) + ((data.RCV_data[0] & 0xC0) >> 6);
-			theta = (temp - 1024) * 0.16;
-#define PI	3.1416
-			pnt.x = range * sin(theta * PI / 180) * 10;
-			pnt.y = range * cos(theta * PI / 180) * 10;
-#define OBJECT_SIZE	5
-			dcMem.Ellipse(pnt.x, pnt.y, pnt.x + OBJECT_SIZE, pnt.y + OBJECT_SIZE);
+		if ((data.Ident == 0x401 || data.Ident == 0x411) && data.DataLength == 8) {
+			ParseRawObject(&data, &raw);
+			if (data.Ident == 0x401) {
+				angle = 57;
+				if (pen.m_hObject)
+					pen.DeleteObject();
+				pen.CreatePen(PS_SOLID, 3, RGB(0, 200, 0));
+				pOldPen = dcMem.SelectObject(&pen);
+			} else {
+				angle = -57;
+				if (pen.m_hObject)
+					pen.DeleteObject();
+				pen.CreatePen(PS_SOLID, 3, RGB(200, 0, 0));
+				pOldPen = dcMem.SelectObject(&pen);
+			}
+			temp = (raw.x_range * cos(angle * RAD_CONVER)) - (raw.y_range * sin(angle * RAD_CONVER));
+			pnt.x = (temp * SCALE);
+			temp = (raw.x_range * sin(angle * RAD_CONVER)) + (raw.y_range * cos(angle * RAD_CONVER));
+			pnt.y = (temp *SCALE);
+			rect.left = pnt.x;
+			rect.right = pnt.x + OBJECT_SIZE;
+			rect.top = pnt.y;
+			rect.bottom = pnt.y + OBJECT_SIZE;
+			dcMem.Ellipse(rect);
+			dcMem.SelectObject(pOldPen);
+			rect.OffsetRect(OBJECT_SIZE, -OBJECT_SIZE);
+			str.Format(_T("%d"), raw.TargetNum);
+			CSize sz = dcMem.GetTextExtent(str);
+			rect.right = rect.left + sz.cx;
+			rect.bottom = rect.top + sz.cy;
+			dcMem.DrawText(str, rect, DT_SINGLELINE | DT_LEFT | DT_VCENTER);
 		}
 		_List.RemoveHead();
 		ReleaseMutex(_ListMutex);
+		if (data.Ident == 0x401)
+			break;
 		pos = _List.GetHeadPosition();
 	}
 	SetOrigin(&dcMem, FALSE);
 	dcMem.SelectObject(pOldPen);
 	dcMem.SelectObject(pOldBrush);
-	brush.DeleteObject();
-	pen.DeleteObject();
+	if (pen.m_hObject)
+		pen.DeleteObject();
 
 	//
 	GetClientRect(&rect);
 	dc.BitBlt(0, 0, rect.Width(), rect.Height(), &dcMem, 0, 0, SRCCOPY);
 	dcMem.SelectObject(pOldBmp);
-	bmp.DeleteObject();
+	if (bmp.m_hObject)
+		bmp.DeleteObject();
 	dcMem.DeleteDC();
 
 	return 0;
+}
+
+void CBirdviewView::ParseRawObject(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *pRaw)
+{
+	if (pSrc == NULL || pRaw == NULL)
+		return;
+
+	int temp;
+
+	pRaw->TargetNum = pSrc->RCV_data[0] & 0x3F;
+
+	temp = pSrc->RCV_data[2] & 0x01;
+	temp = (temp << 8) + pSrc->RCV_data[1];
+	temp = (temp << 2) + ((pSrc->RCV_data[0] & 0xC0) >> 6);
+	pRaw->angle = (temp - 1024) * 0.16;
+
+	temp = pSrc->RCV_data[4] & 0x01;
+	temp = (temp << 8) + pSrc->RCV_data[3];
+	temp = (temp << 7) + ((pSrc->RCV_data[2] & 0xFE) >> 1);
+	pRaw->range = temp * 0.01;
+
+	temp = pSrc->RCV_data[5] & 0x03;
+	temp = (temp << 7) + ((pSrc->RCV_data[4] & 0xFE) >> 1);
+	pRaw->AbsLevel_db = temp * 0.32;
+
+	pRaw->type = (pSrc->RCV_data[5] & 0x7C) >> 2;
+
+	temp = pSrc->RCV_data[7];
+	temp = (temp << 6) + ((pSrc->RCV_data[4] & 0xFC) >> 2);
+	pRaw->relatedSpeed = (temp - 8192) * 0.02;
+
+	pRaw->x_range = pRaw->range * sin(pRaw->angle * RAD_CONVER);
+	pRaw->y_range = pRaw->range * cos(pRaw->angle * RAD_CONVER);
 }
 
 void CBirdviewView::SetOrigin(CDC *pDc, BOOL action, int x_off, int y_off)

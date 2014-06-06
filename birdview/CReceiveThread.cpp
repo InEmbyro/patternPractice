@@ -110,8 +110,9 @@ UINT CReceiveThread::update_thread(LPVOID _p)
 			WaitForSingleObject(pView->_ListMutex, INFINITE);
 			while (dPos) {
 				data = _pList->GetAt(dPos);
-				if (pView->_ReceiveMap.Lookup(data.Ident, fakeKey))
+				if (pView->_ReceiveMap.Lookup(data.Ident, fakeKey)) {
 					pView->_List.AddTail(data);
+				}
 				if (!_this->run) {
 					DecRefCount(_pPos);
 					ReleaseMutex(pView->_ListMutex);

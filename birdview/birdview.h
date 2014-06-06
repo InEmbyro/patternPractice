@@ -9,7 +9,16 @@
 
 extern "C" AFX_EXT_API LPVOID WINAPI InitBirdviewForm(void);
 
-
+typedef struct {
+	unsigned char TargetNum;
+	double	angle;
+	double	range;
+	double AbsLevel_db;
+	double	x_range;
+	double	y_range;
+	double relatedSpeed;	// m/s
+	unsigned char type;
+} RAW_OBJECT_STRUCT;
 
 // CBirdviewView ÀËµø
 class CReceiveThread;
@@ -26,7 +35,7 @@ class CBirdviewView : public CView
 	CArray <CPoint, CPoint&> _Array;
 
 	CReceiveThread *pRcvThread;
-	int count;
+	void CBirdviewView::ParseRawObject(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *pRaw);
 
 public:
 	HANDLE _ListMutex;
