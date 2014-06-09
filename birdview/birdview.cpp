@@ -158,10 +158,9 @@ END_MESSAGE_MAP()
 // CBirdviewFrm 訊息處理常式
 
 unsigned long rcvIdent[] = {
-	0x400, 0x401, 0x402,
-	0x410, 0x411, 0x412,
-	0x601, 0x610, 0x611, 0x612, 0x613, 0x614, 0x615, 0x616, 0x617, 0x618, 0x619, 0x620,
-	0x00};
+	0x400, 0x401, 0x402, 0x00,
+	0x410, 0x411, 0x412, 0x00,
+	0x601, 0x610, 0x611, 0x612, 0x613, 0x614, 0x615, 0x616, 0x617, 0x618, 0x619, 0x620, 0x00};
 
 // CBirdviewView
 
@@ -173,17 +172,45 @@ CBirdviewView::CBirdviewView()
 	:pRcvThread(NULL)
 {
 	_ListMutex = CreateMutex(NULL, FALSE, NULL);
-	_ReceiveMap.InitHashTable(100);
 
 	int idx = 0;
-	unsigned long pkt;
-	do {
-		_ReceiveMap.SetAt(rcvIdent[idx++], pkt);
-	} while (rcvIdent[idx] != 0x00);
+	unsigned long pkt = 0;
+	CList <PARAM_STRUCT, PARAM_STRUCT&> *p;
+	HANDLE h;
+
+	_FilterMap.InitHashTable(sizeof(rcvIdent)/sizeof(rcvIdent[0]));
+	for (idx = 0; idx < (sizeof(rcvIdent)/sizeof(rcvIdent[0])); idx++) {
+		if (rcvIdent[idx] == 0x00) {
+			p = new CList <PARAM_STRUCT, PARAM_STRUCT&>;
+			if (p == NULL) {
+				AfxMessageBox(_T("p == NULL"));
+				return;
+			}
+			_ListArray.Add(p);
+			h = CreateMutex(NULL, FALSE, NULL);
+			if (h == NULL) {
+				_ListArray.RemoveAt(_ListArray.GetSize() - 1);
+				delete p;
+				AfxMessageBox(_T("Failure of creating _ListArrayMutex"));
+			} else {
+				_ListArrayMutex.Add(h);
+			}
+			pkt++;
+			continue;
+		}
+		_FilterMap.SetAt((unsigned long)rcvIdent[idx], pkt);
+	}
 }
 
 CBirdviewView::~CBirdviewView()
 {
+	CList <PARAM_STRUCT, PARAM_STRUCT&> *p;
+
+	for (int idx = 0; idx < _ListArray.GetSize(); idx++) {
+		p = _ListArray.GetAt(idx);
+		delete p;
+		CloseHandle(_ListArrayMutex.GetAt(idx));
+	}
 }
 
 BEGIN_MESSAGE_MAP(CBirdviewView, CView)
@@ -219,10 +246,10 @@ afx_msg LRESULT CBirdviewView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 	CString str;
 	double temp;
 	int angle;
+	unsigned long fakeKey;
+	CList <PARAM_STRUCT, PARAM_STRUCT&>* p;
 
 	if (GetSafeHwnd() == NULL)
-		return 0;
-	if (_List.IsEmpty())
 		return 0;
 
 	/* Create a compatible dc & bmp to avoid flickering */
@@ -251,16 +278,24 @@ afx_msg LRESULT CBirdviewView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 	DrawCarLine(&dcMem);
 
 	POSITION pos;
-	pos = _List.GetHeadPosition();
+	//pos = _List.GetHeadPosition();
 	/* Assign pen, brush etc.. */
 	pOldPen = dcMem.SelectObject(&pen);
 
 	SetOrigin(&dcMem, TRUE, 0, Y_OFFSET + CAR_LENGTH);
-	while (pos) {
-		data = _List.GetHead();
-		WaitForSingleObject(_ListMutex, INFINITE);
-		/* Only try raw first */
-		if ((data.Ident == 0x401 || data.Ident == 0x411) && data.DataLength == 8) {
+
+	int arrIdx = 0;
+	for (arrIdx = 0; arrIdx < _ListArray.GetSize(); arrIdx++) {
+		WaitForSingleObject(_ListArrayMutex.GetAt(arrIdx), INFINITE);
+		p = _ListArray.GetAt(arrIdx);
+		pos = p->GetHeadPosition();
+		while (pos) {
+			data = p->GetAt(pos);
+			p->RemoveHead();
+			if (data.Ident == 0x400 || data.Ident == 0x410) {
+				pos = p->GetHeadPosition();
+				continue;
+			}
 			ParseRawObject(&data, &raw);
 			if (data.Ident == 0x401) {
 				angle = 57;
@@ -291,13 +326,11 @@ afx_msg LRESULT CBirdviewView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 			rect.right = rect.left + sz.cx;
 			rect.bottom = rect.top + sz.cy;
 			dcMem.DrawText(str, rect, DT_SINGLELINE | DT_LEFT | DT_VCENTER);
+			pos = p->GetHeadPosition();
 		}
-		_List.RemoveHead();
-		ReleaseMutex(_ListMutex);
-		if (data.Ident == 0x401)
-			break;
-		pos = _List.GetHeadPosition();
+		ReleaseMutex(_ListArrayMutex.GetAt(arrIdx));
 	}
+
 	SetOrigin(&dcMem, FALSE);
 	dcMem.SelectObject(pOldPen);
 	dcMem.SelectObject(pOldBrush);

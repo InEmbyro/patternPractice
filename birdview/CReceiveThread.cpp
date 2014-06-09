@@ -94,8 +94,10 @@ UINT CReceiveThread::update_thread(LPVOID _p)
 	PARAM_STRUCT data;
 	CBirdviewView *pView = NULL;
 	CList <PARAM_STRUCT, PARAM_STRUCT&>* _pList;
+	CList <PARAM_STRUCT, PARAM_STRUCT&>* _pViewList;
 	unsigned long fakeKey;
 	int idx = 0;
+	BOOL found;
 
 	pView = (CBirdviewView*)_this->_pView;
 	while (_this->run) {
@@ -107,22 +109,26 @@ UINT CReceiveThread::update_thread(LPVOID _p)
 			_pList = (CList <PARAM_STRUCT, PARAM_STRUCT&>*)ReadRawList(_pPos);
 			idx = 0;
 			dPos = _pList->FindIndex(idx++);
-			WaitForSingleObject(pView->_ListMutex, INFINITE);
+			found = FALSE;
 			while (dPos) {
 				data = _pList->GetAt(dPos);
-				if (pView->_ReceiveMap.Lookup(data.Ident, fakeKey)) {
-					pView->_List.AddTail(data);
+				if (pView->_FilterMap.Lookup(data.Ident, fakeKey)) {
+					WaitForSingleObject(pView->_ListArrayMutex.GetAt(fakeKey), INFINITE);
+					_pViewList = pView->_ListArray.GetAt(fakeKey);
+					_pViewList->AddTail(data);
+					found = TRUE;
+					ReleaseMutex(pView->_ListArrayMutex.GetAt(fakeKey));
 				}
 				if (!_this->run) {
 					DecRefCount(_pPos);
-					ReleaseMutex(pView->_ListMutex);
-					pView->SendMessage(WM_USER_DRAW, 0, 0);
+					if (found)
+						pView->SendMessage(WM_USER_DRAW, 0, 0);
 					goto _exit;
 				}
 				dPos = _pList->FindIndex(idx++);
 			}
-			ReleaseMutex(pView->_ListMutex);
-			pView->PostMessage(WM_USER_DRAW, 0, 0);
+			if (found)
+				pView->PostMessage(WM_USER_DRAW, 0, 0);
 			DecRefCount(_pPos);
 			break;
 		default:

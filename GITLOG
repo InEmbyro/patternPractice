@@ -1,6 +1,1 @@
-1. The raw object of both Master and Slave can be shown in birdview. However, 
-it is not cycle aligment.
-
-Next, consider dispatch the raw object of each sensor to different buffers and 
-try to show aligned data.
-
+1. Can show but not good.

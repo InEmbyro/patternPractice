@@ -42,7 +42,9 @@ public:
 	HANDLE _MapMutex;
 
 	CList <PARAM_STRUCT, PARAM_STRUCT&> _List;
-	CMap <unsigned long, unsigned long, unsigned long, unsigned long&> _ReceiveMap;
+	CArray <CList <PARAM_STRUCT, PARAM_STRUCT&>*, CList <PARAM_STRUCT, PARAM_STRUCT&>*> _ListArray;
+	CArray <HANDLE, HANDLE&> _ListArrayMutex;
+	CMap <unsigned long, unsigned long, unsigned long, unsigned long&> _FilterMap;
 
 
 #ifdef _DEBUG
