@@ -17,6 +17,10 @@
 // CcanEngineApp
 // 這個類別的實作請參閱 canEngine.cpp
 //
+typedef struct {
+	LPBYTE ptr;
+	int len;
+} SLOT_DATA;
 
 typedef struct {
 	L2CONFIG l2conf;
@@ -29,8 +33,10 @@ class CCanInfo
 {
 	static UINT receiveThread(LPVOID);
 	static UINT decrefThread(LPVOID);
+	static const int SHARED_MEM_BLOCK_SIZE;
 
 	void		SlotInfo(POSITION);
+	void		SlotInfo();
 	BOOL		FindNextPool(CCanRaw **_p, POSITION *pPos);
 	int			PrepareForIntEvent(MY_L2CONF);
 
@@ -41,7 +47,13 @@ class CCanInfo
 	CList <SLOT_INFO, SLOT_INFO&> _noteSlot;
 	POSITION	_curRawListPos;
 	BOOL		run;
-	//HANDLE		_decMailslot;	//used in infor canEngine to reduce the reference counter
+
+	// For share memory
+	BOOL		swapMem();
+	HANDLE		m_rxMemHnd;
+	HANDLE		m_rxMappingHnd;
+	LPBYTE		m_ptrView[2];
+	ULONGLONG	m_curOffset[2];
 
 public:
 	//static const char* _dereferenceSlotName;
