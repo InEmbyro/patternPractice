@@ -49,11 +49,12 @@ class CCanInfo
 	BOOL		run;
 
 	// For share memory
-	BOOL		swapMem();
+	BOOL	swapMem();
 	HANDLE		m_rxMemHnd;
-	HANDLE		m_rxMappingHnd;
 	LPBYTE		m_ptrView[2];
 	ULONGLONG	m_curOffset[2];
+	CString		m_szName;
+	ULARGE_INTEGER m_iSize;
 
 public:
 	//static const char* _dereferenceSlotName;

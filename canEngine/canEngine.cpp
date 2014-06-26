@@ -11,6 +11,7 @@
 //const char* CCanInfo::_dereferenceSlotName = "\\\\.\\mailslot\\wnc_canEngine_decref";
 const int CCanInfo::MSG_LEN_MAX = 20;
 const int CCanInfo::SHARED_MEM_BLOCK_SIZE = 512;
+
 //
 //TODO: 如果這個 DLL 是動態地對 MFC DLL 連結，
 //		那麼從這個 DLL 匯出的任何會呼叫
@@ -74,20 +75,26 @@ CCanInfo::CCanInfo()
 	:m_pBuf(NULL)
 {
 	_pThreadHandle = NULL;
-	for (int i = 0; i < 2; i++)
+	
+	for (int i = 0; i < 2; i++) {
 		_ThreadEvent[i] = INVALID_HANDLE_VALUE;
+		m_ptrView[i] = NULL;
+		m_curOffset[i] = 0;
+	}
 
-	//CCanRaw *_p;
-	//int i = 50;
-	//while (i--) {
-	//	_p = new CCanRaw();
-	//	if (_p) {
-	//		_pRawList.AddHead(_p);
-	//	}
-	//}
-	//if (!_pRawList.IsEmpty())
-	//	_curRawListPos = _pRawList.GetHeadPosition();
+	CString szError;
 
+	m_szName.Format(_T("SharedMem01"));
+	m_iSize.QuadPart = sizeof(PARAM_STRUCT) * SHARED_MEM_BLOCK_SIZE;
+	m_rxMemHnd = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, m_iSize.HighPart, m_iSize.LowPart, m_szName);
+	if (!m_rxMemHnd) {
+		szError.Format(_T("m_rxMemHnd = NULL, %d"), GetLastError());
+	} else {
+		m_ptrView[1] = (LPBYTE)MapViewOfFile(m_rxMemHnd, FILE_MAP_READ|FILE_MAP_WRITE, 0, 0, 0);
+		if (!m_ptrView[1]) {
+			szError.Format(_T("m_ptrView[1] = NULL, %d"), GetLastError());
+		}
+	}
 	_noteSlotMutex = CreateMutex(NULL, FALSE, NULL);
 }
 //
@@ -388,7 +395,8 @@ void CCanInfo::SlotInfo()
 {
 	if (_noteSlot.IsEmpty()) {
 		/* No any thread registed, need to unmap m_ptrView[0] itself */
-		UnmapViewOfFile(m_ptrView[0]);
+		if (m_ptrView[0])
+			UnmapViewOfFile(m_ptrView[0]);
 		return;
 	}
 
@@ -486,10 +494,9 @@ void CCanInfo::SlotDereg(POSITION pos, unsigned int slotKey)
 
 BOOL CCanInfo::swapMem()
 {
-	CString szName;
-	ULARGE_INTEGER i;
+	CString szError;
 	
-	if ((m_curOffset[0] + sizeof(PARAM_STRUCT)) <= (sizeof(PARAM_STRUCT) * SHARED_MEM_BLOCK_SIZE)) {
+	if ((m_curOffset[1] + sizeof(PARAM_STRUCT)) <= (sizeof(PARAM_STRUCT) * SHARED_MEM_BLOCK_SIZE)) {
 		return FALSE;
 	}
 
@@ -497,23 +504,21 @@ BOOL CCanInfo::swapMem()
 	CloseHandle(m_rxMemHnd);
 	m_ptrView[0] = m_ptrView[1];
 
-	i.QuadPart = sizeof(PARAM_STRUCT) * SHARED_MEM_BLOCK_SIZE;	
-	szName.Format(_T("rxMem01"));
-	m_rxMemHnd = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, i.HighPart, i.LowPart, szName);
+	m_rxMemHnd = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, m_iSize.HighPart, m_iSize.LowPart, m_szName);
 	if (!m_rxMemHnd) {
-		szName.Format(_T("m_rxMemHnd = NULL, %d"), GetLastError());
-		AfxMessageBox(szName);
+		szError.Format(_T("m_rxMemHnd = NULL, %d"), GetLastError());
+		AfxMessageBox(szError);
 	} else {
 		m_ptrView[1] = (LPBYTE)MapViewOfFile(m_rxMemHnd, FILE_MAP_READ|FILE_MAP_WRITE, 0, 0, 0);
-		if (!m_ptrView) {
-			szName.Format(_T("m_ptrView = NULL, %d"), GetLastError());
-			AfxMessageBox(szName);
+		if (!m_ptrView[1]) {
+			szError.Format(_T("m_ptrView = NULL, %d"), GetLastError());
+			AfxMessageBox(szError);
 		}
 	}
 	m_curOffset[0] = m_curOffset[1];
 	m_curOffset[1] = 0;
 
-	/*	Arrive here, m_ptrView[0] points to a data collected, 
+	/*	Arrive here, m_ptrView[0] points to the data collected, 
 		even if the new handle was not created successfully */
 	return TRUE;
 }
@@ -525,8 +530,6 @@ UINT CCanInfo::receiveThread(LPVOID pa)
 	DWORD  ret;
 	int frc = CANL2_RA_NO_DATA;
 	unsigned long diff_time = 0, old_time = 0;
-	CCanRaw *_pR = NULL;
-	DWORD listCount = 0;
 
 	while(pThis->run) {
 		ret = WaitForMultipleObjects(2, &pThis->_ThreadEvent[0], FALSE, INFINITE);
@@ -555,7 +558,6 @@ UINT CCanInfo::receiveThread(LPVOID pa)
 			goto __exit;
 			break;
 		}
-		Sleep(0);
 	}
 
 __exit:
