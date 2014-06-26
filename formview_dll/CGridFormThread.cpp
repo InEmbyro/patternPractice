@@ -94,7 +94,6 @@ UINT CGridFormThread::update_thread(LPVOID _p)
 	BOOL fResult; 
 	DWORD cbMessage;
 	DWORD cMessage;
-
 	SLOT_DATA slotData;
 	int dataLen;
 	PARAM_STRUCT data;

@@ -1,6 +1,7 @@
-1. The gridform can show data with shared memory scheme.
-	-> The canEngine creates view pointer via MapViewOfFile for each 
-	thread registered.
-	-> When all view pointers are Unmap, system will release the memory via
-	Window scheme.
-2. Remove unnecessary Debug folder.
+1. The birdview can use shared memory to show data.
+2. Using the idea in note page to implement ping-pon buffer (_ListArray and
+_ListStoreArray).
+	-> The raw objects seems to be shown more smoothly.
+
+Next, use master (0x400) & slave (0x410) to show raw data synchronously.
+

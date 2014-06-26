@@ -88,48 +88,81 @@ UINT CReceiveThread::update_thread(LPVOID _p)
 	CReceiveThread* _this = (CReceiveThread*) _p;
 	DWORD ret;
 	DWORD cbRead;
-	LPVOID _pVoid;
-	POSITION *_pPos;
-	POSITION dPos;
-	PARAM_STRUCT data;
 	CBirdviewView *pView = NULL;
 	CList <PARAM_STRUCT, PARAM_STRUCT&>* _pList;
 	CList <PARAM_STRUCT, PARAM_STRUCT&>* _pViewList;
-	unsigned long fakeKey;
+	ARRAY_IDX aIdx;
 	int idx = 0;
 	BOOL found;
+
+	BOOL fResult; 
+	DWORD cbMessage;
+	DWORD cMessage;
+	SLOT_DATA slotData;
+	int dataLen;
+	PARAM_STRUCT data;
+
 
 	pView = (CBirdviewView*)_this->_pView;
 	while (_this->run) {
 		ret = WaitForMultipleObjects(2, _this->_infoHnd, FALSE, INFINITE);
 		switch (ret - WAIT_OBJECT_0) {
 		case 0:
-			ReadFile(_this->_mailslotHnd, &_pVoid, sizeof(POSITION), &cbRead, NULL);
-			_pPos = (POSITION*)_pVoid;
-			_pList = (CList <PARAM_STRUCT, PARAM_STRUCT&>*)ReadRawList(_pPos);
-			idx = 0;
-			dPos = _pList->FindIndex(idx++);
-			found = FALSE;
-			while (dPos) {
-				data = _pList->GetAt(dPos);
-				if (pView->_FilterMap.Lookup(data.Ident, fakeKey)) {
-					WaitForSingleObject(pView->_ListArrayMutex.GetAt(fakeKey), INFINITE);
-					_pViewList = pView->_ListArray.GetAt(fakeKey);
-					_pViewList->AddTail(data);
-					found = TRUE;
-					ReleaseMutex(pView->_ListArrayMutex.GetAt(fakeKey));
-				}
-				if (!_this->run) {
-					DecRefCount(_pPos);
-					if (found)
-						pView->SendMessage(WM_USER_DRAW, 0, 0);
-					goto _exit;
-				}
-				dPos = _pList->FindIndex(idx++);
+#if 1
+			fResult = GetMailslotInfo(_this->_mailslotHnd, // mailslot handle 
+				(LPDWORD) NULL,               // no maximum message size 
+				&cbMessage,                   // size of next message 
+				&cMessage,                    // number of messages 
+				(LPDWORD) NULL);              // no read time-out 
+
+			if (fResult) {
+				if (cbMessage == MAILSLOT_NO_MESSAGE)
+					continue;
 			}
-			if (found)
-				pView->PostMessage(WM_USER_DRAW, 0, 0);
-			DecRefCount(_pPos);
+__next_read:
+			fResult = ReadFile(_this->_mailslotHnd, &slotData, sizeof(SLOT_DATA), &cbRead, NULL);
+			if (fResult) {
+				dataLen = 0;
+				while (dataLen != slotData.len) {
+					CopyMemory(&data, slotData.ptr + dataLen, sizeof(PARAM_STRUCT));
+					dataLen += sizeof(PARAM_STRUCT);
+					if (pView->_FilterMap.Lookup(data.Ident, aIdx)) {
+						switch (aIdx.canId) {
+						case 0x400:
+						case 0x601:
+						case 0x410:
+							if (data.DataLength == 7)
+								break;
+							WaitForSingleObject(pView->_ListArrayMutex.GetAt(aIdx.rowIdx), INFINITE);
+							if (pView->_ListArray[aIdx.rowIdx])
+								delete pView->_ListArray[aIdx.rowIdx];
+							_pViewList = pView->_ListStoreArray[aIdx.rowIdx];
+							pView->_ListArray[aIdx.rowIdx] = pView->_ListStoreArray[aIdx.rowIdx];
+							_pViewList = pView->_ListArray[aIdx.rowIdx];
+							WaitForSingleObject(pView->_ListStoreArrayMutex.GetAt(aIdx.rowIdx), INFINITE);
+							pView->_ListStoreArray[aIdx.rowIdx] = new CList <PARAM_STRUCT, PARAM_STRUCT&>;
+							ReleaseMutex(pView->_ListStoreArrayMutex.GetAt(aIdx.rowIdx));
+							ReleaseMutex(pView->_ListArrayMutex.GetAt(aIdx.rowIdx));
+							break;
+						default:
+							WaitForSingleObject(pView->_ListStoreArrayMutex.GetAt(aIdx.rowIdx), INFINITE);
+							_pViewList = pView->_ListStoreArray[aIdx.rowIdx];
+							pView->_ListStoreArray[aIdx.rowIdx]->AddTail(data);
+							_pViewList = pView->_ListStoreArray[aIdx.rowIdx];
+							ReleaseMutex(pView->_ListStoreArrayMutex.GetAt(aIdx.rowIdx));
+							break;
+						}
+					}
+				}
+				UnmapViewOfFile(slotData.ptr);
+				if (!_this->run) {
+					pView->SendMessage(WM_USER_DRAW, 0, 0);
+				}
+			}
+			if (--cMessage)
+				goto __next_read;
+			pView->SendMessage(WM_USER_DRAW, 0, 0);
+#endif
 			break;
 		default:
 		case 1:

@@ -158,9 +158,9 @@ END_MESSAGE_MAP()
 // CBirdviewFrm 訊息處理常式
 
 unsigned long rcvIdent[] = {
-	0x400, 0x401, 0x402, 0x00,
-	0x410, 0x411, 0x412, 0x00,
-	0x601, 0x610, 0x611, 0x612, 0x613, 0x614, 0x615, 0x616, 0x617, 0x618, 0x619, 0x620, 0x00};
+	/*0x400, 0x401, 0x402, 0x00,*/
+	0x410, 0x411, 0x00,
+	/* 0x601, 0x610, 0x611, 0x612, 0x613, 0x614, 0x615, 0x616, 0x617, 0x618, 0x619, 0x620, 0x00*/};
 
 // CBirdviewView
 
@@ -177,28 +177,44 @@ CBirdviewView::CBirdviewView()
 	unsigned long pkt = 0;
 	CList <PARAM_STRUCT, PARAM_STRUCT&> *p;
 	HANDLE h;
+	ARRAY_IDX array_idx;
 
+	array_idx.rowIdx = 0;
 	_FilterMap.InitHashTable(sizeof(rcvIdent)/sizeof(rcvIdent[0]));
 	for (idx = 0; idx < (sizeof(rcvIdent)/sizeof(rcvIdent[0])); idx++) {
 		if (rcvIdent[idx] == 0x00) {
 			p = new CList <PARAM_STRUCT, PARAM_STRUCT&>;
 			if (p == NULL) {
-				AfxMessageBox(_T("p == NULL"));
+				AfxMessageBox(_T("p = NULL"));
 				return;
 			}
-			_ListArray.Add(p);
+			_ListStoreArray.Add(p);
+			_ListArray.Add(NULL);
 			h = CreateMutex(NULL, FALSE, NULL);
 			if (h == NULL) {
-				_ListArray.RemoveAt(_ListArray.GetSize() - 1);
+				_ListStoreArray.RemoveAt(_ListArray.GetSize() - 1);
 				delete p;
-				AfxMessageBox(_T("Failure of creating _ListArrayMutex"));
+				AfxMessageBox(_T("Create _ListStoreArray is failure"));
+				continue;
 			} else {
-				_ListArrayMutex.Add(h);
+				_ListStoreArrayMutex.Add(h);
+				h = CreateMutex(NULL, FALSE, NULL);
+				if (h)
+					_ListArrayMutex.Add(h);
+				else {
+					AfxMessageBox(_T("Create _ListArrayMutex is failure"));
+					_ListArrayMutex.RemoveAt(_ListArrayMutex.GetSize() - 1);
+					_ListStoreArray.RemoveAt(_ListArray.GetSize() - 1);
+					delete p;
+					continue;
+				}
 			}
 			pkt++;
+			array_idx.rowIdx++;
 			continue;
 		}
-		_FilterMap.SetAt((unsigned long)rcvIdent[idx], pkt);
+		array_idx.canId = rcvIdent[idx];
+		_FilterMap.SetAt((unsigned long)rcvIdent[idx], array_idx);
 	}
 }
 
@@ -208,8 +224,13 @@ CBirdviewView::~CBirdviewView()
 
 	for (int idx = 0; idx < _ListArray.GetSize(); idx++) {
 		p = _ListArray.GetAt(idx);
-		delete p;
+		if (p)
+			delete p;
+		p = _ListStoreArray.GetAt(idx);
+		if (p)
+			delete p;
 		CloseHandle(_ListArrayMutex.GetAt(idx));
+		CloseHandle(_ListStoreArrayMutex.GetAt(idx));
 	}
 }
 
@@ -292,7 +313,7 @@ afx_msg LRESULT CBirdviewView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 		while (pos) {
 			data = p->GetAt(pos);
 			p->RemoveHead();
-			if (data.Ident == 0x400 || data.Ident == 0x410) {
+			if (data.Ident == 0x412 || data.Ident == 0x410) {
 				pos = p->GetHeadPosition();
 				continue;
 			}

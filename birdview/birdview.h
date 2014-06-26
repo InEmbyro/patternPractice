@@ -20,6 +20,11 @@ typedef struct {
 	unsigned char type;
 } RAW_OBJECT_STRUCT;
 
+typedef struct {
+	unsigned long canId;
+	int	rowIdx;
+} ARRAY_IDX;
+
 // CBirdviewView ÀËµø
 class CReceiveThread;
 class CBirdviewView : public CView
@@ -42,9 +47,11 @@ public:
 	HANDLE _MapMutex;
 
 	CList <PARAM_STRUCT, PARAM_STRUCT&> _List;
-	CArray <CList <PARAM_STRUCT, PARAM_STRUCT&>*, CList <PARAM_STRUCT, PARAM_STRUCT&>*> _ListArray;
+	CArray <CList <PARAM_STRUCT, PARAM_STRUCT&>*, CList <PARAM_STRUCT, PARAM_STRUCT&>*> _ListArray;	//for showing
 	CArray <HANDLE, HANDLE&> _ListArrayMutex;
-	CMap <unsigned long, unsigned long, unsigned long, unsigned long&> _FilterMap;
+	CArray <CList <PARAM_STRUCT, PARAM_STRUCT&>*, CList <PARAM_STRUCT, PARAM_STRUCT&>*> _ListStoreArray;	//for storing
+	CArray <HANDLE, HANDLE&> _ListStoreArrayMutex;
+	CMap <unsigned long, unsigned long, ARRAY_IDX, ARRAY_IDX&> _FilterMap;
 
 
 #ifdef _DEBUG
