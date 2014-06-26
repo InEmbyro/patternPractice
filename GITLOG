@@ -1,3 +1,6 @@
-1. The data can be stored in shared memory.
-	--> Next, to connect with gridfrom
-
+1. The gridform can show data with shared memory scheme.
+	-> The canEngine creates view pointer via MapViewOfFile for each 
+	thread registered.
+	-> When all view pointers are Unmap, system will release the memory via
+	Window scheme.
+2. Remove unnecessary Debug folder.

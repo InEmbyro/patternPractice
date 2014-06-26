@@ -13,3 +13,8 @@ typedef struct {
 	HANDLE writeHnd;
 	HANDLE eventHnd;
 }SLOT_INFO;
+
+typedef struct {
+	LPBYTE ptr;
+	int len;
+} SLOT_DATA;

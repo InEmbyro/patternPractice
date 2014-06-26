@@ -132,11 +132,11 @@ int CGridFormChildFrm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	pGridFormThread->_pView = _pView;
 	pGridFormThread->SetInfoHandle(InforEventAcquire(pos));
 	pGridFormThread->SetMailHandle(MailSlotAcquire(pos));
-	rawPos = pos;
+	m_rawPos = pos;
 
 	if (!pGridFormThread->InitThread()) {
 		AfxMessageBox(_T("_pGridFormThread->InitThread"));
-		DeregisterAcquire(rawPos, _pView->slotKey);
+		DeregisterAcquire(m_rawPos, _pView->slotKey);
 		_pView->CloseAllHnd();
 	}
 	_pView->pFormThread = pGridFormThread;
@@ -151,7 +151,7 @@ void CGridFormChildFrm::OnClose()
 	// TODO: 在此加入您的訊息處理常式程式碼和 (或) 呼叫預設值
 	_pView->pFormThread->TerminateThread();
 	WaitForSingleObject(_pView->pFormThread->getConfirmHnd(), 5000);
-	DeregisterAcquire(rawPos, _pView->slotKey);
+	DeregisterAcquire(m_rawPos, _pView->slotKey);
 	_pView->CloseAllHnd();
 
 	CMDIChildWnd::OnClose();

@@ -10,7 +10,7 @@
 
 //const char* CCanInfo::_dereferenceSlotName = "\\\\.\\mailslot\\wnc_canEngine_decref";
 const int CCanInfo::MSG_LEN_MAX = 20;
-const int CCanInfo::SHARED_MEM_BLOCK_SIZE = 512;
+const int CCanInfo::SHARED_MEM_BLOCK_SIZE = 64;
 
 //
 //TODO: 如果這個 DLL 是動態地對 MFC DLL 連結，
@@ -80,17 +80,18 @@ CCanInfo::CCanInfo()
 		_ThreadEvent[i] = INVALID_HANDLE_VALUE;
 		m_ptrView[i] = NULL;
 		m_curOffset[i] = 0;
+		m_rxMemHnd[i] = NULL;
 	}
 
 	CString szError;
 
 	m_szName.Format(_T("SharedMem01"));
 	m_iSize.QuadPart = sizeof(PARAM_STRUCT) * SHARED_MEM_BLOCK_SIZE;
-	m_rxMemHnd = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, m_iSize.HighPart, m_iSize.LowPart, m_szName);
-	if (!m_rxMemHnd) {
+	m_rxMemHnd[1] = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, m_iSize.HighPart, m_iSize.LowPart, m_szName);
+	if (!m_rxMemHnd[1]) {
 		szError.Format(_T("m_rxMemHnd = NULL, %d"), GetLastError());
 	} else {
-		m_ptrView[1] = (LPBYTE)MapViewOfFile(m_rxMemHnd, FILE_MAP_READ|FILE_MAP_WRITE, 0, 0, 0);
+		m_ptrView[1] = (LPBYTE)MapViewOfFile(m_rxMemHnd[1], FILE_MAP_READ|FILE_MAP_WRITE, 0, 0, 0);
 		if (!m_ptrView[1]) {
 			szError.Format(_T("m_ptrView[1] = NULL, %d"), GetLastError());
 		}
@@ -291,25 +292,25 @@ POSITION CCanInfo::SlotReg(CString eV, unsigned int slotKey)
 	if (_sl.eventHnd == INVALID_HANDLE_VALUE)
 		goto _error;
 	
-	/* all RawList must be assign a idxKey to identify slot */
-	CCanRaw *pRaw = _pRawList.GetHead();
-	unsigned int fakeKey;
-	if (pRaw->idxKey.Lookup(slotKey, fakeKey)) {
-		/* An new register slotKey should not be found in idxKey */
-		goto _error;
-	}
+	///* all RawList must be assign a idxKey to identify slot */
+	//CCanRaw *pRaw = _pRawList.GetHead();
+	//unsigned int fakeKey;
+	//if (pRaw->idxKey.Lookup(slotKey, fakeKey)) {
+	//	/* An new register slotKey should not be found in idxKey */
+	//	goto _error;
+	//}
 	WaitForSingleObject(_noteSlotMutex, INFINITE);
 	pos = _noteSlot.AddTail(_sl);
 	ReleaseMutex(_noteSlotMutex);
 
-	POSITION rawPos;
-	rawPos = _pRawList.GetHeadPosition();
-	while (rawPos) {
-		pRaw = _pRawList.GetNext(rawPos);
-		WaitForSingleObject(pRaw->_refCountMutex, INFINITE);
-		pRaw->idxKey.SetAt(slotKey, slotKey);
-		ReleaseMutex(pRaw->_refCountMutex);
-	}
+	//POSITION rawPos;
+	//rawPos = _pRawList.GetHeadPosition();
+	//while (rawPos) {
+	//	pRaw = _pRawList.GetNext(rawPos);
+	//	WaitForSingleObject(pRaw->_refCountMutex, INFINITE);
+	//	pRaw->idxKey.SetAt(slotKey, slotKey);
+	//	ReleaseMutex(pRaw->_refCountMutex);
+	//}
 	return pos;
 
 _error:
@@ -395,8 +396,11 @@ void CCanInfo::SlotInfo()
 {
 	if (_noteSlot.IsEmpty()) {
 		/* No any thread registed, need to unmap m_ptrView[0] itself */
-		if (m_ptrView[0])
+		if (m_ptrView[0]) {
 			UnmapViewOfFile(m_ptrView[0]);
+			m_ptrView[0] = NULL;
+			CloseHandle(m_rxMemHnd[0]);
+		}
 		return;
 	}
 
@@ -406,7 +410,7 @@ void CCanInfo::SlotInfo()
 	SLOT_INFO _sl;
 
 	SLOT_DATA slotData;
-	slotData.ptr = m_ptrView[0];
+	SLOT_DATA *pSlot;
 	slotData.len = static_cast<int>(m_curOffset[0]);
 
 	WaitForSingleObject(_noteSlotMutex, INFINITE);
@@ -415,11 +419,17 @@ void CCanInfo::SlotInfo()
 		if (_sl.writeHnd == INVALID_HANDLE_VALUE) {
 			LOG_ERROR("SlotInfo error");
 		} else {
-			WriteFile(_sl.writeHnd, &slotData, sizeof(SLOT_INFO), &cbWriteCount, NULL);
+			slotData.ptr = (LPBYTE)MapViewOfFile(m_rxMemHnd[0], FILE_MAP_READ|FILE_MAP_WRITE, 0, 0, 0);
+			WriteFile(_sl.writeHnd, &slotData, sizeof(slotData), &cbWriteCount, NULL);
 			SetEvent(_sl.eventHnd);
 		}
 	}
 	ReleaseMutex(_noteSlotMutex);
+	if (m_ptrView[0]) {
+		UnmapViewOfFile(m_ptrView[0]);
+		m_ptrView[0] = NULL;
+		CloseHandle(m_rxMemHnd[0]);
+	}
 }
 
 void CCanInfo::SlotInfo(POSITION _pos)
@@ -501,15 +511,20 @@ BOOL CCanInfo::swapMem()
 	}
 
 	FlushViewOfFile(m_ptrView[1], sizeof(PARAM_STRUCT) * SHARED_MEM_BLOCK_SIZE);
-	CloseHandle(m_rxMemHnd);
+	m_rxMemHnd[0] = m_rxMemHnd[1];
+
+	if (m_ptrView[0]) {
+		UnmapViewOfFile(m_ptrView[0]);
+		m_ptrView[0] = NULL;
+	}
 	m_ptrView[0] = m_ptrView[1];
 
-	m_rxMemHnd = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, m_iSize.HighPart, m_iSize.LowPart, m_szName);
-	if (!m_rxMemHnd) {
+	m_rxMemHnd[1] = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, m_iSize.HighPart, m_iSize.LowPart, m_szName);
+	if (!m_rxMemHnd[1]) {
 		szError.Format(_T("m_rxMemHnd = NULL, %d"), GetLastError());
 		AfxMessageBox(szError);
 	} else {
-		m_ptrView[1] = (LPBYTE)MapViewOfFile(m_rxMemHnd, FILE_MAP_READ|FILE_MAP_WRITE, 0, 0, 0);
+		m_ptrView[1] = (LPBYTE)MapViewOfFile(m_rxMemHnd[1], FILE_MAP_READ|FILE_MAP_WRITE, 0, 0, 0);
 		if (!m_ptrView[1]) {
 			szError.Format(_T("m_ptrView = NULL, %d"), GetLastError());
 			AfxMessageBox(szError);
@@ -551,7 +566,7 @@ UINT CCanInfo::receiveThread(LPVOID pa)
 				if (!pThis->run)
 					break;
 			} while (frc > 0);
-			pThis->SlotInfo();
+			//pThis->SlotInfo();
 			break;
 		case 1:
 			LOG_ERROR("interruptThread exit");

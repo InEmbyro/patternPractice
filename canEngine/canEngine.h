@@ -12,15 +12,9 @@
 #include "CCanRaw.h"
 #include "canEngine_def.h"
 
-
-
 // CcanEngineApp
 // 這個類別的實作請參閱 canEngine.cpp
 //
-typedef struct {
-	LPBYTE ptr;
-	int len;
-} SLOT_DATA;
 
 typedef struct {
 	L2CONFIG l2conf;
@@ -50,7 +44,7 @@ class CCanInfo
 
 	// For share memory
 	BOOL	swapMem();
-	HANDLE		m_rxMemHnd;
+	HANDLE		m_rxMemHnd[2];
 	LPBYTE		m_ptrView[2];
 	ULONGLONG	m_curOffset[2];
 	CString		m_szName;

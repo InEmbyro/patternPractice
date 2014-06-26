@@ -89,38 +89,52 @@ UINT CGridFormThread::update_thread(LPVOID _p)
 	CGridFormThread* _this = (CGridFormThread*) _p;
 	DWORD ret;
 	DWORD cbRead;
-	LPVOID _pVoid;
-	POSITION *_pPos;
-	POSITION dPos;
-	PARAM_STRUCT data;
 	GridFormChildView *pView = NULL;
-	CList <PARAM_STRUCT, PARAM_STRUCT&>* _pList;
-	_this->_decmailslotHnd = CreateFile(_this->decmailslotName, GENERIC_WRITE, FILE_SHARE_READ, (LPSECURITY_ATTRIBUTES)NULL, OPEN_EXISTING, 
-		FILE_ATTRIBUTE_NORMAL, (HANDLE)NULL);
+
+	BOOL fResult; 
+	DWORD cbMessage;
+	DWORD cMessage;
+
+	SLOT_DATA slotData;
+	int dataLen;
+	PARAM_STRUCT data;
 
 	pView = (GridFormChildView*)_this->_pView;
 	while (_this->run) {
 		ret = WaitForMultipleObjects(2, _this->_infoHnd, FALSE, INFINITE);
 		switch (ret - WAIT_OBJECT_0) {
 		case 0:
-			ReadFile(_this->_mailslotHnd, &_pVoid, sizeof(POSITION), &cbRead, NULL);
-			_pPos = (POSITION*)_pVoid;
-			_pList = (CList <PARAM_STRUCT, PARAM_STRUCT&>*)ReadRawList(_pPos);
-			dPos = _pList->GetHeadPosition();
-			WaitForSingleObject(pView->_ListMutex, INFINITE);
-			while (dPos) {
-				data = _pList->GetNext(dPos);
-				pView->_List.AddTail(data);
-				if (!_this->run) {
-					DecRefCount(_pPos);
-					ReleaseMutex(pView->_ListMutex);
-					pView->SendMessage(WM_USER_DRAW, 0, 0);
-					goto _exit;
-				}
+			fResult = GetMailslotInfo(_this->_mailslotHnd, // mailslot handle 
+				(LPDWORD) NULL,               // no maximum message size 
+				&cbMessage,                   // size of next message 
+				&cMessage,                    // number of messages 
+				(LPDWORD) NULL);              // no read time-out 
+
+			if (fResult) {
+				if (cbMessage == MAILSLOT_NO_MESSAGE)
+					continue;
 			}
-			DecRefCount(_pPos);
-			ReleaseMutex(pView->_ListMutex);
-			pView->PostMessage(WM_USER_DRAW, 0, 0);
+__next_read:
+			fResult = ReadFile(_this->_mailslotHnd, &slotData, sizeof(SLOT_DATA), &cbRead, NULL);
+			if (fResult) {
+				dataLen = 0;
+				WaitForSingleObject(pView->_ListMutex, INFINITE);
+				while (dataLen != slotData.len) {
+					CopyMemory(&data, slotData.ptr + dataLen, sizeof(PARAM_STRUCT));
+					dataLen += sizeof(PARAM_STRUCT);
+					pView->_List.AddTail(data);
+					if (!_this->run) {
+						UnmapViewOfFile(slotData.ptr);
+						pView->SendMessage(WM_USER_DRAW, 0, 0);
+						goto _exit;
+					}
+				}
+				ReleaseMutex(pView->_ListMutex);
+				UnmapViewOfFile(slotData.ptr);
+				pView->PostMessage(WM_USER_DRAW, 0, 0);
+			}
+			if (--cMessage)
+				goto __next_read;
 			break;
 		default:
 		case 1:
@@ -136,4 +150,3 @@ _exit:
 	_this->_pThread = NULL;
 	return 1;
 }
-

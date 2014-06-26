@@ -101,7 +101,7 @@ protected:
 public:
 
 	GridFormChildView *_pView;
-	POSITION	rawPos;
+	POSITION	m_rawPos;
 	CGridFormChildFrm* pMyself;
 	GRID_MODE GetGridMode() { return m_gridMode; }
 	unsigned int GetGridRows() { return m_gridRow; }
