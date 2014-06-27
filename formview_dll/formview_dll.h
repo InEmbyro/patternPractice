@@ -75,12 +75,10 @@ public:
 	afx_msg void OnNMCustomdraw(NMHDR *pNMHDR, LRESULT *pResult);
 	afx_msg void OnLvnGetdispinfo(NMHDR *pNMHDR, LRESULT *pResult);
 	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
-	afx_msg void OnPaint();
 protected:
 //	afx_msg LRESULT OnSuerBkdraw(WPARAM wParam, LPARAM lParam);
 public:
 	afx_msg void OnSize(UINT nType, int cx, int cy);
-
 	afx_msg void OnHdnBegintrack(NMHDR *pNMHDR, LRESULT *pResult);
 };
 

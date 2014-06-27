@@ -1,7 +1,7 @@
-1. The raw object of both of master and slave can be shown synchorniously.
-2. Add some criterial to prevent unnecessary buffer swapping.
+1. The redrawing of gridform has been improved. When the window is overlap, the
+rest of items can be filled with gray color.
 
 Next,
 1. Try to show tracking.
-2. Try optimize the redrawing of gridform.
+2. The redrawing ot the gap between header and items should be improved.
 

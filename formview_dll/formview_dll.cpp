@@ -173,6 +173,7 @@ BEGIN_MESSAGE_MAP(GridFormChildView, CListView)
 	ON_WM_SIZE()
 	ON_NOTIFY(HDN_BEGINTRACKA, 0, &GridFormChildView::OnHdnBegintrack)
 	ON_NOTIFY(HDN_BEGINTRACKW, 0, &GridFormChildView::OnHdnBegintrack)
+//	ON_WM_PAINT()
 END_MESSAGE_MAP()
 
 GridFormChildView::GridFormChildView()
@@ -376,7 +377,17 @@ int __cdecl GridFormChildView::Compare(const WPARAM_STRUCT * p1, const WPARAM_ST
 
 BOOL GridFormChildView::OnEraseBkgnd(CDC* pDC)
 {
+	int totalWidth = 0;
+	CRect rect;
+
 	// TODO: 在此加入您的訊息處理常式程式碼和 (或) 呼叫預設值
+	for (int idx = 0; idx < GetListCtrl().GetHeaderCtrl()->GetItemCount(); idx++) {
+		totalWidth += GetListCtrl().GetColumnWidth(idx);
+	}
+	GetClientRect(rect);
+	rect.left = totalWidth;
+	
+	pDC->FillSolidRect(rect, RGB(128, 128, 128));
 	return FALSE;
 	return CWnd::OnEraseBkgnd(pDC);
 }
@@ -418,7 +429,6 @@ void GridFormChildView::OnTopCleargrid()
 	AfxSetResourceHandle(hInstOld);
 }
 
-
 void CGridFormChildFrm::OnNcRButtonUp(UINT nHitTest, CPoint point)
 {
 	// TODO: 在此加入您的訊息處理常式程式碼和 (或) 呼叫預設值
@@ -459,7 +469,6 @@ void GridFormChildView::OnNMCustomdraw(NMHDR *pNMHDR, LRESULT *pResult)
 		break;
     }
 }
-
 
 void GridFormChildView::OnLvnGetdispinfo(NMHDR *pNMHDR, LRESULT *pResult)
 {
