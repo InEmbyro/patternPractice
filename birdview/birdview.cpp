@@ -160,7 +160,7 @@ END_MESSAGE_MAP()
 unsigned long rcvIdent[] = {
 	0x400, 0x401, 0x00,
 	0x410, 0x411, 0x00,
-	/* 0x601, 0x610, 0x611, 0x612, 0x613, 0x614, 0x615, 0x616, 0x617, 0x618, 0x619, 0x620, 0x00*/};
+	0x601, 0x610, 0x611, 0x612, 0x613, 0x614, 0x615, 0x616, 0x617, 0x618, 0x619, 0x620, 0x00};
 
 // CBirdviewView
 
@@ -256,8 +256,107 @@ void CBirdviewView::Dump(CDumpContext& dc) const
 #endif //_DEBUG
 
 
-// CBirdviewView 訊息處理常式
+void CBirdviewView::ParseTrackingObject(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *pRaw)
+{
+	if (pSrc == NULL || pRaw == NULL)
+		return;
 
+	int temp;
+
+	pRaw->angle = 0;
+	pRaw->range = 0;
+	pRaw->AbsLevel_db = 0;
+	pRaw->type = 0;
+
+	pRaw->TargetNum = (pSrc->RCV_data[7] & 0xFC) >> 2;
+	
+	temp = pSrc->RCV_data[1] & 0x1F;
+	temp = (temp << 8) + pSrc->RCV_data[0];
+	pRaw->x_range = (temp - 7500) * 0.016;
+
+	temp = pSrc->RCV_data[3] & 0x01;
+	temp = (temp << 8) + pSrc->RCV_data[2];
+	temp = (temp << 3) + ((pSrc->RCV_data[1] & 0xE0) >> 5);
+	pRaw->y_range = (temp - 2048) * 0.016;
+}
+
+void CBirdviewView::DrawTrackingObject(PARAM_STRUCT *pD, CDC *pDc)
+{
+	RAW_OBJECT_STRUCT raw;
+	CPen pen;
+	CPen *pOldPen;
+	CPoint pnt;
+	double temp;
+	CRect rect;
+	CString str;
+	CSize sz;
+
+	if (pen.m_hObject)
+		pen.DeleteObject();
+	ParseTrackingObject(pD, &raw);
+	pen.CreatePen(PS_SOLID, 3, RGB(0, 200, 0));
+	pOldPen = pDc->SelectObject(&pen);
+
+	pnt.x = raw.x_range * SCALE / 2;
+	pnt.y = raw.y_range * SCALE / 2;
+
+	rect.left = pnt.x;
+	rect.right = pnt.x + OBJECT_SIZE;
+	rect.top = pnt.y;
+	rect.bottom = pnt.y + OBJECT_SIZE;
+	pDc->FillSolidRect(rect, RGB(0, 200, 0));
+	pDc->SelectObject(pOldPen);
+	rect.OffsetRect(OBJECT_SIZE, -OBJECT_SIZE);
+	str.Format(_T("%d"), raw.TargetNum);
+	sz = pDc->GetTextExtent(str);
+	rect.right = rect.left + sz.cx;
+	rect.bottom = rect.top + sz.cy;
+	pDc->DrawText(str, rect, DT_SINGLELINE | DT_LEFT | DT_VCENTER);
+
+}
+// CBirdviewView 訊息處理常式
+void CBirdviewView::DrawRawOjbect(PARAM_STRUCT *pD, CDC *pDc)
+{
+	RAW_OBJECT_STRUCT raw;
+	int angle;
+	CPen pen;
+	CPen *pOldPen;
+	CPoint pnt;
+	double temp;
+	CRect rect;
+	CString str;
+	CSize sz;
+
+	if (pen.m_hObject)
+		pen.DeleteObject();
+	ParseRawObject(pD, &raw);
+	if (pD->Ident == 0x401) {
+		angle = 57;
+		pen.CreatePen(PS_SOLID, 3, RGB(200, 200, 0));
+	} else if (pD->Ident == 0x411) {
+		angle = -57;
+		pen.CreatePen(PS_SOLID, 3, RGB(200, 0, 0));
+	}
+	pOldPen = pDc->SelectObject(&pen);
+
+	temp = (raw.x_range * cos(angle * RAD_CONVER)) - (raw.y_range * sin(angle * RAD_CONVER));
+	pnt.x = (temp * SCALE);
+	temp = (raw.x_range * sin(angle * RAD_CONVER)) + (raw.y_range * cos(angle * RAD_CONVER));
+	pnt.y = (temp *SCALE);
+
+	rect.left = pnt.x;
+	rect.right = pnt.x + OBJECT_SIZE;
+	rect.top = pnt.y;
+	rect.bottom = pnt.y + OBJECT_SIZE;
+	pDc->Ellipse(rect);
+	pDc->SelectObject(pOldPen);
+	rect.OffsetRect(OBJECT_SIZE, -OBJECT_SIZE);
+	str.Format(_T("%d"), raw.TargetNum);
+	sz = pDc->GetTextExtent(str);
+	rect.right = rect.left + sz.cx;
+	rect.bottom = rect.top + sz.cy;
+	pDc->DrawText(str, rect, DT_SINGLELINE | DT_LEFT | DT_VCENTER);
+}
 
 afx_msg LRESULT CBirdviewView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 {
@@ -304,49 +403,24 @@ afx_msg LRESULT CBirdviewView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 	pOldPen = dcMem.SelectObject(&pen);
 
 	SetOrigin(&dcMem, TRUE, 0, Y_OFFSET + CAR_LENGTH);
-
 	int arrIdx = 0;
 	for (arrIdx = 0; arrIdx < _ListArray.GetSize(); arrIdx++) {
 		WaitForSingleObject(_ListArrayMutex.GetAt(arrIdx), INFINITE);
 		p = _ListArray.GetAt(arrIdx);
+		if (!p) {
+			ReleaseMutex(_ListArrayMutex.GetAt(arrIdx));
+			continue;
+		}
 		pos = p->GetHeadPosition();
 		while (pos) {
 			data = p->GetAt(pos);
 			p->RemoveHead();
-			if (data.Ident == 0x412 || data.Ident == 0x410) {
-				pos = p->GetHeadPosition();
-				continue;
+			if (data.Ident == 0x401 || data.Ident == 0x411)
+				DrawRawOjbect(&data, &dcMem);
+			else if (data.Ident >= 0x610 && data.Ident <= 0x620) {
+				DrawTrackingObject(&data, &dcMem);
 			}
-			ParseRawObject(&data, &raw);
-			if (data.Ident == 0x401) {
-				angle = 57;
-				if (pen.m_hObject)
-					pen.DeleteObject();
-				pen.CreatePen(PS_SOLID, 3, RGB(0, 200, 0));
-				pOldPen = dcMem.SelectObject(&pen);
-			} else {
-				angle = -57;
-				if (pen.m_hObject)
-					pen.DeleteObject();
-				pen.CreatePen(PS_SOLID, 3, RGB(200, 0, 0));
-				pOldPen = dcMem.SelectObject(&pen);
-			}
-			temp = (raw.x_range * cos(angle * RAD_CONVER)) - (raw.y_range * sin(angle * RAD_CONVER));
-			pnt.x = (temp * SCALE);
-			temp = (raw.x_range * sin(angle * RAD_CONVER)) + (raw.y_range * cos(angle * RAD_CONVER));
-			pnt.y = (temp *SCALE);
-			rect.left = pnt.x;
-			rect.right = pnt.x + OBJECT_SIZE;
-			rect.top = pnt.y;
-			rect.bottom = pnt.y + OBJECT_SIZE;
-			dcMem.Ellipse(rect);
-			dcMem.SelectObject(pOldPen);
-			rect.OffsetRect(OBJECT_SIZE, -OBJECT_SIZE);
-			str.Format(_T("%d"), raw.TargetNum);
-			CSize sz = dcMem.GetTextExtent(str);
-			rect.right = rect.left + sz.cx;
-			rect.bottom = rect.top + sz.cy;
-			dcMem.DrawText(str, rect, DT_SINGLELINE | DT_LEFT | DT_VCENTER);
+__next:
 			pos = p->GetHeadPosition();
 		}
 		ReleaseMutex(_ListArrayMutex.GetAt(arrIdx));

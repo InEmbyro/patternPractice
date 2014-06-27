@@ -40,7 +40,10 @@ class CBirdviewView : public CView
 	CArray <CPoint, CPoint&> _Array;
 
 	CReceiveThread *pRcvThread;
-	void CBirdviewView::ParseRawObject(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *pRaw);
+	void ParseRawObject(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *pRaw);
+	void ParseTrackingObject(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *pRaw);
+	void DrawRawOjbect(PARAM_STRUCT *, CDC*);
+	void DrawTrackingObject(PARAM_STRUCT*, CDC*);
 
 public:
 	HANDLE _ListMutex;

@@ -1,7 +1,6 @@
-1. The redrawing of gridform has been improved. When the window is overlap, the
-rest of items can be filled with gray color.
+1. The tracking object can be shown but the position seems not correct compared
+with raw objects.
 
 Next,
-1. Try to show tracking.
-2. The redrawing ot the gap between header and items should be improved.
+1. The redrawing ot the gap between header and items should be improved.
 
