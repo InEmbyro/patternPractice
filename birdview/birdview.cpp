@@ -18,8 +18,8 @@
 
 #define PI	3.1416
 #define RAD_CONVER	(PI / 180)
-#define SCALE	20
-#define OBJECT_SIZE	10
+#define SCALE	10
+#define OBJECT_SIZE		10
 
 #define CAR_WIDTH	(2 * SCALE)		//2 meter
 #define CAR_LENGTH	(4.5 * SCALE)	//4.5m
@@ -286,7 +286,6 @@ void CBirdviewView::DrawTrackingObject(PARAM_STRUCT *pD, CDC *pDc)
 	CPen pen;
 	CPen *pOldPen;
 	CPoint pnt;
-	double temp;
 	CRect rect;
 	CString str;
 	CSize sz;
@@ -297,13 +296,36 @@ void CBirdviewView::DrawTrackingObject(PARAM_STRUCT *pD, CDC *pDc)
 	pen.CreatePen(PS_SOLID, 3, RGB(0, 200, 0));
 	pOldPen = pDc->SelectObject(&pen);
 
-	pnt.x = raw.x_range * SCALE / 2;
-	pnt.y = raw.y_range * SCALE / 2;
+	pnt.y = raw.x_range * SCALE;
+	pnt.y = -pnt.y;
+	pnt.x = raw.y_range * SCALE;
+	pnt.x = -pnt.x;
 
-	rect.left = pnt.x;
-	rect.right = pnt.x + OBJECT_SIZE;
+	rect.left = pnt.x - (CAR_WIDTH / 2);
+	rect.right = pnt.x + (CAR_WIDTH / 2);
 	rect.top = pnt.y;
-	rect.bottom = pnt.y + OBJECT_SIZE;
+	rect.bottom = pnt.y + (CAR_LENGTH);
+	pDc->FillSolidRect(rect, RGB(0, 200, 0));
+	pDc->SelectObject(pOldPen);
+	rect.OffsetRect((CAR_WIDTH / 2), -(CAR_WIDTH / 2));
+	str.Format(_T("%d"), raw.TargetNum);
+	sz = pDc->GetTextExtent(str);
+	rect.right = rect.left + sz.cx;
+	rect.bottom = rect.top + sz.cy;
+	pDc->DrawText(str, rect, DT_SINGLELINE | DT_LEFT | DT_VCENTER);
+#if 0	// for drawing test
+	raw.x_range = -7.33;
+	raw.y_range = 3.40;
+	raw.TargetNum = 99;
+	pnt.y = raw.x_range * SCALE;
+	pnt.y = -pnt.y;
+	pnt.x = raw.y_range * SCALE;
+	pnt.x = -pnt.x;
+
+	rect.left = pnt.x - (CAR_WIDTH / 2);
+	rect.right = pnt.x + (CAR_WIDTH / 2);
+	rect.top = pnt.y;
+	rect.bottom = pnt.y + (CAR_LENGTH);
 	pDc->FillSolidRect(rect, RGB(0, 200, 0));
 	pDc->SelectObject(pOldPen);
 	rect.OffsetRect(OBJECT_SIZE, -OBJECT_SIZE);
@@ -312,7 +334,7 @@ void CBirdviewView::DrawTrackingObject(PARAM_STRUCT *pD, CDC *pDc)
 	rect.right = rect.left + sz.cx;
 	rect.bottom = rect.top + sz.cy;
 	pDc->DrawText(str, rect, DT_SINGLELINE | DT_LEFT | DT_VCENTER);
-
+#endif
 }
 // CBirdviewView 訊息處理常式
 void CBirdviewView::DrawRawOjbect(PARAM_STRUCT *pD, CDC *pDc)
@@ -361,12 +383,8 @@ void CBirdviewView::DrawRawOjbect(PARAM_STRUCT *pD, CDC *pDc)
 afx_msg LRESULT CBirdviewView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 {
 	PARAM_STRUCT data;
-	RAW_OBJECT_STRUCT raw;
 	CPoint pnt;
 	CString str;
-	double temp;
-	int angle;
-	unsigned long fakeKey;
 	CList <PARAM_STRUCT, PARAM_STRUCT&>* p;
 
 	if (GetSafeHwnd() == NULL)
@@ -402,7 +420,6 @@ afx_msg LRESULT CBirdviewView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 	/* Assign pen, brush etc.. */
 	pOldPen = dcMem.SelectObject(&pen);
 
-	SetOrigin(&dcMem, TRUE, 0, Y_OFFSET + CAR_LENGTH);
 	int arrIdx = 0;
 	for (arrIdx = 0; arrIdx < _ListArray.GetSize(); arrIdx++) {
 		WaitForSingleObject(_ListArrayMutex.GetAt(arrIdx), INFINITE);
@@ -418,15 +435,15 @@ afx_msg LRESULT CBirdviewView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 			if (data.Ident == 0x401 || data.Ident == 0x411)
 				DrawRawOjbect(&data, &dcMem);
 			else if (data.Ident >= 0x610 && data.Ident <= 0x620) {
+				SetOrigin(&dcMem, TRUE, 0, Y_OFFSET);
 				DrawTrackingObject(&data, &dcMem);
+				SetOrigin(&dcMem, FALSE);
 			}
-__next:
 			pos = p->GetHeadPosition();
 		}
 		ReleaseMutex(_ListArrayMutex.GetAt(arrIdx));
 	}
 
-	SetOrigin(&dcMem, FALSE);
 	dcMem.SelectObject(pOldPen);
 	dcMem.SelectObject(pOldBrush);
 	if (pen.m_hObject)

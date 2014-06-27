@@ -99,6 +99,9 @@ BOOL CdllTest2App::InitInstance()
 
 	afxAmbientActCtx = FALSE;
 
+	OnFileNew();
+	OnFileBirdview();
+
 	return TRUE;
 }
 
