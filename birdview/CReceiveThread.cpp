@@ -135,9 +135,7 @@ __next_read:
 							WaitForSingleObject(pView->_ListArrayMutex.GetAt(aIdx.rowIdx), INFINITE);
 							if (pView->_ListArray[aIdx.rowIdx])
 								delete pView->_ListArray[aIdx.rowIdx];
-							_pViewList = pView->_ListStoreArray[aIdx.rowIdx];
 							pView->_ListArray[aIdx.rowIdx] = pView->_ListStoreArray[aIdx.rowIdx];
-							_pViewList = pView->_ListArray[aIdx.rowIdx];
 							WaitForSingleObject(pView->_ListStoreArrayMutex.GetAt(aIdx.rowIdx), INFINITE);
 							pView->_ListStoreArray[aIdx.rowIdx] = new CList <PARAM_STRUCT, PARAM_STRUCT&>;
 							ReleaseMutex(pView->_ListStoreArrayMutex.GetAt(aIdx.rowIdx));
@@ -150,9 +148,7 @@ __next_read:
 							WaitForSingleObject(pView->_ListArrayMutex.GetAt(aIdx.rowIdx), INFINITE);
 							if (pView->_ListArray[aIdx.rowIdx])
 								delete pView->_ListArray[aIdx.rowIdx];
-							_pViewList = pView->_ListStoreArray[aIdx.rowIdx];
 							pView->_ListArray[aIdx.rowIdx] = pView->_ListStoreArray[aIdx.rowIdx];
-							_pViewList = pView->_ListArray[aIdx.rowIdx];
 							WaitForSingleObject(pView->_ListStoreArrayMutex.GetAt(aIdx.rowIdx), INFINITE);
 							pView->_ListStoreArray[aIdx.rowIdx] = new CList <PARAM_STRUCT, PARAM_STRUCT&>;
 							ReleaseMutex(pView->_ListStoreArrayMutex.GetAt(aIdx.rowIdx));

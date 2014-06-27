@@ -1,6 +1,4 @@
-1. The tracking has been drawn correctly, but the raw object is not yet.
+1. The raw object can be drawn based on the position of the sensors.
 
 Next,
 1. The redrawing ot the gap between header and items should be improved.
-2. Raw object should be drawn based the postion of the related sensors. For
-example, the x-position of master radar should be shifted about 0.7m.

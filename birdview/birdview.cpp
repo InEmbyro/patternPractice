@@ -313,28 +313,6 @@ void CBirdviewView::DrawTrackingObject(PARAM_STRUCT *pD, CDC *pDc)
 	rect.right = rect.left + sz.cx;
 	rect.bottom = rect.top + sz.cy;
 	pDc->DrawText(str, rect, DT_SINGLELINE | DT_LEFT | DT_VCENTER);
-#if 0	// for drawing test
-	raw.x_range = -7.33;
-	raw.y_range = 3.40;
-	raw.TargetNum = 99;
-	pnt.y = raw.x_range * SCALE;
-	pnt.y = -pnt.y;
-	pnt.x = raw.y_range * SCALE;
-	pnt.x = -pnt.x;
-
-	rect.left = pnt.x - (CAR_WIDTH / 2);
-	rect.right = pnt.x + (CAR_WIDTH / 2);
-	rect.top = pnt.y;
-	rect.bottom = pnt.y + (CAR_LENGTH);
-	pDc->FillSolidRect(rect, RGB(0, 200, 0));
-	pDc->SelectObject(pOldPen);
-	rect.OffsetRect(OBJECT_SIZE, -OBJECT_SIZE);
-	str.Format(_T("%d"), raw.TargetNum);
-	sz = pDc->GetTextExtent(str);
-	rect.right = rect.left + sz.cx;
-	rect.bottom = rect.top + sz.cy;
-	pDc->DrawText(str, rect, DT_SINGLELINE | DT_LEFT | DT_VCENTER);
-#endif
 }
 // CBirdviewView 訊息處理常式
 void CBirdviewView::DrawRawOjbect(PARAM_STRUCT *pD, CDC *pDc)
@@ -354,10 +332,10 @@ void CBirdviewView::DrawRawOjbect(PARAM_STRUCT *pD, CDC *pDc)
 	ParseRawObject(pD, &raw);
 	if (pD->Ident == 0x401) {
 		angle = 57;
-		pen.CreatePen(PS_SOLID, 3, RGB(200, 200, 0));
+		pen.CreatePen(PS_SOLID, 3, RGB(200, 0, 0));
 	} else if (pD->Ident == 0x411) {
 		angle = -57;
-		pen.CreatePen(PS_SOLID, 3, RGB(200, 0, 0));
+		pen.CreatePen(PS_SOLID, 3, RGB(200, 200, 0));
 	}
 	pOldPen = pDc->SelectObject(&pen);
 
@@ -432,13 +410,17 @@ afx_msg LRESULT CBirdviewView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 		while (pos) {
 			data = p->GetAt(pos);
 			p->RemoveHead();
-			if (data.Ident == 0x401 || data.Ident == 0x411)
+			if (data.Ident == 0x401) {
+				SetOrigin(&dcMem, TRUE, -(CAR_WIDTH / 2), CAR_LENGTH);
 				DrawRawOjbect(&data, &dcMem);
-			else if (data.Ident >= 0x610 && data.Ident <= 0x620) {
+			} else if (data.Ident == 0x411) {
+				SetOrigin(&dcMem, TRUE, CAR_WIDTH / 2, CAR_LENGTH);
+				DrawRawOjbect(&data, &dcMem);
+			} else if (data.Ident >= 0x610 && data.Ident <= 0x620) {
 				SetOrigin(&dcMem, TRUE, 0, Y_OFFSET);
 				DrawTrackingObject(&data, &dcMem);
-				SetOrigin(&dcMem, FALSE);
 			}
+			SetOrigin(&dcMem, FALSE);
 			pos = p->GetHeadPosition();
 		}
 		ReleaseMutex(_ListArrayMutex.GetAt(arrIdx));

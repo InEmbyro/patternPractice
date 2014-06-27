@@ -315,7 +315,7 @@ void GridFormChildView::ShowInIdent()
 			pkt.param = data;
 			_Map.SetAt(pkt.param.Ident, pkt);
 		} else {
-			pkt.counter = 0;
+			pkt.counter = 1;
 			pkt.param = data;
 			WaitForSingleObject(_MapMutex, INFINITE);
 			_Map.SetAt(pkt.param.Ident, pkt);
