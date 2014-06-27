@@ -108,7 +108,6 @@ UINT CReceiveThread::update_thread(LPVOID _p)
 		ret = WaitForMultipleObjects(2, _this->_infoHnd, FALSE, INFINITE);
 		switch (ret - WAIT_OBJECT_0) {
 		case 0:
-#if 1
 			fResult = GetMailslotInfo(_this->_mailslotHnd, // mailslot handle 
 				(LPDWORD) NULL,               // no maximum message size 
 				&cbMessage,                   // size of next message 
@@ -129,9 +128,24 @@ __next_read:
 					if (pView->_FilterMap.Lookup(data.Ident, aIdx)) {
 						switch (aIdx.canId) {
 						case 0x400:
-						case 0x601:
 						case 0x410:
+							/* The header of raw object will be send twice */
 							if (data.DataLength == 7)
+								break;
+							WaitForSingleObject(pView->_ListArrayMutex.GetAt(aIdx.rowIdx), INFINITE);
+							if (pView->_ListArray[aIdx.rowIdx])
+								delete pView->_ListArray[aIdx.rowIdx];
+							_pViewList = pView->_ListStoreArray[aIdx.rowIdx];
+							pView->_ListArray[aIdx.rowIdx] = pView->_ListStoreArray[aIdx.rowIdx];
+							_pViewList = pView->_ListArray[aIdx.rowIdx];
+							WaitForSingleObject(pView->_ListStoreArrayMutex.GetAt(aIdx.rowIdx), INFINITE);
+							pView->_ListStoreArray[aIdx.rowIdx] = new CList <PARAM_STRUCT, PARAM_STRUCT&>;
+							ReleaseMutex(pView->_ListStoreArrayMutex.GetAt(aIdx.rowIdx));
+							ReleaseMutex(pView->_ListArrayMutex.GetAt(aIdx.rowIdx));
+							break;
+						case 0x601:
+							/* If there is not tracking objects, buffer should not be swap */
+							if (data.RCV_data[0] == 0)
 								break;
 							WaitForSingleObject(pView->_ListArrayMutex.GetAt(aIdx.rowIdx), INFINITE);
 							if (pView->_ListArray[aIdx.rowIdx])
@@ -162,7 +176,6 @@ __next_read:
 			if (--cMessage)
 				goto __next_read;
 			pView->SendMessage(WM_USER_DRAW, 0, 0);
-#endif
 			break;
 		default:
 		case 1:

@@ -1,7 +1,7 @@
-1. The birdview can use shared memory to show data.
-2. Using the idea in note page to implement ping-pon buffer (_ListArray and
-_ListStoreArray).
-	-> The raw objects seems to be shown more smoothly.
+1. The raw object of both of master and slave can be shown synchorniously.
+2. Add some criterial to prevent unnecessary buffer swapping.
 
-Next, use master (0x400) & slave (0x410) to show raw data synchronously.
+Next,
+1. Try to show tracking.
+2. Try optimize the redrawing of gridform.
 

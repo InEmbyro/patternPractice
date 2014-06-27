@@ -21,7 +21,7 @@ public:
 private:
 	void	SetEventTerminateHnd(void);
 	void	InforDec(POSITION _pos);
-	static UINT update_thread(LPVOID);
+	static	UINT update_thread(LPVOID);
 
 	CWinThread* _pThread;
 	BOOL	run;
