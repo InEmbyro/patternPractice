@@ -59,7 +59,11 @@ public:
 	static const int MSG_LEN_MAX;
 	void		GetDeviceType(int u32DeviceType);
 	POSITION	SlotReg(CString slotName, unsigned int slotKey);
+	POSITION	SlotReg(CString slotName);
+
 	void		SlotDereg(POSITION, unsigned int slotKey);
+	void		SlotDereg(POSITION);
+
 	BOOL		StartThread(MY_L2CONF);
 	//BOOL		StartDecThread(void);
 	HANDLE		MailslotHndGet(POSITION);

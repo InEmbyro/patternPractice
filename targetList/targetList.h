@@ -6,14 +6,18 @@
 
 
 extern "C" AFX_EXT_API LPVOID WINAPI InitTargetListForm();
+#define	WM_USER_DRAW	(WM_USER + 1)
 
 // CTargetList 表單檢視
+
+class CReceiveThread;
 
 class CTargetList : public CFormView
 {
 	DECLARE_DYNCREATE(CTargetList)
 
 	CTargetList();           // 動態建立所使用的保護建構函式
+	CReceiveThread *pRcvThread;
 protected:
 	virtual ~CTargetList();
 
@@ -31,10 +35,14 @@ protected:
 
 	DECLARE_MESSAGE_MAP()
 public:
+	static const char* mailslot;
+
 	CComboBox m_combo;
 	CListCtrl m_listctrl;
 	virtual BOOL Create(LPCTSTR lpszClassName, LPCTSTR lpszWindowName, DWORD dwStyle, const RECT& rect, CWnd* pParentWnd, UINT nID, CCreateContext* pContext = NULL);
 	afx_msg void OnSize(UINT nType, int cx, int cy);
+protected:
+	afx_msg LRESULT OnUserDraw(WPARAM wParam, LPARAM lParam);
 };
 
 // CTargetListForm 框架
@@ -44,6 +52,7 @@ class CTargetListForm : public CMDIChildWnd
 	DECLARE_DYNCREATE(CTargetListForm)
 	CTargetListForm();           // 動態建立所使用的保護建構函式
 
+	CReceiveThread *pRcvThread;
 protected:
 	virtual ~CTargetListForm();
 
@@ -52,9 +61,9 @@ protected:
 
 public:
 	CTargetList *_pView;
-//	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
-//	virtual BOOL Create(LPCTSTR lpszClassName, LPCTSTR lpszWindowName, DWORD dwStyle = WS_CHILD | WS_VISIBLE | WS_OVERLAPPEDWINDOW, const RECT& rect = rectDefault, CMDIFrameWnd* pParentWnd = NULL, CCreateContext* pContext = NULL);
+	POSITION	rawPos;
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
+	afx_msg void OnClose();
 };
 
 

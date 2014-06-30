@@ -101,6 +101,7 @@
     <None Include="targetList.def" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="CReceiveThread.cpp" />
     <ClCompile Include="targetList.cpp">
       <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</CompileAsManaged>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -115,6 +116,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CReceiveThread.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetList.h" />

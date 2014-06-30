@@ -1,4 +1,4 @@
-1. Ensure the targetList.lib can be linked in Release build
+1. targetList DLL can receive the data from canEngine.
 
-Next, ensure TargetList can receive data from canEngine.
+Next, consider how to show data with combo-list.
 

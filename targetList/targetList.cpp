@@ -4,12 +4,15 @@
 #include "stdafx.h"
 #include <afxwin.h>
 #include <afxdllx.h>
+#include "../canEngine/canEngineApi.h"
 #include "targetList.h"
+#include "CReceiveThread.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
 
+const char* CTargetList::mailslot = "\\\\.\\mailslot\\wnc_targetlist_view";
 static AFX_EXTENSION_MODULE targetListDLL = { NULL, NULL };
 
 extern "C" int APIENTRY
@@ -90,6 +93,7 @@ void CTargetList::DoDataExchange(CDataExchange* pDX)
 BEGIN_MESSAGE_MAP(CTargetList, CFormView)
 //	ON_WM_CREATE()
 	ON_WM_SIZE()
+	ON_MESSAGE(WM_USER_DRAW, &CTargetList::OnUserDraw)
 END_MESSAGE_MAP()
 
 
@@ -119,17 +123,19 @@ IMPLEMENT_DYNCREATE(CTargetListForm, CMDIChildWnd)
 
 CTargetListForm::CTargetListForm()
 {
+	pRcvThread = new CReceiveThread();
 	_pView = NULL;
 }
 
 CTargetListForm::~CTargetListForm()
 {
+	delete pRcvThread;
 }
 
 
 BEGIN_MESSAGE_MAP(CTargetListForm, CMDIChildWnd)
-//	ON_WM_CREATE()
 	ON_WM_CREATE()
+	ON_WM_CLOSE()
 END_MESSAGE_MAP()
 
 
@@ -167,6 +173,34 @@ int CTargetListForm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	_pView->UpdateData(FALSE);
 	_pView->m_listctrl.SetWindowPos(NULL, 0, 0, rect.Width(), rect.Height(), SWP_NOMOVE);
 
+	if (!pRcvThread) {
+		AfxMessageBox(_T("!pRcvThread"));
+		return -1;
+	}
+
+	CString name;
+	POSITION pos;
+	name = CTargetList::mailslot;
+	pos = RegisterAcquire01(name);
+	if (pos == NULL) {
+		AfxMessageBox(_T("CTargetListForm::mailslot"));
+		AfxSetResourceHandle(hInstOld);
+		return -1;
+	}
+	
+	pRcvThread->_pView = (LPVOID)_pView;
+	pRcvThread->SetInfoHandle(InforEventAcquire(pos));
+	pRcvThread->SetMailHandle(MailSlotAcquire(pos));
+	rawPos = pos;
+
+	if (!pRcvThread->InitThread()) {
+		AfxMessageBox(_T("pRcvThread->InitThread"));
+		DeregisterAcquire01(rawPos);
+	}
+	_pView->pRcvThread = pRcvThread;
+
+	UpdateData(FALSE);
+
 	AfxSetResourceHandle(hInstOld);
 	return 0;
 }
@@ -179,4 +213,19 @@ void CTargetList::OnSize(UINT nType, int cx, int cy)
 	// TODO: 在此加入您的訊息處理常式程式碼
 	if (m_listctrl.m_hWnd)
 		m_listctrl.SetWindowPos(NULL, 0, 0, cx, cy,SWP_NOMOVE);
+}
+
+
+afx_msg LRESULT CTargetList::OnUserDraw(WPARAM wParam, LPARAM lParam)
+{
+	return 0;
+}
+
+void CTargetListForm::OnClose()
+{
+	// TODO: 在此加入您的訊息處理常式程式碼和 (或) 呼叫預設值
+	_pView->pRcvThread->TerminateThread();
+	WaitForSingleObject(_pView->pRcvThread->getConfirmHnd(), 5000);
+	DeregisterAcquire01(rawPos);
+	CMDIChildWnd::OnClose();
 }

@@ -128,6 +128,7 @@ int CBirdviewFrm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	pos = RegisterAcquire(name, CBirdviewView::slotKey);
 	if (pos == NULL) {
 		AfxMessageBox(_T("GridFormChildView::mailslot"));
+		AfxSetResourceHandle(hInstOld);
 		return -1;
 	}
 

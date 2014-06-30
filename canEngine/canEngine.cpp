@@ -324,6 +324,44 @@ _error:
 	return NULL;
 }
 
+POSITION CCanInfo::SlotReg(CString eV)
+{
+	POSITION pos = NULL;
+	SLOT_INFO _sl;
+
+	_sl.eventHnd = INVALID_HANDLE_VALUE;
+	_sl.slotHnd = INVALID_HANDLE_VALUE;
+	_sl.writeHnd = INVALID_HANDLE_VALUE;
+
+	_sl.slotHnd = CreateMailslot(eV, sizeof(SLOT_DATA), MAILSLOT_WAIT_FOREVER,(LPSECURITY_ATTRIBUTES) NULL);
+	if (_sl.slotHnd == INVALID_HANDLE_VALUE)
+		goto _error;
+
+	_sl.writeHnd = CreateFile(eV, GENERIC_WRITE, FILE_SHARE_READ, (LPSECURITY_ATTRIBUTES)NULL, OPEN_EXISTING, 
+		FILE_ATTRIBUTE_NORMAL, (HANDLE)NULL);
+	if (_sl.writeHnd == INVALID_HANDLE_VALUE)
+		goto _error;
+	
+	_sl.eventHnd = CreateEvent(NULL, FALSE, FALSE, NULL);
+	if (_sl.eventHnd == INVALID_HANDLE_VALUE)
+		goto _error;
+	WaitForSingleObject(_noteSlotMutex, INFINITE);
+	pos = _noteSlot.AddTail(_sl);
+	ReleaseMutex(_noteSlotMutex);
+
+	return pos;
+
+_error:
+	if (_sl.eventHnd != INVALID_HANDLE_VALUE)
+		CloseHandle(_sl.eventHnd);
+	if (_sl.slotHnd != INVALID_HANDLE_VALUE)
+		CloseHandle(_sl.slotHnd);
+	if (_sl.writeHnd != INVALID_HANDLE_VALUE)
+		CloseHandle(_sl.writeHnd);
+	
+	return NULL;
+}
+
 HANDLE CCanInfo::InforEventGet(POSITION pos)
 {
 	SLOT_INFO _sl;
@@ -459,6 +497,10 @@ void CCanInfo::SlotInfo(POSITION _pos)
 	}
 	ReleaseMutex(_noteSlotMutex);
 }
+void CCanInfo::SlotDereg(POSITION pos)
+{
+	SlotDereg(pos, 0);
+}
 
 void CCanInfo::SlotDereg(POSITION pos, unsigned int slotKey)
 {
@@ -471,6 +513,7 @@ void CCanInfo::SlotDereg(POSITION pos, unsigned int slotKey)
 	_noteSlot.RemoveAt(pos);
 	ReleaseMutex(_noteSlotMutex);
 
+#if 0
 	POSITION rawPos;
 	CCanRaw *pRaw;
 	rawPos = _pRawList.GetHeadPosition();
@@ -486,6 +529,7 @@ void CCanInfo::SlotDereg(POSITION pos, unsigned int slotKey)
 		}
 	}
 	pRaw = NULL;
+#endif
 }
 
 //UINT CCanInfo::decrefThread(LPVOID pa)
