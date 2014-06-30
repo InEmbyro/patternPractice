@@ -1,4 +1,5 @@
-1. The raw object can be drawn based on the position of the sensors.
+1. Add target list DLL project.
+2. Target List formview can be shown.
 
-Next,
-1. The redrawing ot the gap between header and items should be improved.
+Next, ensure TargetList can receive data from canEngine.
+

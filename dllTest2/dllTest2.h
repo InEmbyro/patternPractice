@@ -40,6 +40,7 @@ public:
 	afx_msg void OnFileNew();
 	DECLARE_MESSAGE_MAP()
 	afx_msg void OnFileBirdview();
+	afx_msg void OnFileTargetlist();
 };
 
 extern CdllTest2App theApp;
