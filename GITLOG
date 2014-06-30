@@ -1,5 +1,4 @@
-1. Add target list DLL project.
-2. Target List formview can be shown.
+1. Ensure the targetList.lib can be linked in Release build
 
 Next, ensure TargetList can receive data from canEngine.
 
