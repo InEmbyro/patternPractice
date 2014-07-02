@@ -97,7 +97,9 @@ UINT CReceiveThread::update_thread(LPVOID _p)
 	DWORD cMessage;
 	SLOT_DATA slotData;
 	int dataLen;
+	unsigned long fakeKey;
 	PARAM_STRUCT data;
+	RAW_OBJECT_STRUCT rawData;
 
 
 	pView = (CTargetList*)_this->_pView;
@@ -122,6 +124,23 @@ __next_read:
 				while (dataLen != slotData.len) {
 					CopyMemory(&data, slotData.ptr + dataLen, sizeof(PARAM_STRUCT));
 					dataLen += sizeof(PARAM_STRUCT);
+					if (pView->_filterMap.Lookup(data.Ident, fakeKey)) {
+						if (data.Ident > 0x44F) {
+							pView->ParseTrackingObject(&data, &rawData);
+						} else {
+							pView->ParseRawObject(&data, &rawData);
+						}
+						WaitForSingleObject(pView->_listStoreMutex, INFINITE);
+						pView->_listStore->AddTail(rawData);
+						if (rawData.TargetNum == 0) {
+							WaitForSingleObject(pView->_listMutex, INFINITE);
+							delete pView->_list;
+							pView->_list = pView->_listStore;
+							pView->_listStore = new CList <RAW_OBJECT_STRUCT, RAW_OBJECT_STRUCT&>;
+							ReleaseMutex(pView->_listMutex);
+						}
+						ReleaseMutex(pView->_listStoreMutex);
+					}
 				}
 				UnmapViewOfFile(slotData.ptr);
 				if (!_this->run) {

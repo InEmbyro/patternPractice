@@ -5,11 +5,15 @@
 #include "afxcmn.h"
 
 
+extern unsigned long recvId[];
 extern "C" AFX_EXT_API LPVOID WINAPI InitTargetListForm();
+
+typedef int (__cdecl *GENERICCOMPAREFN1)(const void * elem1, const void * elem2);
 #define	WM_USER_DRAW	(WM_USER + 1)
+#define RAD_CONVER	(3.1416 / 180)
+
 
 // CTargetList 表單檢視
-
 class CReceiveThread;
 
 class CTargetList : public CFormView
@@ -18,6 +22,12 @@ class CTargetList : public CFormView
 
 	CTargetList();           // 動態建立所使用的保護建構函式
 	CReceiveThread *pRcvThread;
+	void ParseRawObject(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *pRaw);
+	void ParseTrackingObject(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *pRaw);
+
+	void SetTrackingHeader();
+	void SetRawHeader();
+
 protected:
 	virtual ~CTargetList();
 
@@ -36,13 +46,24 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	static const char* mailslot;
+	CMap <unsigned long, unsigned long, unsigned long, unsigned long&> _filterMap;
+	HANDLE _listMutex;
+	HANDLE _listStoreMutex;
+	CList <RAW_OBJECT_STRUCT, RAW_OBJECT_STRUCT&> *_list;
+	CList <RAW_OBJECT_STRUCT, RAW_OBJECT_STRUCT&> *_listStore;
+	CArray <RAW_OBJECT_STRUCT, RAW_OBJECT_STRUCT&> _listArray;
+	static int __cdecl Compare(const RAW_OBJECT_STRUCT * p1, const RAW_OBJECT_STRUCT * p2);
 
 	CComboBox m_combo;
 	CListCtrl m_listctrl;
+	int GetComboIdx();
 	virtual BOOL Create(LPCTSTR lpszClassName, LPCTSTR lpszWindowName, DWORD dwStyle, const RECT& rect, CWnd* pParentWnd, UINT nID, CCreateContext* pContext = NULL);
 	afx_msg void OnSize(UINT nType, int cx, int cy);
 protected:
 	afx_msg LRESULT OnUserDraw(WPARAM wParam, LPARAM lParam);
+public:
+	afx_msg void OnCbnSelchangeTargetlistCombo();
+	virtual void OnInitialUpdate();
 };
 
 // CTargetListForm 框架

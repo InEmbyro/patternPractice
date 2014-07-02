@@ -10,17 +10,6 @@
 extern "C" AFX_EXT_API LPVOID WINAPI InitBirdviewForm(void);
 
 typedef struct {
-	unsigned char TargetNum;
-	double	angle;
-	double	range;
-	double AbsLevel_db;
-	double	x_range;
-	double	y_range;
-	double relatedSpeed;	// m/s
-	unsigned char type;
-} RAW_OBJECT_STRUCT;
-
-typedef struct {
 	unsigned long canId;
 	int	rowIdx;
 } ARRAY_IDX;

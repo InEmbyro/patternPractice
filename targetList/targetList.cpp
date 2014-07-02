@@ -4,13 +4,34 @@
 #include "stdafx.h"
 #include <afxwin.h>
 #include <afxdllx.h>
+#include <iostream>
+#include <vector>
 #include "../canEngine/canEngineApi.h"
+#include "../Softing/Can_def.h"
+#include "../Softing/CANL2.H"
 #include "targetList.h"
 #include "CReceiveThread.h"
+
+using namespace std;
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
+
+unsigned long recvId[] = {
+	0x610, 0x611, 0x612, 0x613, 0x614, 0x615, 0x616, 0x617, 0x618, 0x619, 0x620, 0x00,
+	0x401, 0x00,
+	0x411, 0x00,
+};
+
+const char *comboStr[] = {
+	"Tracking 01", 
+	"Raw 01",
+	"Raw 02",
+	NULL};
+
+std::vector<CString> comboList;
+
 
 const char* CTargetList::mailslot = "\\\\.\\mailslot\\wnc_targetlist_view";
 static AFX_EXTENSION_MODULE targetListDLL = { NULL, NULL };
@@ -76,11 +97,36 @@ IMPLEMENT_DYNCREATE(CTargetList, CFormView)
 CTargetList::CTargetList()
 	: CFormView(CTargetList::IDD)
 {
+	CString sz;
+	const char **ptr = &comboStr[0];
+	while (*ptr) {
+		sz = *ptr;
+		comboList.push_back(sz);
+		ptr++;
+	}
+	_filterMap.InitHashTable(100);
+	_listMutex = CreateMutex(NULL, FALSE, NULL);
+	_listStoreMutex = CreateMutex(NULL, FALSE, NULL);
 
+	_list = new CList <RAW_OBJECT_STRUCT, RAW_OBJECT_STRUCT&>;
+	if (_list) {
+		_listStore = new CList <RAW_OBJECT_STRUCT, RAW_OBJECT_STRUCT&>;
+		if (!_listStore) {
+			AfxMessageBox(_T("!_listStore"));
+		}
+	} else {
+		AfxMessageBox(_T("!_list"));
+	}
 }
 
 CTargetList::~CTargetList()
 {
+	CloseHandle(_listMutex);
+	CloseHandle(_listStoreMutex);
+	if (_list)
+		delete _list;
+	if (_listStore)
+		delete _listStore;
 }
 
 void CTargetList::DoDataExchange(CDataExchange* pDX)
@@ -94,6 +140,7 @@ BEGIN_MESSAGE_MAP(CTargetList, CFormView)
 //	ON_WM_CREATE()
 	ON_WM_SIZE()
 	ON_MESSAGE(WM_USER_DRAW, &CTargetList::OnUserDraw)
+	ON_CBN_SELCHANGE(IDC_TARGETLIST_COMBO, &CTargetList::OnCbnSelchangeTargetlistCombo)
 END_MESSAGE_MAP()
 
 
@@ -125,6 +172,7 @@ CTargetListForm::CTargetListForm()
 {
 	pRcvThread = new CReceiveThread();
 	_pView = NULL;
+
 }
 
 CTargetListForm::~CTargetListForm()
@@ -148,6 +196,73 @@ BOOL CTargetList::Create(LPCTSTR lpszClassName, LPCTSTR lpszWindowName, DWORD dw
 	return CFormView::Create(lpszClassName, lpszWindowName, dwStyle, rect, pParentWnd, nID, pContext);
 }
 
+void CTargetList::ParseRawObject(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *pRaw)
+{
+	if (pSrc == NULL || pRaw == NULL)
+		return;
+
+	int temp;
+
+	pRaw->TargetNum = pSrc->RCV_data[0] & 0x3F;
+
+	temp = pSrc->RCV_data[2] & 0x01;
+	temp = (temp << 8) + pSrc->RCV_data[1];
+	temp = (temp << 2) + ((pSrc->RCV_data[0] & 0xC0) >> 6);
+	pRaw->angle = (temp - 1024) * 0.16;
+
+	temp = pSrc->RCV_data[4] & 0x01;
+	temp = (temp << 8) + pSrc->RCV_data[3];
+	temp = (temp << 7) + ((pSrc->RCV_data[2] & 0xFE) >> 1);
+	pRaw->range = temp * 0.01;
+
+	temp = pSrc->RCV_data[5] & 0x03;
+	temp = (temp << 7) + ((pSrc->RCV_data[4] & 0xFE) >> 1);
+	pRaw->AbsLevel_db = temp * 0.32;
+
+	pRaw->type = (pSrc->RCV_data[5] & 0x7C) >> 2;
+
+	temp = pSrc->RCV_data[7];
+	temp = (temp << 6) + ((pSrc->RCV_data[4] & 0xFC) >> 2);
+	pRaw->relatedSpeed = (temp - 8192) * 0.02;
+
+	pRaw->x_range = pRaw->range * sin(pRaw->angle * RAD_CONVER);
+	pRaw->y_range = pRaw->range * cos(pRaw->angle * RAD_CONVER);
+}
+
+void CTargetList::ParseTrackingObject(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *pRaw)
+{
+	if (pSrc == NULL || pRaw == NULL)
+		return;
+
+	int temp;
+
+	pRaw->TargetNum = (pSrc->RCV_data[7] & 0xFC) >> 2;
+	
+	temp = pSrc->RCV_data[1] & 0x1F;
+	temp = (temp << 8) + pSrc->RCV_data[0];
+	pRaw->x_point = (temp - 7500) * 0.016;
+
+	temp = pSrc->RCV_data[3] & 0x01;
+	temp = (temp << 8) + pSrc->RCV_data[2];
+	temp = (temp << 3) + ((pSrc->RCV_data[1] & 0xE0) >> 5);
+	pRaw->y_point = (temp - 2048) * 0.016;
+
+	temp = pSrc->RCV_data[4] & 0x0F;
+	temp = (temp << 7) + ((pSrc->RCV_data[3] & 0xFE) >> 1);
+	pRaw->x_speed = (temp - 1024) * 0.1;
+
+	temp = pSrc->RCV_data[5] & 0x7F;
+	temp = (temp << 4) + ((pSrc->RCV_data[4] & 0xF0) >> 4);
+	pRaw->y_speed = (temp - 1024) * 0.1;
+
+	temp = pSrc->RCV_data[6] & 0x01;
+	temp = (temp << 1) + ((pSrc->RCV_data[5] & 0x80) >> 7);
+	pRaw->lane = temp;
+
+	temp = pSrc->RCV_data[7] & 0x03;
+	temp = (temp << 3) + ((pSrc->RCV_data[6] & 0xE0) >> 5);
+	pRaw->size = temp * 0.064;
+}
 
 int CTargetListForm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
@@ -172,6 +287,18 @@ int CTargetListForm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	_pView->Create(NULL, NULL, AFX_WS_DEFAULT_VIEW, rect, this, AFX_IDW_PANE_FIRST, NULL);
 	_pView->UpdateData(FALSE);
 	_pView->m_listctrl.SetWindowPos(NULL, 0, 0, rect.Width(), rect.Height(), SWP_NOMOVE);
+
+	_pView->m_combo.ResetContent();
+	vector<CString>::iterator ite;
+	for (ite = comboList.begin(); ite < comboList.end(); ite++) {
+		_pView->m_combo.AddString(*ite);
+	}
+	_pView->m_combo.SetCurSel(0);
+	for (int idx = 0; idx < sizeof(recvId)/sizeof(recvId[0]); idx++) {
+		if (recvId[idx] == 0x00)
+			break;
+		_pView->_filterMap.SetAt(recvId[idx], recvId[idx]);
+	}
 
 	if (!pRcvThread) {
 		AfxMessageBox(_T("!pRcvThread"));
@@ -215,9 +342,83 @@ void CTargetList::OnSize(UINT nType, int cx, int cy)
 		m_listctrl.SetWindowPos(NULL, 0, 0, cx, cy,SWP_NOMOVE);
 }
 
+int __cdecl CTargetList::Compare(const RAW_OBJECT_STRUCT * p1, const RAW_OBJECT_STRUCT * p2)
+{
+	if (p1->TargetNum > p2->TargetNum)
+		return 1;
+	else if (p1->TargetNum < p2->TargetNum)
+		return -1;
+	else
+		return 0;
+}
 
 afx_msg LRESULT CTargetList::OnUserDraw(WPARAM wParam, LPARAM lParam)
 {
+	int row = 0;
+	int idx = 0;
+	CString sz;
+	RAW_OBJECT_STRUCT data;
+	POSITION pos;
+	
+	_listArray.RemoveAll();
+	WaitForSingleObject(_listMutex, INFINITE);
+	while ((pos = _list->FindIndex(row++))) {
+		data = _list->GetAt(pos);
+		_listArray.Add(data);
+	}
+	ReleaseMutex(_listMutex);
+	RAW_OBJECT_STRUCT *pD = _listArray.GetData();
+	qsort(pD, _listArray.GetSize(), sizeof(RAW_OBJECT_STRUCT), (GENERICCOMPAREFN1)Compare);
+	row = 0;
+
+	switch (m_combo.GetCurSel()) {
+	case 0:
+		m_listctrl.DeleteAllItems();
+		for (row = 0; row < _listArray.GetCount(); row++) {
+			data = _listArray.GetAt(row);
+			idx = 1;
+			sz.Format(_T("%d"), data.TargetNum);
+			m_listctrl.InsertItem(row, sz);
+			sz.Format(_T("%.2f"), data.x_point);
+			m_listctrl.SetItemText(row, idx++, sz);
+			sz.Format(_T("%.2f"), data.y_point);
+			m_listctrl.SetItemText(row, idx++, sz);
+			sz.Format(_T("%.2f"), data.x_speed);
+			m_listctrl.SetItemText(row, idx++, sz);
+			sz.Format(_T("%.2f"), data.y_speed);
+			m_listctrl.SetItemText(row, idx++, sz);
+			sz.Format(_T("%d"), data.lane);
+			m_listctrl.SetItemText(row, idx++, sz);
+			sz.Format(_T("%d"), data.len);
+			m_listctrl.SetItemText(row, idx++, sz);
+			sz.Format(_T("%d"), data.size);
+			m_listctrl.SetItemText(row, idx++, sz);
+		}
+		break;
+	case 1:
+	case 2:
+		m_listctrl.DeleteAllItems();
+		for (row = 0; row < _listArray.GetCount(); row++) {
+			data = _listArray.GetAt(row);
+			idx = 1;
+			sz.Format(_T("%d"), data.TargetNum);
+			m_listctrl.InsertItem(row, sz);
+			sz.Format(_T("%.2f"), data.angle);
+			m_listctrl.SetItemText(row, idx++, sz);
+			sz.Format(_T("%.2f"), data.range);
+			m_listctrl.SetItemText(row, idx++, sz);
+			sz.Format(_T("%.2f"), data.AbsLevel_db);
+			m_listctrl.SetItemText(row, idx++, sz);
+			sz.Format(_T("%d"), data.type);
+			m_listctrl.SetItemText(row, idx++, sz);
+			sz.Format(_T("%.2f"), data.relatedSpeed);
+			m_listctrl.SetItemText(row, idx++, sz);
+		}
+		break;
+	default:
+		break;
+	}
+
 	return 0;
 }
 
@@ -229,3 +430,93 @@ void CTargetListForm::OnClose()
 	DeregisterAcquire01(rawPos);
 	CMDIChildWnd::OnClose();
 }
+
+int CTargetList::GetComboIdx()
+{
+	return m_combo.GetCurSel();
+}
+
+void CTargetList::OnCbnSelchangeTargetlistCombo()
+{
+	// TODO: 在此加入控制項告知處理常式程式碼
+	int selIdx = m_combo.GetCurSel();
+	
+	int idx = 0;
+	while (selIdx != 0) {
+		if (recvId[idx++] == 0)
+			selIdx--;
+	}
+
+	_filterMap.RemoveAll();
+	for (; idx <(sizeof(recvId)/sizeof(recvId[0])); idx++) {
+		if (recvId[idx] == 0x0)
+			break;
+		_filterMap.SetAt(recvId[idx], recvId[idx]);
+	}
+
+	switch (m_combo.GetCurSel()) {
+	case 0:
+		SetTrackingHeader();
+		break;
+	case 1:
+	case 2:
+		SetRawHeader();
+		break;
+	}
+
+	WaitForSingleObject(_listMutex, INFINITE);
+	_list->RemoveAll();
+	if (_list)
+		delete _list;
+	_list = new CList <RAW_OBJECT_STRUCT, RAW_OBJECT_STRUCT&>;
+	ReleaseMutex(_listMutex);
+
+	WaitForSingleObject(_listStoreMutex, INFINITE);
+	_listStore->RemoveAll();
+	if (_listStore)
+		delete _listStore;
+	_listStore = new CList <RAW_OBJECT_STRUCT, RAW_OBJECT_STRUCT&>;
+	ReleaseMutex(_listStoreMutex);
+}
+
+
+void CTargetList::OnInitialUpdate()
+{
+	CFormView::OnInitialUpdate();
+
+	// TODO: 在此加入特定的程式碼和 (或) 呼叫基底類別
+	SetTrackingHeader();
+}
+
+void CTargetList::SetTrackingHeader()
+{
+	int idx = m_listctrl.GetHeaderCtrl()->GetItemCount();
+	while (idx--)
+		m_listctrl.GetHeaderCtrl()->DeleteItem(0);
+
+	idx = 0;
+	m_listctrl.InsertColumn(idx++, _T("No."),			LVCFMT_LEFT, 50, 0);
+	m_listctrl.InsertColumn(idx++, _T("x_point[m]"),	LVCFMT_LEFT, 90, 0);
+	m_listctrl.InsertColumn(idx++, _T("y_point[m]"),	LVCFMT_LEFT, 90, 0);
+	m_listctrl.InsertColumn(idx++, _T("Speed_x[m/s]"),	LVCFMT_LEFT, 90, 0);
+	m_listctrl.InsertColumn(idx++, _T("Speed_y[m/s]"),	LVCFMT_LEFT, 90, 0);
+	m_listctrl.InsertColumn(idx++, _T("Lane"),			LVCFMT_LEFT, 90, 0);
+	m_listctrl.InsertColumn(idx++, _T("Length"),		LVCFMT_LEFT, 90, 0);
+	m_listctrl.InsertColumn(idx++, _T("Size"),			LVCFMT_LEFT, 90, 0);
+}
+
+void CTargetList::SetRawHeader()
+{
+	int idx = m_listctrl.GetHeaderCtrl()->GetItemCount();
+	while (idx--)
+		m_listctrl.GetHeaderCtrl()->DeleteItem(0);
+
+	idx = 0;
+	m_listctrl.InsertColumn(idx++, _T("No."),				LVCFMT_LEFT, 50, 0);
+	m_listctrl.InsertColumn(idx++, _T("Azimuth[deg]"),		LVCFMT_LEFT, 90, 0);
+	m_listctrl.InsertColumn(idx++, _T("Range[m]"),			LVCFMT_LEFT, 90, 0);
+	m_listctrl.InsertColumn(idx++, _T("Amplitude"),			LVCFMT_LEFT, 90, 0);
+	m_listctrl.InsertColumn(idx++, _T("Class"),				LVCFMT_LEFT, 90, 0);
+	m_listctrl.InsertColumn(idx++, _T("Speed_radial[m/s]"), LVCFMT_LEFT, 90, 0);
+}
+

@@ -114,6 +114,30 @@ typedef struct {
 	PARAM_STRUCT param;
 } WPARAM_STRUCT;				
 
+
+typedef union {
+	struct {
+		unsigned char TargetNum;
+		double	angle;
+		double	range;
+		double 	AbsLevel_db;
+		double	x_range;
+		double	y_range;
+		double relatedSpeed;	// m/s
+		unsigned char type;
+	};
+	struct {
+		unsigned char TargetNum;
+		double	x_point;
+		double	y_point;
+		double 	x_speed;
+		double	y_speed;
+		unsigned char lane;
+		unsigned char len;
+		unsigned char size;
+	};
+} RAW_OBJECT_STRUCT;
+
 //                 used together with CANL2_initialize_fifo_mode()
 typedef struct 
 {
