@@ -238,6 +238,7 @@ CBirdviewView::~CBirdviewView()
 BEGIN_MESSAGE_MAP(CBirdviewView, CView)
 	ON_MESSAGE(WM_USER_DRAW, &CBirdviewView::OnUserDraw)
 //ON_WM_PAINT()
+ON_WM_ERASEBKGND()
 END_MESSAGE_MAP()
 
 // CBirdviewView 診斷
@@ -538,4 +539,13 @@ void CBirdviewView::OnPaint()
 void CBirdviewView::OnDraw(CDC* /*pDC*/)
 {
 	// TODO: 在此加入特定的程式碼和 (或) 呼叫基底類別
+}
+
+
+BOOL CBirdviewView::OnEraseBkgnd(CDC* pDC)
+{
+	// TODO: 在此加入您的訊息處理常式程式碼和 (或) 呼叫預設值
+
+	return TRUE;
+	return CView::OnEraseBkgnd(pDC);
 }

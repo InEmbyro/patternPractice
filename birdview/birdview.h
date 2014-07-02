@@ -59,6 +59,7 @@ protected:
 public:
 	afx_msg void OnPaint();
 	virtual void OnDraw(CDC* /*pDC*/);
+	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
 };
 
 #pragma once

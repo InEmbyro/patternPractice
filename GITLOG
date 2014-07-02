@@ -1,2 +1,2 @@
-1. Target List can show data
+1. Add OnEraseBkgnd() function of birdview to avoid flickering.
 
