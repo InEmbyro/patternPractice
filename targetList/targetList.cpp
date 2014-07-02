@@ -141,6 +141,7 @@ BEGIN_MESSAGE_MAP(CTargetList, CFormView)
 	ON_WM_SIZE()
 	ON_MESSAGE(WM_USER_DRAW, &CTargetList::OnUserDraw)
 	ON_CBN_SELCHANGE(IDC_TARGETLIST_COMBO, &CTargetList::OnCbnSelchangeTargetlistCombo)
+//	ON_WM_ERASEBKGND()
 END_MESSAGE_MAP()
 
 
@@ -519,4 +520,3 @@ void CTargetList::SetRawHeader()
 	m_listctrl.InsertColumn(idx++, _T("Class"),				LVCFMT_LEFT, 90, 0);
 	m_listctrl.InsertColumn(idx++, _T("Speed_radial[m/s]"), LVCFMT_LEFT, 90, 0);
 }
-

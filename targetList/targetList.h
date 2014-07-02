@@ -3,7 +3,7 @@
 #include "resource.h"
 #include "afxwin.h"
 #include "afxcmn.h"
-
+#include "TargetListCtrl.h"
 
 extern unsigned long recvId[];
 extern "C" AFX_EXT_API LPVOID WINAPI InitTargetListForm();
@@ -55,7 +55,7 @@ public:
 	static int __cdecl Compare(const RAW_OBJECT_STRUCT * p1, const RAW_OBJECT_STRUCT * p2);
 
 	CComboBox m_combo;
-	CListCtrl m_listctrl;
+	CTargetListCtrl m_listctrl;
 	int GetComboIdx();
 	virtual BOOL Create(LPCTSTR lpszClassName, LPCTSTR lpszWindowName, DWORD dwStyle, const RECT& rect, CWnd* pParentWnd, UINT nID, CCreateContext* pContext = NULL);
 	afx_msg void OnSize(UINT nType, int cx, int cy);

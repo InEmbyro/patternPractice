@@ -1,2 +1,2 @@
-1. Add OnEraseBkgnd() function of birdview to avoid flickering.
+1. Add CTargetListCtrl into targetLsit in to control row color.
 
