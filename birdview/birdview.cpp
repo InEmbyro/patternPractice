@@ -8,6 +8,8 @@
 #include <math.h>
 #include "resource.h"
 #include "birdview.h"
+#include "gl/gl.h"
+#include "gl/glu.h"
 #include "CReceiveThread.h"
 #include "../canEngine/canEngineApi.h"
 
@@ -26,6 +28,54 @@
 #define Y_OFFSET	10
 
 static AFX_EXTENSION_MODULE birdviewDLL = { NULL, NULL };
+
+unsigned char threeto8[8] =
+{
+	0, 0111>>1, 0222>>1, 0333>>1, 0444>>1, 0555>>1, 0666>>1, 0377
+};
+
+
+unsigned char twoto8[4] =
+{
+	0, 0x55, 0xaa, 0xff
+};
+
+unsigned char oneto8[2] =
+{
+	0, 255
+};
+
+static int defaultOverride[13] =
+{
+	0, 3, 24, 27, 64, 67, 88, 173, 181, 236, 247, 164, 91
+};
+
+static PALETTEENTRY defaultPalEntry[20] =
+{
+	{ 0,   0,   0,    0 },
+	{ 0x80,0,   0,    0 },
+	{ 0,   0x80,0,    0 },
+	{ 0x80,0x80,0,    0 },
+	{ 0,   0,   0x80, 0 },
+	{ 0x80,0,   0x80, 0 },
+	{ 0,   0x80,0x80, 0 },
+	{ 0xC0,0xC0,0xC0, 0 },
+
+	{ 192, 220, 192,  0 },
+	{ 166, 202, 240,  0 },
+	{ 255, 251, 240,  0 },
+	{ 160, 160, 164,  0 },
+
+	{ 0x80,0x80,0x80, 0 },
+	{ 0xFF,0,   0,    0 },
+	{ 0,   0xFF,0,    0 },
+	{ 0xFF,0xFF,0,    0 },
+	{ 0,   0,   0xFF, 0 },
+	{ 0xFF,0,   0xFF, 0 },
+	{ 0,   0xFF,0xFF, 0 },
+	{ 0xFF,0xFF,0xFF, 0 }
+};
+
 
 extern "C" int APIENTRY
 DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved)
@@ -111,6 +161,8 @@ int CBirdviewFrm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	CRect rect;
 	rect.SetRect(0, 0, lpCreateStruct->cx, lpCreateStruct->cy);
 	_pView->Create(NULL, NULL, AFX_WS_DEFAULT_VIEW, rect, this, AFX_IDW_PANE_FIRST, NULL);
+	_pView->Init();
+	_pView->SetTimer(0, 100, NULL);
 	
 	/*	Calling UpdateDate(FALSE) will cause GridFormChildView::DoDataExchange is called.
 		In the function, GridFormChildView::m_hWnd will be assigned */
@@ -153,6 +205,7 @@ int CBirdviewFrm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 BEGIN_MESSAGE_MAP(CBirdviewFrm, CMDIChildWnd)
 	ON_WM_CREATE()
 	ON_WM_CLOSE()
+//	ON_WM_DESTROY()
 END_MESSAGE_MAP()
 
 
@@ -172,6 +225,9 @@ const unsigned int CBirdviewView::slotKey = 0x01;
 CBirdviewView::CBirdviewView()
 	:pRcvThread(NULL)
 {
+	m_pDC = NULL;
+	m_pOldPalette = NULL;
+
 	_ListMutex = CreateMutex(NULL, FALSE, NULL);
 
 	int idx = 0;
@@ -239,6 +295,8 @@ BEGIN_MESSAGE_MAP(CBirdviewView, CView)
 	ON_MESSAGE(WM_USER_DRAW, &CBirdviewView::OnUserDraw)
 //ON_WM_PAINT()
 ON_WM_ERASEBKGND()
+ON_WM_TIMER()
+ON_WM_DESTROY()
 END_MESSAGE_MAP()
 
 // CBirdviewView 診斷
@@ -536,6 +594,163 @@ void CBirdviewView::OnPaint()
 }
 
 
+unsigned char CBirdviewView::ComponentFromIndex(int i, UINT nbits, UINT shift)
+{
+	unsigned char val;
+
+	val = (unsigned char) (i >> shift);
+	switch (nbits)
+	{
+
+	case 1:
+		val &= 0x1;
+		return oneto8[val];
+	case 2:
+		val &= 0x3;
+		return twoto8[val];
+	case 3:
+		val &= 0x7;
+		return threeto8[val];
+
+	default:
+		return 0;
+	}
+}
+
+
+void CBirdviewView::Init()
+{
+	PIXELFORMATDESCRIPTOR pfd;
+	int         n;
+	HGLRC       hrc;
+	GLfloat     fMaxObjSize, fAspect;
+	GLfloat     fNearPlane, fFarPlane;
+
+	m_pDC = new CClientDC(this);
+
+	ASSERT(m_pDC != NULL);
+
+	if (!bSetupPixelFormat())
+		return;
+
+	n = ::GetPixelFormat(m_pDC->GetSafeHdc());
+	::DescribePixelFormat(m_pDC->GetSafeHdc(), n, sizeof(pfd), &pfd);
+
+/*
+	CreateRGBPalette();
+*/
+
+	hrc = wglCreateContext(m_pDC->GetSafeHdc());
+	wglMakeCurrent(m_pDC->GetSafeHdc(), hrc);
+
+	GetClientRect(&m_oldRect);
+	glClearDepth(1.0f);
+	glEnable(GL_DEPTH_TEST);
+
+	if (m_oldRect.bottom)
+		fAspect = (GLfloat)m_oldRect.right/m_oldRect.bottom;
+	else    // don't divide by zero, not that we should ever run into that...
+		fAspect = 1.0f;
+	fNearPlane = 3.0f;
+	fFarPlane = 7.0f;
+	fMaxObjSize = 3.0f;
+	m_fRadius = fNearPlane + fMaxObjSize / 2.0f;
+
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluPerspective(40.0f, fAspect, fNearPlane, fFarPlane);
+	glMatrixMode(GL_MODELVIEW);
+}
+
+BOOL CBirdviewView::bSetupPixelFormat()
+{
+	static PIXELFORMATDESCRIPTOR pfd =
+	{
+		sizeof(PIXELFORMATDESCRIPTOR),  // size of this pfd
+		1,                              // version number
+		PFD_DRAW_TO_WINDOW |            // support window
+		  PFD_SUPPORT_OPENGL |          // support OpenGL
+		  PFD_DOUBLEBUFFER,             // double buffered
+		PFD_TYPE_RGBA,                  // RGBA type
+		24,                             // 24-bit color depth
+		0, 0, 0, 0, 0, 0,               // color bits ignored
+		0,                              // no alpha buffer
+		0,                              // shift bit ignored
+		0,                              // no accumulation buffer
+		0, 0, 0, 0,                     // accum bits ignored
+		32,                             // 32-bit z-buffer
+		0,                              // no stencil buffer
+		0,                              // no auxiliary buffer
+		PFD_MAIN_PLANE,                 // main layer
+		0,                              // reserved
+		0, 0, 0                         // layer masks ignored
+	};
+	int pixelformat;
+
+	if ( (pixelformat = ChoosePixelFormat(m_pDC->GetSafeHdc(), &pfd)) == 0 )
+	{
+		MessageBox(_T("ChoosePixelFormat failed"));
+		return FALSE;
+	}
+
+	if (SetPixelFormat(m_pDC->GetSafeHdc(), pixelformat, &pfd) == FALSE)
+	{
+		MessageBox(_T("SetPixelFormat failed"));
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+#pragma warning(disable : 4244)
+void CBirdviewView::CreateRGBPalette()
+{
+	PIXELFORMATDESCRIPTOR pfd;
+	LOGPALETTE *pPal;
+	int n, i;
+
+	n = ::GetPixelFormat(m_pDC->GetSafeHdc());
+	::DescribePixelFormat(m_pDC->GetSafeHdc(), n, sizeof(pfd), &pfd);
+
+	if (pfd.dwFlags & PFD_NEED_PALETTE)
+	{
+		n = 1 << pfd.cColorBits;
+		pPal = (PLOGPALETTE) new char[sizeof(LOGPALETTE) + n * sizeof(PALETTEENTRY)];
+
+		ASSERT(pPal != NULL);
+
+		pPal->palVersion = 0x300;
+		pPal->palNumEntries = n;
+		for (i=0; i<n; i++)
+		{
+			pPal->palPalEntry[i].peRed =
+					ComponentFromIndex(i, pfd.cRedBits, pfd.cRedShift);
+			pPal->palPalEntry[i].peGreen =
+					ComponentFromIndex(i, pfd.cGreenBits, pfd.cGreenShift);
+			pPal->palPalEntry[i].peBlue =
+					ComponentFromIndex(i, pfd.cBlueBits, pfd.cBlueShift);
+			pPal->palPalEntry[i].peFlags = 0;
+		}
+
+		/* fix up the palette to include the default GDI palette */
+		if ((pfd.cColorBits == 8)                           &&
+			(pfd.cRedBits   == 3) && (pfd.cRedShift   == 0) &&
+			(pfd.cGreenBits == 3) && (pfd.cGreenShift == 3) &&
+			(pfd.cBlueBits  == 2) && (pfd.cBlueShift  == 6)
+		   )
+		{
+			for (i = 1 ; i <= 12 ; i++)
+				pPal->palPalEntry[defaultOverride[i]] = defaultPalEntry[i];
+		}
+
+		m_cPalette.CreatePalette(pPal);
+		delete [] pPal;
+
+		m_pOldPalette = m_pDC->SelectPalette(&m_cPalette, FALSE);
+		m_pDC->RealizePalette();
+	}
+}
+#pragma warning(default : 4244)
 void CBirdviewView::OnDraw(CDC* /*pDC*/)
 {
 	// TODO: 在此加入特定的程式碼和 (或) 呼叫基底類別
@@ -548,4 +763,191 @@ BOOL CBirdviewView::OnEraseBkgnd(CDC* pDC)
 
 	return TRUE;
 	return CView::OnEraseBkgnd(pDC);
+}
+
+
+
+void CBirdviewView::OnTimer(UINT_PTR nIDEvent)
+{
+	DrawScene();
+
+	// TODO: 在此加入您的訊息處理常式程式碼和 (或) 呼叫預設值
+	CView::OnTimer(nIDEvent);
+
+	// Eat spurious WM_TIMER messages
+	MSG msg;
+	while(::PeekMessage(&msg, m_hWnd, WM_TIMER, WM_TIMER, PM_REMOVE));
+}
+
+#pragma warning(default : 4244)
+
+void CBirdviewView::DrawScene()
+{
+	static BOOL     bBusy = FALSE;
+	static GLfloat  wAngleY = 45.0f;
+	static GLfloat  wAngleX = 1.0f;
+	static GLfloat  wAngleZ = 5.0f;
+
+	if(bBusy)
+		return;
+	bBusy = TRUE;
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+#if 1
+
+	glPushMatrix();
+	glTranslatef(0.0f, 0.0f, -m_fRadius);
+	/*
+	glRotatef(wAngleX, 1.0f, 0.0f, 0.0f);
+	glRotatef(wAngleY, 0.0f, 1.0f, 0.0f);
+	glRotatef(wAngleZ, 0.0f, 0.0f, 1.0f);
+	*/
+//	glLoadIdentity();
+	//glTranslatef(-1.5f,10.0f, -6.0f);
+	glRotatef(wAngleX++, 1.0f, 0.0f, 0.0f);
+	wAngleY += 1;
+	glRotatef(wAngleY, 0.0f, 1.0f, 0.0f);
+
+	glBegin(GL_QUAD_STRIP);
+			glColor3f(1.0f, 0.0f, 1.0f);
+			glVertex3f(-0.5f, 0.5f, 0.5f);
+
+			glColor3f(1.0f, 0.0f, 0.0f);
+			glVertex3f(-0.5f, -0.5f, 0.5f);
+
+			glColor3f(1.0f, 1.0f, 1.0f);
+			glVertex3f(0.5f, 0.5f, 0.5f);
+
+			glColor3f(1.0f, 1.0f, 0.0f);
+			glVertex3f(0.5f, -0.5f, 0.5f);
+
+			glColor3f(0.0f, 1.0f, 1.0f);
+			glVertex3f(0.5f, 0.5f, -0.5f);
+
+			glColor3f(0.0f, 1.0f, 0.0f);
+			glVertex3f(0.5f, -0.5f, -0.5f);
+
+			glColor3f(0.0f, 0.0f, 1.0f);
+			glVertex3f(-0.5f, 0.5f, -0.5f);
+
+			glColor3f(0.0f, 0.0f, 0.0f);
+			glVertex3f(-0.5f, -0.5f,  -0.5f);
+
+			glColor3f(1.0f, 0.0f, 1.0f);
+			glVertex3f(-0.5f, 0.5f, 0.5f);
+
+			glColor3f(1.0f, 0.0f, 0.0f);
+			glVertex3f(-0.5f, -0.5f, 0.5f);
+	glEnd();
+	glPopMatrix();
+#else
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	glPushMatrix();
+
+		glTranslatef(0.0f, 0.0f, -m_fRadius);
+		glRotatef(wAngleX, 1.0f, 0.0f, 0.0f);
+		glRotatef(wAngleY, 0.0f, 1.0f, 0.0f);
+		glRotatef(wAngleZ, 0.0f, 0.0f, 1.0f);
+
+		wAngleX += 1.0f;
+		wAngleY += 10.0f;
+		wAngleZ += 5.0f;
+
+
+		glBegin(GL_QUAD_STRIP);
+			glColor3f(1.0f, 0.0f, 1.0f);
+			glVertex3f(-0.5f, 0.5f, 0.5f);
+
+			glColor3f(1.0f, 0.0f, 0.0f);
+			glVertex3f(-0.5f, -0.5f, 0.5f);
+
+			glColor3f(1.0f, 1.0f, 1.0f);
+			glVertex3f(0.5f, 0.5f, 0.5f);
+
+			glColor3f(1.0f, 1.0f, 0.0f);
+			glVertex3f(0.5f, -0.5f, 0.5f);
+
+			glColor3f(0.0f, 1.0f, 1.0f);
+			glVertex3f(0.5f, 0.5f, -0.5f);
+
+			glColor3f(0.0f, 1.0f, 0.0f);
+			glVertex3f(0.5f, -0.5f, -0.5f);
+
+			glColor3f(0.0f, 0.0f, 1.0f);
+			glVertex3f(-0.5f, 0.5f, -0.5f);
+
+			glColor3f(0.0f, 0.0f, 0.0f);
+			glVertex3f(-0.5f, -0.5f,  -0.5f);
+
+			glColor3f(1.0f, 0.0f, 1.0f);
+			glVertex3f(-0.5f, 0.5f, 0.5f);
+
+			glColor3f(1.0f, 0.0f, 0.0f);
+			glVertex3f(-0.5f, -0.5f, 0.5f);
+		glEnd();
+/*
+		glBegin(GL_QUADS);
+			glColor3f(1.0f, 0.0f, 1.0f);
+			glVertex3f(-0.5f, 0.5f, 0.5f);
+
+			glColor3f(1.0f, 1.0f, 1.0f);
+			glVertex3f(0.5f, 0.5f, 0.5f);
+
+			glColor3f(0.0f, 1.0f, 1.0f);
+			glVertex3f(0.5f, 0.5f, -0.5f);
+
+			glColor3f(0.0f, 0.0f, 1.0f);
+			glVertex3f(-0.5f, 0.5f, -0.5f);
+		glEnd();
+*/
+		/*
+		glBegin(GL_QUADS);
+			glColor3f(1.0f, 0.0f, 0.0f);
+			glVertex3f(-0.5f, -0.5f, 0.5f);
+
+			glColor3f(1.0f, 1.0f, 0.0f);
+			glVertex3f(0.5f, -0.5f, 0.5f);
+
+			glColor3f(0.0f, 1.0f, 0.0f);
+			glVertex3f(0.5f, -0.5f, -0.5f);
+
+			glColor3f(0.0f, 0.0f, 0.0f);
+			glVertex3f(-0.5f, -0.5f,  -0.5f);
+		glEnd();
+		*/
+
+	glPopMatrix();
+#endif
+
+	glFinish();
+	SwapBuffers(wglGetCurrentDC());
+
+	bBusy = FALSE;
+}
+
+
+void CBirdviewView::OnDestroy()
+{
+	HGLRC   hrc;
+
+	KillTimer(0);
+
+	hrc = ::wglGetCurrentContext();
+
+	::wglMakeCurrent(NULL,  NULL);
+
+	if (hrc)
+		::wglDeleteContext(hrc);
+
+	if (m_pOldPalette)
+		m_pDC->SelectPalette(m_pOldPalette, FALSE);
+
+	if (m_pDC)
+		delete m_pDC;
+
+	CView::OnDestroy();
+
+	// TODO: 在此加入您的訊息處理常式程式碼
 }

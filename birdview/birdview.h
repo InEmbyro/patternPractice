@@ -27,6 +27,7 @@ class CBirdviewView : public CView
 	void DrawCarLine(CDC *pDc);
 	void SetOrigin(CDC *pDc, BOOL action, int x_offset = 0, int y_offset = 0);
 	CArray <CPoint, CPoint&> _Array;
+	void CreateRGBPalette();
 
 	CReceiveThread *pRcvThread;
 	void ParseRawObject(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *pRaw);
@@ -35,6 +36,16 @@ class CBirdviewView : public CView
 	void DrawTrackingObject(PARAM_STRUCT*, CDC*);
 
 public:
+	CPalette    m_cPalette;
+	CPalette    *m_pOldPalette;
+	CRect       m_oldRect;
+	CClientDC   *m_pDC;
+	unsigned char ComponentFromIndex(int i, UINT nbits, UINT shift);
+	void	Init();
+	float	m_fRadius;
+	BOOL bSetupPixelFormat(void);
+	void DrawScene();
+
 	HANDLE _ListMutex;
 	HANDLE _MapMutex;
 
@@ -60,6 +71,8 @@ public:
 	afx_msg void OnPaint();
 	virtual void OnDraw(CDC* /*pDC*/);
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
+	afx_msg void OnTimer(UINT_PTR nIDEvent);
+	afx_msg void OnDestroy();
 };
 
 #pragma once
