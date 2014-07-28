@@ -38,9 +38,10 @@ protected:
 public:
 	afx_msg void OnAppAbout();
 	afx_msg void OnFileNew();
-	DECLARE_MESSAGE_MAP()
 	afx_msg void OnFileBirdview();
 	afx_msg void OnFileTargetlist();
+	DECLARE_MESSAGE_MAP()
+	afx_msg void OnFileTest();
 };
 
 extern CdllTest2App theApp;

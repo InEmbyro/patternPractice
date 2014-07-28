@@ -26,6 +26,7 @@ BEGIN_MESSAGE_MAP(CdllTest2App, CWinApp)
 	ON_COMMAND(ID_FILE_NEW, &CdllTest2App::OnFileNew)
 	ON_COMMAND(ID_FILE_BIRDVIEW, &CdllTest2App::OnFileBirdview)
 	ON_COMMAND(ID_FILE_TARGETLIST, &CdllTest2App::OnFileTargetlist)
+	//ON_COMMAND(ID_FILE_TEST, &CdllTest2App::OnFileTargetlist)
 END_MESSAGE_MAP()
 
 
@@ -172,4 +173,11 @@ void CdllTest2App::OnFileTargetlist()
 {
 	// TODO: 在此加入您的命令處理常式程式碼
 	CTargetListForm *pFrame = (CTargetListForm*)InitTargetListForm();
+}
+
+
+void CdllTest2App::OnFileTest()
+{
+	OnFileTargetlist();
+	// TODO: 在此加入您的命令處理常式程式碼
 }

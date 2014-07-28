@@ -115,6 +115,7 @@ int CGridFormChildFrm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	_pView->UpdateData(FALSE);
 
 	if (!pGridFormThread) {
+		AfxSetResourceHandle(hInstOld);
 		AfxMessageBox(_T("_pGridFormThread"));
 		return -1;
 	}
@@ -125,6 +126,7 @@ int CGridFormChildFrm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	name = GridFormChildView::mailslot;
 	pos = RegisterAcquire(name, GridFormChildView::slotKey);
 	if (pos == NULL) {
+		AfxSetResourceHandle(hInstOld);
 		AfxMessageBox(_T("GridFormChildView::mailslot"));
 		return -1;
 	}
