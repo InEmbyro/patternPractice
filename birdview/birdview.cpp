@@ -8,8 +8,6 @@
 #include <math.h>
 #include "resource.h"
 #include "birdview.h"
-#include "gl/gl.h"
-#include "gl/glu.h"
 #include "CReceiveThread.h"
 #include "../canEngine/canEngineApi.h"
 
@@ -23,17 +21,13 @@
 #define SCALE	10
 #define OBJECT_SIZE		10
 
-#define GLGL
-
 #define CAR_WIDTH	(2 * SCALE)		//2 meter
 #define CAR_LENGTH	(4.5 * SCALE)	//4.5m
 #define Y_OFFSET	10
 
 static AFX_EXTENSION_MODULE birdviewDLL = { NULL, NULL };
-
-GLfloat	CBirdviewView::halfCarLen = 2.0f;
-GLfloat	CBirdviewView::halfCarWidth = 1.0f;
-
+float CBirdviewView::halfCarWidth = 1.0f;
+float CBirdviewView::halfCarLen = 2.0f;
 
 unsigned char threeto8[8] =
 {
@@ -168,7 +162,7 @@ int CBirdviewFrm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	rect.SetRect(0, 0, lpCreateStruct->cx, lpCreateStruct->cy);
 	_pView->Create(NULL, NULL, AFX_WS_DEFAULT_VIEW, rect, this, AFX_IDW_PANE_FIRST, NULL);
 	_pView->Init();
-	//_pView->SetTimer(0, 50, NULL);
+	_pView->SetTimer(0, 100, NULL);
 	
 	/*	Calling UpdateDate(FALSE) will cause GridFormChildView::DoDataExchange is called.
 		In the function, GridFormChildView::m_hWnd will be assigned */
@@ -325,11 +319,6 @@ void CBirdviewView::Dump(CDumpContext& dc) const
 
 void CBirdviewView::ParseTrackingObject(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *pRaw)
 {
-#ifdef GLGL
-	return;
-#endif //GLGL
-
-
 	if (pSrc == NULL || pRaw == NULL)
 		return;
 
@@ -387,12 +376,88 @@ void CBirdviewView::DrawTrackingObject(PARAM_STRUCT *pD, CDC *pDc)
 	pDc->DrawText(str, rect, DT_SINGLELINE | DT_LEFT | DT_VCENTER);
 }
 // CBirdviewView 訊息處理常式
+
+void CBirdviewView::DrawRawObject3D(PARAM_STRUCT *pD)
+{
+	int angle;
+	float temp;
+	RAW_OBJECT_STRUCT raw;
+	CPoint pnt;
+
+	ParseRawObject(pD, &raw);
+	if (pD->Ident == 0x401) {
+		angle = 57;
+	} else if (pD->Ident == 0x411) {
+		angle = -57;
+	}
+	temp = (raw.x_range * cos(angle * RAD_CONVER)) - (raw.y_range * sin(angle * RAD_CONVER));
+	pnt.x = temp;
+	temp = (raw.x_range * sin(angle * RAD_CONVER)) + (raw.y_range * cos(angle * RAD_CONVER));
+	temp += halfCarLen;
+	pnt.y = temp;	//it is Z
+
+	glPushMatrix();
+	glColor3f(1.0f, 1.0f, 0.0f);
+
+	//front
+	glBegin(GL_QUADS);
+	glNormal3f(0.0f, 0.0f, -1.0f);
+	glVertex3f(pnt.x - 0.5f,	1.0f,	pnt.y + 0.5f);
+	glVertex3f(pnt.x - 0.5f,	0.0f,	pnt.y + 0.5f);
+	glVertex3f(pnt.x + 0.5f,	0.0f,	pnt.y + 0.5f);
+	glVertex3f(pnt.x + 0.5f,	1.0f,	pnt.y + 0.5f);
+	glEnd();
+
+	//back
+	glBegin(GL_QUADS);
+	glNormal3f(0.0f, 0.0f, -1.0f);
+	glVertex3f(pnt.x - 0.5f,	1.0f,	pnt.y - 0.5f);
+	glVertex3f(pnt.x - 0.5f,	0.0f,	pnt.y - 0.5f);
+	glVertex3f(pnt.x + 0.5f,	0.0f,	pnt.y - 0.5f);
+	glVertex3f(pnt.x + 0.5f,	1.0f,	pnt.y - 0.5f);
+	glEnd();
+
+	//right
+	glBegin(GL_QUADS);
+	glNormal3f(-1.0f, 0.0f, 0.0f);
+	glVertex3f(pnt.x + 0.5f,	1.0f,	pnt.y + 0.5f);
+	glVertex3f(pnt.x + 0.5f,	0.0f,	pnt.y + 0.5f);
+	glVertex3f(pnt.x + 0.5f,	0.0f,	pnt.y - 0.5f);
+	glVertex3f(pnt.x + 0.5f,	1.0f,	pnt.y - 0.5f);
+	glEnd();
+
+	//left
+	glBegin(GL_QUADS);
+	glNormal3f(-1.0f, 0.0f, 0.0f);
+	glVertex3f(pnt.x - 0.5f,	1.0f,	pnt.y + 0.5f);
+	glVertex3f(pnt.x - 0.5f,	0.0f,	pnt.y + 0.5f);
+	glVertex3f(pnt.x - 0.5f,	0.0f,	pnt.y - 0.5f);
+	glVertex3f(pnt.x - 0.5f,	1.0f,	pnt.y - 0.5f);
+	glEnd();
+
+	//top
+	glBegin(GL_QUADS);
+	glNormal3f(0.0f, 1.0f, 0.0f);
+	glVertex3f(pnt.x + 0.5f,	1.0f,	pnt.y + 0.5f);
+	glVertex3f(pnt.x + 0.5f,	1.0f,	pnt.y - 0.5f);
+	glVertex3f(pnt.x - 0.5f,	1.0f,	pnt.y - 0.5f);
+	glVertex3f(pnt.x - 0.5f,	1.0f,	pnt.y + 0.5f);
+	glEnd();
+
+	//bottom
+	glBegin(GL_QUADS);
+	glNormal3f(0.0f, 1.0f, 0.0f);
+	glVertex3f(pnt.x + 0.5f,	0.0f,	pnt.y + 0.5f);
+	glVertex3f(pnt.x + 0.5f,	0.0f,	pnt.y - 0.5f);
+	glVertex3f(pnt.x - 0.5f,	0.0f,	pnt.y - 0.5f);
+	glVertex3f(pnt.x - 0.5f,	0.0f,	pnt.y + 0.5f);
+	glEnd();
+
+	glPopMatrix();
+}
+
 void CBirdviewView::DrawRawObject(PARAM_STRUCT *pD, CDC *pDc)
 {
-#ifdef GLGL
-	return;
-#endif //GLGL
-
 	RAW_OBJECT_STRUCT raw;
 	int angle;
 	CPen pen;
@@ -434,70 +499,6 @@ void CBirdviewView::DrawRawObject(PARAM_STRUCT *pD, CDC *pDc)
 	pDc->DrawText(str, rect, DT_SINGLELINE | DT_LEFT | DT_VCENTER);
 }
 
-void CBirdviewView::DrawRawObject3D(PARAM_STRUCT *pP)
-{
-	RAW_OBJECT_STRUCT raw;
-	int angle;
-	float temp;
-	float tempZ;
-	float tempX;
-	CPoint pnt;
-
-	ParseRawObject(pP, &raw);
-	if (pP->Ident == 0x401) {
-		angle = 57;
-	} else if (pP->Ident == 0x411) {
-		angle = -57;
-	}
-
-	temp = (raw.x_range * cos(angle * RAD_CONVER)) - (raw.y_range * sin(angle * RAD_CONVER));
-	pnt.x = (temp * 1);
-	temp = (raw.x_range * sin(angle * RAD_CONVER)) + (raw.y_range * cos(angle * RAD_CONVER));
-	temp += halfCarLen;
-	pnt.y = (temp *1);
-
-	glPushMatrix();
-	glColor3f(1.0f, 1.0f, 0.0f);
-	//front
-	glBegin(GL_QUADS);
-	glNormal3f(0.0f, 0.0f, pnt.y);
-	glVertex3f(pnt.x - 0.5f,	1.0f,	pnt.y + 0.5f);
-	glVertex3f(pnt.x - 0.5f,	0.0f,	pnt.y + 0.5f);
-	glVertex3f(pnt.x + 0.5f,	0.0f,	pnt.y + 0.5f);
-	glVertex3f(pnt.x + 0.5f,	1.0f,	pnt.y + 0.5f);
-	glEnd();
-
-	//right
-	glBegin(GL_QUADS);
-	glNormal3f(pnt.x, 0.0f, 0.0f);
-	glVertex3f(pnt.x + 0.5f,	1.0f,	pnt.y + 0.5f);
-	glVertex3f(pnt.x + 0.5f,	0.0f,	pnt.y + 0.5f);
-	glVertex3f(pnt.x + 0.5f,	0.0f,	pnt.y - 0.5f);
-	glVertex3f(pnt.x + 0.5f,	1.0f,	pnt.y - 0.5f);
-	glEnd();
-	
-	//left
-	glBegin(GL_QUADS);
-	glNormal3f(-pnt.x, 0.0f, 0.0f);
-	glVertex3f(pnt.x - 0.5f,	1.0f,	pnt.y + 0.5f);
-	glVertex3f(pnt.x - 0.5f,	0.0f,	pnt.y + 0.5f);
-	glVertex3f(pnt.x - 0.5f,	0.0f,	pnt.y - 0.5f);
-	glVertex3f(pnt.x - 0.5f,	1.0f,	pnt.y - 0.5f);
-	glEnd();
-
-	//top
-	glBegin(GL_QUADS);
-	glNormal3f(0.0f, 1.0f, 0.0f);
-	glVertex3f(pnt.x - 0.5f,	1.0f,	pnt.y + 0.5f);
-	glVertex3f(pnt.x - 0.5f,	1.0f,	pnt.y - 0.5f);
-	glVertex3f(pnt.x + 0.5f,	1.0f,	pnt.y - 0.5f);
-	glVertex3f(pnt.x + 0.5f,	1.0f,	pnt.y + 0.5f);
-	glEnd();
-
-
-	glPopMatrix();
-}
-
 afx_msg LRESULT CBirdviewView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 {
 	PARAM_STRUCT data;
@@ -509,8 +510,8 @@ afx_msg LRESULT CBirdviewView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 	if (GetSafeHwnd() == NULL)
 		return 0;
 
+#if 1
 	DrawScene();
-
 	int arrIdx = 0;
 	for (arrIdx = 0; arrIdx < _ListArray.GetSize(); arrIdx++) {
 		WaitForSingleObject(_ListArrayMutex.GetAt(arrIdx), INFINITE);
@@ -528,8 +529,8 @@ afx_msg LRESULT CBirdviewView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 			} else if (data.Ident == 0x411) {
 				DrawRawObject3D(&data);
 			}
-			/* else if (data.Ident >= 0x610 && data.Ident <= 0x620) {
-				SetOrigin(&dcMem, TRUE, 0, Y_OFFSET);
+			/*
+			else if (data.Ident >= 0x610 && data.Ident <= 0x620) {
 				DrawTrackingObject(&data, &dcMem);
 			}
 			*/
@@ -537,9 +538,81 @@ afx_msg LRESULT CBirdviewView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 		}
 		ReleaseMutex(_ListArrayMutex.GetAt(arrIdx));
 	}
+
 	glFinish();
 	SwapBuffers(wglGetCurrentDC());
+#else 
+	/* Create a compatible dc & bmp to avoid flickering */
+	CClientDC dc(this);	/* acquire device context */
+	CRect rect;
+	GetClientRect(&rect);
 
+	CDC dcMem;
+	dcMem.CreateCompatibleDC(&dc);
+
+	/* Prepare Pen for drawing object */
+	CPen pen, *pOldPen;
+	CBrush	*pOldBrush = NULL;
+	CBrush	*pBrush = CBrush::FromHandle((HBRUSH)GetStockObject(NULL_BRUSH));
+	CFont font;
+	CFont *pOldFont;
+	font.CreatePointFont(90, _T("Arial"));
+	pOldFont = dcMem.SelectObject(&font);
+	dcMem.SetTextColor(RGB(255, 255, 255));
+
+	CBitmap bmp;
+	CBitmap *pOldBmp = NULL;
+	bmp.CreateCompatibleBitmap(&dc, rect.Width(), rect.Height());
+	pOldBmp = dcMem.SelectObject(&bmp);
+	pOldBrush = dcMem.SelectObject(pBrush);
+	DrawCarLine(&dcMem);
+
+	POSITION pos;
+	//pos = _List.GetHeadPosition();
+	/* Assign pen, brush etc.. */
+	pOldPen = dcMem.SelectObject(&pen);
+
+	int arrIdx = 0;
+	for (arrIdx = 0; arrIdx < _ListArray.GetSize(); arrIdx++) {
+		WaitForSingleObject(_ListArrayMutex.GetAt(arrIdx), INFINITE);
+		p = _ListArray.GetAt(arrIdx);
+		if (!p) {
+			ReleaseMutex(_ListArrayMutex.GetAt(arrIdx));
+			continue;
+		}
+		pos = p->GetHeadPosition();
+		while (pos) {
+			data = p->GetAt(pos);
+			p->RemoveHead();
+			if (data.Ident == 0x401) {
+				SetOrigin(&dcMem, TRUE, -(CAR_WIDTH / 2), CAR_LENGTH);
+				DrawRawOjbect(&data, &dcMem);
+			} else if (data.Ident == 0x411) {
+				SetOrigin(&dcMem, TRUE, CAR_WIDTH / 2, CAR_LENGTH);
+				DrawRawOjbect(&data, &dcMem);
+			} else if (data.Ident >= 0x610 && data.Ident <= 0x620) {
+				SetOrigin(&dcMem, TRUE, 0, Y_OFFSET);
+				DrawTrackingObject(&data, &dcMem);
+			}
+			SetOrigin(&dcMem, FALSE);
+			pos = p->GetHeadPosition();
+		}
+		ReleaseMutex(_ListArrayMutex.GetAt(arrIdx));
+	}
+
+	dcMem.SelectObject(pOldPen);
+	dcMem.SelectObject(pOldBrush);
+	if (pen.m_hObject)
+		pen.DeleteObject();
+
+	//
+	GetClientRect(&rect);
+	dc.BitBlt(0, 0, rect.Width(), rect.Height(), &dcMem, 0, 0, SRCCOPY);
+	dcMem.SelectObject(pOldBmp);
+	if (bmp.m_hObject)
+		bmp.DeleteObject();
+	dcMem.DeleteDC();
+#endif
 	return 0;
 }
 
@@ -658,7 +731,6 @@ unsigned char CBirdviewView::ComponentFromIndex(int i, UINT nbits, UINT shift)
 	}
 }
 
-
 void CBirdviewView::Init()
 {
 	PIXELFORMATDESCRIPTOR pfd;
@@ -676,6 +748,7 @@ void CBirdviewView::Init()
 	::DescribePixelFormat(m_pDC->GetSafeHdc(), n, sizeof(pfd), &pfd);
 
 	CreateRGBPalette();
+
 	hrc = wglCreateContext(m_pDC->GetSafeHdc());
 	wglMakeCurrent(m_pDC->GetSafeHdc(), hrc);
 
@@ -689,21 +762,20 @@ void CBirdviewView::Init()
 	glEnable(GL_NORMALIZE); //Automatically normalize normals
 
 	if (m_oldRect.bottom)
-		m_fAspect = (GLfloat)m_oldRect.Width()/m_oldRect.Height();
+		m_fAspect = (GLfloat)m_oldRect.right/m_oldRect.bottom;
 	else    // don't divide by zero, not that we should ever run into that...
 		m_fAspect = 1.0f;
 	m_fNearPlane = 3.0f;
 	m_fFarPlane = 300.0f;
-	m_fMaxObjSize = 150.0f;
+	m_fMaxObjSize = 50.0f;
 	m_fRadius = m_fNearPlane + m_fMaxObjSize / 2.0f;
 	m_fFov = 30.0f;
 
+	glViewport(0, 0, m_oldRect.Width(), m_oldRect.Height());
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	gluPerspective(m_fFov, m_fAspect, m_fNearPlane, m_fFarPlane);
 	glMatrixMode(GL_MODELVIEW);
-
-
 }
 
 BOOL CBirdviewView::bSetupPixelFormat()
@@ -831,80 +903,87 @@ void CBirdviewView::DrawScene()
 	static GLfloat  wAngleX = 1.0f;
 	static GLfloat  wAngleZ = 5.0f;
 
- 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	
-	CRect rect;
-	GetClientRect(&rect);
-	glViewport(0, 0, rect.Width(), rect.Height());
-	glLoadIdentity();
-	glTranslatef(0.0f, 5.0f, -m_fRadius);
-	glRotatef(30.0f, 1.0f, 0.0f, 0.0f);
 
-	//Add ambient light
-	GLfloat ambientColor[] = {0.2f, 0.2f,0.2f, 1.0f}; //Color (0.2, 0.2, 0.2)
+	glLoadIdentity();
+	glTranslatef(0.0f, 0.0f, -m_fRadius);
+	glRotatef(20.0f, 1.0f, 0.0f, 0.0f);
+
+	GLfloat ambientColor[] = {0.5f, 0.5f, 0.5f, 1.0f}; //Color (0.2, 0.2, 0.2)
 	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambientColor);
 	
 	//Add positioned light
 	GLfloat lightColor0[] = {0.2f, 0.2f, 0.2f, 1.0f}; //Color (0.5, 0.5, 0.5)
-	GLfloat lightPos0[] = {0.0f, 8.0f, 8.0f, 1.0f}; //Positioned at (4, 0, 8)
+	GLfloat lightPos0[] = {0.0f, 0.0f, -8.0f, 1.0f}; //Positioned at (4, 0, 8)
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, lightColor0);
 	glLightfv(GL_LIGHT0, GL_POSITION, lightPos0);
 	
 	//Add directed light
-	GLfloat lightColor1[] = {0.2f, 0.2f, 0.2f, 1.0f}; //Color (0.5, 0.2, 0.2)
+	GLfloat lightColor1[] = {0.5f, 0.5f, 0.5f, 1.0f}; //Color (0.5, 0.2, 0.2)
 	//Coming from the direction (-1, 0.5, 0.5)
-	GLfloat lightPos1[] = {0.0f, 8.0f, 0.0f, 0.0f};
+	GLfloat lightPos1[] = {-5.0f, 8.0f, -8.0f, 0.0f};
 	glLightfv(GL_LIGHT1, GL_DIFFUSE, lightColor1);
 	glLightfv(GL_LIGHT1, GL_POSITION, lightPos1);
 	
 	glPushMatrix();
-	glColor3f(1.0f, 0.2f, 0.2f);
-	glBegin(GL_QUADS);	
-	//Front
-	glNormal3f(0.0f, 0.0f, 1.0f);
-	glVertex3f(-halfCarWidth,	2.0f,	halfCarLen);
-	glVertex3f(-halfCarWidth,	0.0f,	halfCarLen);
-	glVertex3f(halfCarWidth,	0.0f,	halfCarLen);
-	glVertex3f(halfCarWidth,	2.0f,	halfCarLen);
+	glColor3f(1.0f, 0.0f, 0.0f);
 
-	//left
-	glNormal3f(-1.0f, 0.0f, 0.0f);
-	glVertex3f(-halfCarWidth,	2.0f,	halfCarLen);
-	glVertex3f(-halfCarWidth,	0.0f,	halfCarLen);
-	glVertex3f(-halfCarWidth,	0.0f,	-halfCarLen);
-	glVertex3f(-halfCarWidth,	2.0f,	-halfCarLen);
-
-	//right
-	glNormal3f(1.0f, 0.0f, 0.0f);
-	glVertex3f(halfCarWidth,	2.0f,	halfCarLen);
-	glVertex3f(halfCarWidth,	0.0f,	halfCarLen);
-	glVertex3f(halfCarWidth,	0.0f,	-halfCarLen);
-	glVertex3f(halfCarWidth,	2.0f,	-halfCarLen);	
+	//front
+	glBegin(GL_QUADS);
+	glNormal3f(0.0f, 0.0f, -1.0f);
+	glVertex3f(-halfCarWidth, 2.0f, halfCarLen);
+	glVertex3f(-halfCarWidth, 0.0f, halfCarLen);
+	glVertex3f(halfCarWidth, 0.0f, halfCarLen);
+	glVertex3f(halfCarWidth, 2.0f, halfCarLen);
+	glEnd();
 
 	//back
+	glBegin(GL_QUADS);
 	glNormal3f(0.0f, 0.0f, -1.0f);
-	glVertex3f(-halfCarWidth,	2.0f,	-halfCarLen);
-	glVertex3f(-halfCarWidth,	0.0f,	-halfCarLen);
-	glVertex3f(halfCarWidth,	0.0f,	-halfCarLen);
-	glVertex3f(halfCarWidth,	2.0f,	-halfCarLen);
+	glVertex3f(-halfCarWidth, 2.0f, -halfCarLen);
+	glVertex3f(-halfCarWidth, 0.0f, -halfCarLen);
+	glVertex3f(halfCarWidth, 0.0f, -halfCarLen);
+	glVertex3f(halfCarWidth, 2.0f, -halfCarLen);
+	glEnd();
+
+	//right
+	glBegin(GL_QUADS);
+	glNormal3f(-1.0f, 0.0f, 0.0f);
+	glVertex3f(halfCarWidth, 2.0f, halfCarLen);
+	glVertex3f(halfCarWidth, 2.0f, -halfCarLen);
+	glVertex3f(halfCarWidth, 0.0f, -halfCarLen);
+	glVertex3f(halfCarWidth, 0.0f, halfCarLen);
+	glEnd();
+
+	//left
+	glBegin(GL_QUADS);
+	glNormal3f(-1.0f, 0.0f, 0.0f);
+	glVertex3f(-halfCarWidth, 2.0f, halfCarLen);
+	glVertex3f(-halfCarWidth, 2.0f, -halfCarLen);
+	glVertex3f(-halfCarWidth, 0.0f, -halfCarLen);
+	glVertex3f(-halfCarWidth, 0.0f, halfCarLen);
+	glEnd();
 
 	//top
+	glBegin(GL_QUADS);
 	glNormal3f(0.0f, 1.0f, 0.0f);
-	glVertex3f(-halfCarWidth,	2.0f,	halfCarLen);
-	glVertex3f(halfCarWidth,	2.0f,	halfCarLen);
-	glVertex3f(halfCarWidth,	2.0f,	-halfCarLen);
-	glVertex3f(-halfCarWidth,	2.0f,	-halfCarLen);
+	glVertex3f(-halfCarWidth, 2.0f, halfCarLen);
+	glVertex3f(halfCarWidth, 2.0f, halfCarLen);
+	glVertex3f(halfCarWidth, 2.0f, -halfCarLen);
+	glVertex3f(-halfCarWidth, 2.0f, -halfCarLen);
+	glEnd();
 
 	//bottom
-	glNormal3f(0.0f, -1.0f, 0.0f);
-	glVertex3f(-halfCarWidth,	0.0f,	halfCarLen);
-	glVertex3f(-halfCarWidth,	0.0f,	-halfCarLen);
-	glVertex3f(halfCarWidth,	0.0f,	-halfCarLen);
-	glVertex3f(halfCarWidth,	0.0f,	halfCarLen);
+	glBegin(GL_QUADS);
+	glNormal3f(0.0f, 1.0f, 0.0f);
+	glVertex3f(-halfCarWidth,	0.0f, halfCarLen);
+	glVertex3f(halfCarWidth,	0.0f, halfCarLen);
+	glVertex3f(halfCarWidth,	0.0f, -halfCarLen);
+	glVertex3f(-halfCarWidth,	0.0f, -halfCarLen);
 	glEnd();
-	glPopMatrix();
 
+	glPopMatrix();
 }
 
 
@@ -938,11 +1017,12 @@ void CBirdviewView::OnSize(UINT nType, int cx, int cy)
 	CView::OnSize(nType, cx, cy);
 
 	// TODO: 在此加入您的訊息處理常式程式碼
-	GetClientRect(&m_oldRect);
-	glViewport(0, 0, m_oldRect.Width(), m_oldRect.Height());
+	CRect rect;
+	GetClientRect(&rect);
+	glViewport(0, 0, rect.Width(), rect.Height());
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	m_fAspect = (double)m_oldRect.Width()/(double)m_oldRect.Height();
-	gluPerspective(m_fFov, m_fAspect, m_fNearPlane, m_fFarPlane);
+	gluPerspective(m_fFov, (double)rect.Width()/ (double)rect.Height(), m_fNearPlane, m_fFarPlane);
 	glMatrixMode(GL_MODELVIEW);
+
 }

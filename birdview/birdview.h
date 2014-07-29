@@ -2,11 +2,10 @@
 
 #include "stdafx.h"
 #include "resource.h"
-#include "../Softing/Can_def.h"
-#include "../Softing/CANL2.H"
 #include "gl/gl.h"
 #include "gl/glu.h"
-
+#include "../Softing/Can_def.h"
+#include "../Softing/CANL2.H"
 
 #define	WM_USER_DRAW	(WM_USER + 1)
 
@@ -24,6 +23,8 @@ class CBirdviewView : public CView
 	DECLARE_DYNCREATE(CBirdviewView)
 	static const char* mailslot;
 	static const unsigned int slotKey;
+	static float halfCarWidth;
+	static float halfCarLen;
 
 	CBirdviewView();           // 動態建立所使用的保護建構函式
 	virtual ~CBirdviewView();
@@ -49,13 +50,12 @@ public:
 	float	m_fRadius;
 	BOOL bSetupPixelFormat(void);
 	void DrawScene();
-	GLfloat     m_fMaxObjSize;
-	GLfloat		m_fAspect;
-	GLfloat     m_fNearPlane;
-	GLfloat		m_fFarPlane;
-	GLfloat		m_fFov;
-	static GLfloat	halfCarLen;
-	static GLfloat	halfCarWidth;
+	GLfloat	m_fMaxObjSize;
+	GLfloat m_fAspect;
+	GLfloat	m_fNearPlane;
+	GLfloat m_fFarPlane;
+	GLfloat m_fFov;
+
 
 	HANDLE _ListMutex;
 	HANDLE _MapMutex;
