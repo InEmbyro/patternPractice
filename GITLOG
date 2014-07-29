@@ -1,3 +1,3 @@
-1. Bug fixing. TargetList can not be shown when pervious opened frame is Gridform.
-2. In formview, resume resource handle when return from the OnCreate() of frame.
+1. Using opneGL library draws birdview. The raw objects can be drawn in 3D.
+The raw objects coming from slave has been tested.
 

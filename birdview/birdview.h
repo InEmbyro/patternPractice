@@ -4,6 +4,9 @@
 #include "resource.h"
 #include "../Softing/Can_def.h"
 #include "../Softing/CANL2.H"
+#include "gl/gl.h"
+#include "gl/glu.h"
+
 
 #define	WM_USER_DRAW	(WM_USER + 1)
 
@@ -32,7 +35,8 @@ class CBirdviewView : public CView
 	CReceiveThread *pRcvThread;
 	void ParseRawObject(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *pRaw);
 	void ParseTrackingObject(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *pRaw);
-	void DrawRawOjbect(PARAM_STRUCT *, CDC*);
+	void DrawRawObject(PARAM_STRUCT *, CDC*);
+	void DrawRawObject3D(PARAM_STRUCT *);
 	void DrawTrackingObject(PARAM_STRUCT*, CDC*);
 
 public:
@@ -45,6 +49,13 @@ public:
 	float	m_fRadius;
 	BOOL bSetupPixelFormat(void);
 	void DrawScene();
+	GLfloat     m_fMaxObjSize;
+	GLfloat		m_fAspect;
+	GLfloat     m_fNearPlane;
+	GLfloat		m_fFarPlane;
+	GLfloat		m_fFov;
+	static GLfloat	halfCarLen;
+	static GLfloat	halfCarWidth;
 
 	HANDLE _ListMutex;
 	HANDLE _MapMutex;
@@ -73,6 +84,7 @@ public:
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	afx_msg void OnDestroy();
+	afx_msg void OnSize(UINT nType, int cx, int cy);
 };
 
 #pragma once
