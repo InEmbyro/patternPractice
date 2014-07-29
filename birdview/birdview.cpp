@@ -885,7 +885,7 @@ BOOL CBirdviewView::OnEraseBkgnd(CDC* pDC)
 
 void CBirdviewView::OnTimer(UINT_PTR nIDEvent)
 {
-	DrawScene();
+	SendMessage(WM_USER_DRAW, 0, 0);
 
 	// TODO: 在此加入您的訊息處理常式程式碼和 (或) 呼叫預設值
 	CView::OnTimer(nIDEvent);
@@ -982,7 +982,72 @@ void CBirdviewView::DrawScene()
 	glVertex3f(halfCarWidth,	0.0f, -halfCarLen);
 	glVertex3f(-halfCarWidth,	0.0f, -halfCarLen);
 	glEnd();
+	glPopMatrix();
 
+
+#define FAN_LEN	(5.0f)
+	float tempX = 0;
+	float tempZ = 0;
+
+	glPushMatrix();
+	glTranslatef(-halfCarWidth, 0.0f, halfCarLen);
+	glRotatef(-57.0f, 0.0f, 1.0f, 0.0f);
+
+	glBegin(GL_LINE_LOOP);
+	glColor3f(0.0f, 1.0f, 0.0f);
+	glVertex3f(0.0f, 0.0f, 0.0f);
+	for (float idx = -60; idx <= 60; idx += 0.01) {
+		tempX = FAN_LEN * sin(idx * 3.1415926 / 180);
+		tempZ = FAN_LEN * cos(idx * 3.1415926 / 180);
+		glVertex3f(tempX, 0.0f, tempZ);
+	}
+	glEnd();
+	glPopMatrix();
+
+	glPushMatrix();
+	glTranslatef(halfCarWidth, 0.0f, halfCarLen);
+	glRotatef(57.0f, 0.0f, 1.0f, 0.0f);
+
+	glBegin(GL_LINE_LOOP);
+	glColor3f(0.0f, 1.0f, 0.0f);
+	glVertex3f(0.0f, 0.0f, 0.0f);
+	for (float idx = -60; idx <= 60; idx += 0.01) {
+		tempX = FAN_LEN * sin(idx * 3.1415926 / 180);
+		tempZ = FAN_LEN * cos(idx * 3.1415926 / 180);
+		glVertex3f(tempX, 0.0f, tempZ);
+	}
+	glEnd();
+	glPopMatrix();
+
+	glPushMatrix();
+	glPushAttrib(GL_ENABLE_BIT); 
+	glLineStipple(1, 0xFF00);
+	glEnable(GL_LINE_STIPPLE);
+
+	glPushMatrix();
+	glTranslatef(halfCarWidth, 0.0f, 0.0f);
+	glColor3f(0.5f, 0.5f, 0.5f);
+	glBegin(GL_LINES);
+	for (int idx = 0; idx <= 3; idx++) {
+		glVertex3f((2 * halfCarWidth) * idx, 0.0f, (2 * halfCarLen) * 3);
+		glVertex3f((2 * halfCarWidth) * idx, 0.0f, -(2 * halfCarLen) * 100);
+	}
+	glEnd();
+	glPopMatrix();
+
+	glPushMatrix();
+	glTranslatef(-halfCarWidth, 0.0f, 0.0f);
+	glColor3f(0.5f, 0.5f, 0.5f);
+	glBegin(GL_LINES);
+	for (int idx = 0; idx <= 3; idx++) {
+		glVertex3f(-(2 * halfCarWidth) * idx, 0.0f, (2 * halfCarLen) * 3);
+		glVertex3f(-(2 * halfCarWidth) * idx, 0.0f, -(2 * halfCarLen) * 100);
+	}
+	glEnd();
+	glPopMatrix();
+
+	glDisable(GL_LINE_STIPPLE);
+	glPopAttrib();
 	glPopMatrix();
 }
 
