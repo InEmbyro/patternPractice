@@ -16,7 +16,7 @@
 #define new DEBUG_NEW
 #endif
 
-#define PI	3.1416
+#define PI	3.1415926
 #define RAD_CONVER	(PI / 180)
 #define SCALE	10
 #define OBJECT_SIZE		10
@@ -24,6 +24,8 @@
 #define CAR_WIDTH	(2 * SCALE)		//2 meter
 #define CAR_LENGTH	(4.5 * SCALE)	//4.5m
 #define Y_OFFSET	10
+#define FAN_LEN	(5.0f)
+#define SENSOR_ROTATE	(57.0f)
 
 static AFX_EXTENSION_MODULE birdviewDLL = { NULL, NULL };
 float CBirdviewView::halfCarWidth = 1.0f;
@@ -162,7 +164,7 @@ int CBirdviewFrm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	rect.SetRect(0, 0, lpCreateStruct->cx, lpCreateStruct->cy);
 	_pView->Create(NULL, NULL, AFX_WS_DEFAULT_VIEW, rect, this, AFX_IDW_PANE_FIRST, NULL);
 	_pView->Init();
-	_pView->SetTimer(0, 100, NULL);
+	//_pView->SetTimer(0, 100, NULL);
 	
 	/*	Calling UpdateDate(FALSE) will cause GridFormChildView::DoDataExchange is called.
 		In the function, GridFormChildView::m_hWnd will be assigned */
@@ -223,7 +225,7 @@ const char* CBirdviewView::mailslot = "\\\\.\\mailslot\\wnc_bird_view";
 const unsigned int CBirdviewView::slotKey = 0x01;
 
 CBirdviewView::CBirdviewView()
-	:pRcvThread(NULL)
+	:pRcvThread(NULL), m_RoadLineStartZ(0), m_RoadLineStartZStep(0)
 {
 	m_pDC = NULL;
 	m_pOldPalette = NULL;
@@ -298,6 +300,7 @@ ON_WM_ERASEBKGND()
 ON_WM_TIMER()
 ON_WM_DESTROY()
 ON_WM_SIZE()
+ON_MESSAGE(WM_UPDATE_SPEED_DRAWING, &CBirdviewView::OnUpdateSpeedDrawing)
 END_MESSAGE_MAP()
 
 // CBirdviewView 診斷
@@ -386,9 +389,9 @@ void CBirdviewView::DrawRawObject3D(PARAM_STRUCT *pD)
 
 	ParseRawObject(pD, &raw);
 	if (pD->Ident == 0x401) {
-		angle = 57;
+		angle = SENSOR_ROTATE;
 	} else if (pD->Ident == 0x411) {
-		angle = -57;
+		angle = -SENSOR_ROTATE;
 	}
 	temp = (raw.x_range * cos(angle * RAD_CONVER)) - (raw.y_range * sin(angle * RAD_CONVER));
 	pnt.x = temp;
@@ -397,8 +400,12 @@ void CBirdviewView::DrawRawObject3D(PARAM_STRUCT *pD)
 	pnt.y = temp;	//it is Z
 
 	glPushMatrix();
-	glColor3f(1.0f, 1.0f, 0.0f);
-
+	if (pD->Ident == 0x401) {
+		glColor3f(1.0f, 1.0f, 0.0f);
+	} else {
+		glColor3f(0.0f, 1.0f, 0.0f);
+	}
+	glTranslatef(0.0f, 0.0f, halfCarLen);
 	//front
 	glBegin(GL_QUADS);
 	glNormal3f(0.0f, 0.0f, -1.0f);
@@ -769,7 +776,7 @@ void CBirdviewView::Init()
 	m_fFarPlane = 300.0f;
 	m_fMaxObjSize = 50.0f;
 	m_fRadius = m_fNearPlane + m_fMaxObjSize / 2.0f;
-	m_fFov = 30.0f;
+	m_fFov = 60.0f;
 
 	glViewport(0, 0, m_oldRect.Width(), m_oldRect.Height());
 	glMatrixMode(GL_PROJECTION);
@@ -885,7 +892,10 @@ BOOL CBirdviewView::OnEraseBkgnd(CDC* pDC)
 
 void CBirdviewView::OnTimer(UINT_PTR nIDEvent)
 {
-	SendMessage(WM_USER_DRAW, 0, 0);
+
+	m_RoadLineStartZ += 1.0f;
+
+	//SendMessage(WM_USER_DRAW, 0, 0);
 
 	// TODO: 在此加入您的訊息處理常式程式碼和 (或) 呼叫預設值
 	CView::OnTimer(nIDEvent);
@@ -909,6 +919,7 @@ void CBirdviewView::DrawScene()
 	glLoadIdentity();
 	glTranslatef(0.0f, 0.0f, -m_fRadius);
 	glRotatef(20.0f, 1.0f, 0.0f, 0.0f);
+	glRotatef(15.0f, 0.0f, 1.0f, 0.0f);
 
 	GLfloat ambientColor[] = {0.5f, 0.5f, 0.5f, 1.0f}; //Color (0.2, 0.2, 0.2)
 	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambientColor);
@@ -984,14 +995,14 @@ void CBirdviewView::DrawScene()
 	glEnd();
 	glPopMatrix();
 
-
-#define FAN_LEN	(5.0f)
+#if 1
 	float tempX = 0;
 	float tempZ = 0;
 
+	//drawing left fan
 	glPushMatrix();
 	glTranslatef(-halfCarWidth, 0.0f, halfCarLen);
-	glRotatef(-57.0f, 0.0f, 1.0f, 0.0f);
+	glRotatef(-SENSOR_ROTATE, 0.0f, 1.0f, 0.0f);
 
 	glBegin(GL_LINE_LOOP);
 	glColor3f(0.0f, 1.0f, 0.0f);
@@ -1004,9 +1015,10 @@ void CBirdviewView::DrawScene()
 	glEnd();
 	glPopMatrix();
 
+	//drawing right fan
 	glPushMatrix();
 	glTranslatef(halfCarWidth, 0.0f, halfCarLen);
-	glRotatef(57.0f, 0.0f, 1.0f, 0.0f);
+	glRotatef(SENSOR_ROTATE, 0.0f, 1.0f, 0.0f);
 
 	glBegin(GL_LINE_LOOP);
 	glColor3f(0.0f, 1.0f, 0.0f);
@@ -1019,36 +1031,66 @@ void CBirdviewView::DrawScene()
 	glEnd();
 	glPopMatrix();
 
-	glPushMatrix();
-	glPushAttrib(GL_ENABLE_BIT); 
-	glLineStipple(1, 0xFF00);
-	glEnable(GL_LINE_STIPPLE);
+	//draw road line @right side
+	//glPushMatrix();
+	//glPushAttrib(GL_ENABLE_BIT); 
+	//glLineStipple(1, 0xFF00);
+	//glEnable(GL_LINE_STIPPLE);
 
 	glPushMatrix();
 	glTranslatef(halfCarWidth, 0.0f, 0.0f);
-	glColor3f(0.5f, 0.5f, 0.5f);
 	glBegin(GL_LINES);
+	float temp;
+
+#define DASHED_STEP	(3.0f)
+	temp = -1000.0f;
+	m_RoadLineStartZ += m_RoadLineStartZStep;
+	if (m_RoadLineStartZ > DASHED_STEP * 2)
+		m_RoadLineStartZ -= (DASHED_STEP * 2);
+
+	float temp1 = temp;
 	for (int idx = 0; idx <= 3; idx++) {
-		glVertex3f((2 * halfCarWidth) * idx, 0.0f, (2 * halfCarLen) * 3);
-		glVertex3f((2 * halfCarWidth) * idx, 0.0f, -(2 * halfCarLen) * 100);
+		glColor3f(0.5f, 0.5f, 0.5f);
+		glVertex3f((2 * halfCarWidth) * idx, 0.0f, temp);
+		glVertex3f((2 * halfCarWidth) * idx, 0.0f, temp + m_RoadLineStartZ);
+		glVertex3f((2 * halfCarWidth) * -idx, 0.0f, temp);
+		glVertex3f((2 * halfCarWidth) * -idx, 0.0f, temp + m_RoadLineStartZ);
+		temp += DASHED_STEP;
+
+		glColor3f(0.0f, 0.0f, 0.0f);
+		glVertex3f((2 * halfCarWidth) * idx, 0.0f, temp);
+		glVertex3f((2 * halfCarWidth) * idx, 0.0f, temp + DASHED_STEP);
+		glVertex3f((2 * halfCarWidth) * -idx, 0.0f, temp);
+		glVertex3f((2 * halfCarWidth) * -idx, 0.0f, temp + DASHED_STEP);
+		temp = temp1;
+	}
+	temp = temp1 + m_RoadLineStartZ + DASHED_STEP;
+	temp1 = temp;
+	for (int idx = 0; idx <= 3; idx++) {
+		while (!(temp > ((m_fFarPlane - m_fNearPlane) / 2))) {
+			glColor3f(0.5f, 0.5f, 0.5f);
+			glVertex3f((2 * halfCarWidth) * idx, 0.0f, temp);
+			glVertex3f((2 * halfCarWidth) * idx, 0.0f, temp + DASHED_STEP);
+			glVertex3f((2 * halfCarWidth) * -idx, 0.0f, temp);
+			glVertex3f((2 * halfCarWidth) * -idx, 0.0f, temp + DASHED_STEP);
+			temp += DASHED_STEP;
+
+			glColor3f(0.0f, 0.0f, 0.0f);
+			glVertex3f((2 * halfCarWidth) * idx, 0.0f, temp);
+			glVertex3f((2 * halfCarWidth) * idx, 0.0f, temp + DASHED_STEP);
+			glVertex3f((2 * halfCarWidth) * -idx, 0.0f, temp);
+			glVertex3f((2 * halfCarWidth) * -idx, 0.0f, temp + DASHED_STEP);
+			temp += DASHED_STEP;
+		}
+		temp = temp1;
 	}
 	glEnd();
 	glPopMatrix();
 
-	glPushMatrix();
-	glTranslatef(-halfCarWidth, 0.0f, 0.0f);
-	glColor3f(0.5f, 0.5f, 0.5f);
-	glBegin(GL_LINES);
-	for (int idx = 0; idx <= 3; idx++) {
-		glVertex3f(-(2 * halfCarWidth) * idx, 0.0f, (2 * halfCarLen) * 3);
-		glVertex3f(-(2 * halfCarWidth) * idx, 0.0f, -(2 * halfCarLen) * 100);
-	}
-	glEnd();
-	glPopMatrix();
-
-	glDisable(GL_LINE_STIPPLE);
-	glPopAttrib();
-	glPopMatrix();
+	//glDisable(GL_LINE_STIPPLE);
+	//glPopAttrib();
+	//glPopMatrix();
+#endif
 }
 
 
@@ -1090,4 +1132,12 @@ void CBirdviewView::OnSize(UINT nType, int cx, int cy)
 	gluPerspective(m_fFov, (double)rect.Width()/ (double)rect.Height(), m_fNearPlane, m_fFarPlane);
 	glMatrixMode(GL_MODELVIEW);
 
+}
+
+
+afx_msg LRESULT CBirdviewView::OnUpdateSpeedDrawing(WPARAM wParam, LPARAM lParam)
+{
+	m_RoadLineStartZStep = (float)wParam / 6000.0f;
+	//m_RoadLineStartZStep /= 10;
+	return 0;
 }

@@ -1,3 +1,5 @@
-1. Draw road & the detection area with fan shape.
-2. Draw road sign.
+1. The road line can be drawn with velocity.
+2. Fix the raw objects position. The origin should be the installation postion 
+of sensors.
+
 

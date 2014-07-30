@@ -101,6 +101,7 @@ UINT CReceiveThread::update_thread(LPVOID _p)
 	SLOT_DATA slotData;
 	int dataLen;
 	PARAM_STRUCT data;
+	int velocity;
 
 
 	pView = (CBirdviewView*)_this->_pView;
@@ -125,6 +126,11 @@ __next_read:
 				while (dataLen != slotData.len) {
 					CopyMemory(&data, slotData.ptr + dataLen, sizeof(PARAM_STRUCT));
 					dataLen += sizeof(PARAM_STRUCT);
+					if (data.Ident == 0x3F5) {
+						velocity = data.RCV_data[1] & 0x7F;
+						velocity = (velocity << 8) + data.RCV_data[0];
+						pView->PostMessage(WM_UPDATE_SPEED_DRAWING, velocity, 0);
+					}
 					if (pView->_FilterMap.Lookup(data.Ident, aIdx)) {
 						switch (aIdx.canId) {
 						case 0x400:

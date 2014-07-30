@@ -7,7 +7,8 @@
 #include "../Softing/Can_def.h"
 #include "../Softing/CANL2.H"
 
-#define	WM_USER_DRAW	(WM_USER + 1)
+#define	WM_USER_DRAW			(WM_USER + 1)
+#define WM_UPDATE_SPEED_DRAWING (WM_USER + 2)
 
 extern "C" AFX_EXT_API LPVOID WINAPI InitBirdviewForm(void);
 
@@ -55,6 +56,8 @@ public:
 	GLfloat	m_fNearPlane;
 	GLfloat m_fFarPlane;
 	GLfloat m_fFov;
+	GLfloat m_RoadLineStartZ;
+	GLfloat m_RoadLineStartZStep;
 
 
 	HANDLE _ListMutex;
@@ -85,6 +88,8 @@ public:
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	afx_msg void OnDestroy();
 	afx_msg void OnSize(UINT nType, int cx, int cy);
+protected:
+	afx_msg LRESULT OnUpdateSpeedDrawing(WPARAM wParam, LPARAM lParam);
 };
 
 #pragma once
