@@ -26,6 +26,7 @@ class CBirdviewView : public CView
 	static const unsigned int slotKey;
 	static float halfCarWidth;
 	static float halfCarLen;
+	static float halfRoadWidth;
 
 	CBirdviewView();           // 動態建立所使用的保護建構函式
 	virtual ~CBirdviewView();
@@ -40,6 +41,7 @@ class CBirdviewView : public CView
 	void DrawRawObject(PARAM_STRUCT *, CDC*);
 	void DrawRawObject3D(PARAM_STRUCT *);
 	void DrawTrackingObject(PARAM_STRUCT*, CDC*);
+	void DrawTrackingObject3D(PARAM_STRUCT*);
 
 public:
 	CPalette    m_cPalette;

@@ -24,12 +24,14 @@
 #define CAR_WIDTH	(2 * SCALE)		//2 meter
 #define CAR_LENGTH	(4.5 * SCALE)	//4.5m
 #define Y_OFFSET	10
-#define FAN_LEN	(5.0f)
 #define SENSOR_ROTATE	(57.0f)
+#define DASHED_STEP		(3.0f)
+#define FAN_LEN			(3.5f * 1.5)
 
 static AFX_EXTENSION_MODULE birdviewDLL = { NULL, NULL };
 float CBirdviewView::halfCarWidth = 1.0f;
 float CBirdviewView::halfCarLen = 2.0f;
+float CBirdviewView::halfRoadWidth = (3.5f / 2);
 
 unsigned char threeto8[8] =
 {
@@ -344,6 +346,86 @@ void CBirdviewView::ParseTrackingObject(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *p
 	pRaw->y_range = (temp - 2048) * 0.016;
 }
 
+void CBirdviewView::DrawTrackingObject3D(PARAM_STRUCT* pD)
+{
+	RAW_OBJECT_STRUCT raw;
+	float tempX;
+	float tempZ;
+
+	ParseTrackingObject(pD, &raw);
+	tempZ = -raw.x_range;
+	tempX = -raw.y_range;
+
+	glColor3f(0.0f, 1.0f, 0.0f);
+
+	//front
+	glPushMatrix();
+	glNormal3f(0.0f, 0.0f, -1.0f);
+	glBegin(GL_QUADS);
+	glVertex3f(tempX - halfCarWidth, 0.0f, tempZ + halfCarLen);
+	glVertex3f(tempX - halfCarWidth, 1.0f, tempZ + halfCarLen);
+	glVertex3f(tempX + halfCarWidth, 1.0f, tempZ + halfCarLen);
+	glVertex3f(tempX + halfCarWidth, 0.0f, tempZ + halfCarLen);
+	glEnd();
+	glPopMatrix();
+
+	//back
+	glPushMatrix();
+	glNormal3f(0.0f, 0.0f, -1.0f);
+	glBegin(GL_QUADS);
+	glVertex3f(tempX - halfCarWidth, 0.0f, tempZ - halfCarLen);
+	glVertex3f(tempX - halfCarWidth, 1.0f, tempZ - halfCarLen);
+	glVertex3f(tempX + halfCarWidth, 1.0f, tempZ - halfCarLen);
+	glVertex3f(tempX + halfCarWidth, 0.0f, tempZ - halfCarLen);
+	glEnd();
+	glPopMatrix();
+
+	//right
+	glPushMatrix();
+	glNormal3f(-1.0f, 0.0f, 0.0f);
+	glBegin(GL_QUADS);
+	glVertex3f(tempX + halfCarWidth, 1.0f, tempZ + halfCarLen);
+	glVertex3f(tempX + halfCarWidth, 1.0f, tempZ - halfCarLen);
+	glVertex3f(tempX + halfCarWidth, 0.0f, tempZ - halfCarLen);
+	glVertex3f(tempX + halfCarWidth, 0.0f, tempZ + halfCarLen);
+	glEnd();
+	glPopMatrix();
+
+	//left
+	glPushMatrix();
+	glNormal3f(-1.0f, 0.0f, 0.0f);
+	glBegin(GL_QUADS);
+	glVertex3f(tempX - halfCarWidth, 1.0f, tempZ + halfCarLen);
+	glVertex3f(tempX - halfCarWidth, 1.0f, tempZ - halfCarLen);
+	glVertex3f(tempX - halfCarWidth, 0.0f, tempZ - halfCarLen);
+	glVertex3f(tempX - halfCarWidth, 0.0f, tempZ + halfCarLen);
+	glEnd();
+	glPopMatrix();
+
+	//top
+	glPushMatrix();
+	glNormal3f(0.0f, 1.0f, 0.0f);
+	glBegin(GL_QUADS);
+	glVertex3f(tempX - halfCarWidth, 1.0f, tempZ + halfCarLen);
+	glVertex3f(tempX - halfCarWidth, 1.0f, tempZ - halfCarLen);
+	glVertex3f(tempX + halfCarWidth, 1.0f, tempZ - halfCarLen);
+	glVertex3f(tempX + halfCarWidth, 1.0f, tempZ + halfCarLen);
+	glEnd();
+	glPopMatrix();
+
+	//bottom
+	glPushMatrix();
+	glNormal3f(0.0f, 1.0f, 0.0f);
+	glBegin(GL_QUADS);
+	glVertex3f(tempX - halfCarWidth, 0.0f, tempZ + halfCarLen);
+	glVertex3f(tempX - halfCarWidth, 0.0f, tempZ - halfCarLen);
+	glVertex3f(tempX + halfCarWidth, 0.0f, tempZ - halfCarLen);
+	glVertex3f(tempX + halfCarWidth, 0.0f, tempZ + halfCarLen);
+	glEnd();
+	glPopMatrix();
+
+}
+
 void CBirdviewView::DrawTrackingObject(PARAM_STRUCT *pD, CDC *pDc)
 {
 	RAW_OBJECT_STRUCT raw;
@@ -401,9 +483,9 @@ void CBirdviewView::DrawRawObject3D(PARAM_STRUCT *pD)
 
 	glPushMatrix();
 	if (pD->Ident == 0x401) {
-		glColor3f(1.0f, 1.0f, 0.0f);
+		glColor3f(1.0f, 0.0f, 0.0f);
 	} else {
-		glColor3f(0.0f, 1.0f, 0.0f);
+		glColor3f(1.0f, 1.0f, 0.0f);
 	}
 	glTranslatef(0.0f, 0.0f, halfCarLen);
 	//front
@@ -535,12 +617,9 @@ afx_msg LRESULT CBirdviewView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 				DrawRawObject3D(&data);
 			} else if (data.Ident == 0x411) {
 				DrawRawObject3D(&data);
+			} else if (data.Ident >= 0x610 && data.Ident <= 0x620) {
+				DrawTrackingObject3D(&data);
 			}
-			/*
-			else if (data.Ident >= 0x610 && data.Ident <= 0x620) {
-				DrawTrackingObject(&data, &dcMem);
-			}
-			*/
 			pos = p->GetHeadPosition();
 		}
 		ReleaseMutex(_ListArrayMutex.GetAt(arrIdx));
@@ -774,7 +853,7 @@ void CBirdviewView::Init()
 		m_fAspect = 1.0f;
 	m_fNearPlane = 3.0f;
 	m_fFarPlane = 300.0f;
-	m_fMaxObjSize = 50.0f;
+	m_fMaxObjSize = 40.0f;
 	m_fRadius = m_fNearPlane + m_fMaxObjSize / 2.0f;
 	m_fFov = 60.0f;
 
@@ -893,9 +972,7 @@ BOOL CBirdviewView::OnEraseBkgnd(CDC* pDC)
 void CBirdviewView::OnTimer(UINT_PTR nIDEvent)
 {
 
-	m_RoadLineStartZ += 1.0f;
-
-	//SendMessage(WM_USER_DRAW, 0, 0);
+	SendMessage(WM_USER_DRAW, 0, 0);
 
 	// TODO: 在此加入您的訊息處理常式程式碼和 (或) 呼叫預設值
 	CView::OnTimer(nIDEvent);
@@ -1005,7 +1082,7 @@ void CBirdviewView::DrawScene()
 	glRotatef(-SENSOR_ROTATE, 0.0f, 1.0f, 0.0f);
 
 	glBegin(GL_LINE_LOOP);
-	glColor3f(0.0f, 1.0f, 0.0f);
+	glColor3f(0.5f, 0.5f, 0.5f);
 	glVertex3f(0.0f, 0.0f, 0.0f);
 	for (float idx = -60; idx <= 60; idx += 0.01) {
 		tempX = FAN_LEN * sin(idx * 3.1415926 / 180);
@@ -1021,7 +1098,7 @@ void CBirdviewView::DrawScene()
 	glRotatef(SENSOR_ROTATE, 0.0f, 1.0f, 0.0f);
 
 	glBegin(GL_LINE_LOOP);
-	glColor3f(0.0f, 1.0f, 0.0f);
+	glColor3f(0.5f, 0.5f, 0.5f);
 	glVertex3f(0.0f, 0.0f, 0.0f);
 	for (float idx = -60; idx <= 60; idx += 0.01) {
 		tempX = FAN_LEN * sin(idx * 3.1415926 / 180);
@@ -1037,49 +1114,51 @@ void CBirdviewView::DrawScene()
 	//glLineStipple(1, 0xFF00);
 	//glEnable(GL_LINE_STIPPLE);
 
-	glPushMatrix();
-	glTranslatef(halfCarWidth, 0.0f, 0.0f);
-	glBegin(GL_LINES);
 	float temp;
-
-#define DASHED_STEP	(3.0f)
 	temp = -1000.0f;
+
 	m_RoadLineStartZ += m_RoadLineStartZStep;
+
+	glPushMatrix();
+	//glTranslatef(halfRoadWidth, 0.0f, 0.0f);
+	glBegin(GL_LINES);
+
 	if (m_RoadLineStartZ > DASHED_STEP * 2)
 		m_RoadLineStartZ -= (DASHED_STEP * 2);
 
 	float temp1 = temp;
-	for (int idx = 0; idx <= 3; idx++) {
+	for (int idx = 1; idx <= 7; idx += 2) {
 		glColor3f(0.5f, 0.5f, 0.5f);
-		glVertex3f((2 * halfCarWidth) * idx, 0.0f, temp);
-		glVertex3f((2 * halfCarWidth) * idx, 0.0f, temp + m_RoadLineStartZ);
-		glVertex3f((2 * halfCarWidth) * -idx, 0.0f, temp);
-		glVertex3f((2 * halfCarWidth) * -idx, 0.0f, temp + m_RoadLineStartZ);
+		glVertex3f(halfRoadWidth * idx, 0.0f, temp);
+		glVertex3f(halfRoadWidth * idx, 0.0f, temp + m_RoadLineStartZ);
+		glVertex3f(halfRoadWidth * -idx, 0.0f, temp);
+		glVertex3f(halfRoadWidth * -idx, 0.0f, temp + m_RoadLineStartZ);
 		temp += DASHED_STEP;
 
 		glColor3f(0.0f, 0.0f, 0.0f);
-		glVertex3f((2 * halfCarWidth) * idx, 0.0f, temp);
-		glVertex3f((2 * halfCarWidth) * idx, 0.0f, temp + DASHED_STEP);
-		glVertex3f((2 * halfCarWidth) * -idx, 0.0f, temp);
-		glVertex3f((2 * halfCarWidth) * -idx, 0.0f, temp + DASHED_STEP);
+		glVertex3f(halfRoadWidth * idx, 0.0f, temp);
+		glVertex3f(halfRoadWidth * idx, 0.0f, temp + DASHED_STEP);
+		glVertex3f(halfRoadWidth * -idx, 0.0f, temp);
+		glVertex3f(halfRoadWidth * -idx, 0.0f, temp + DASHED_STEP);
 		temp = temp1;
 	}
+
 	temp = temp1 + m_RoadLineStartZ + DASHED_STEP;
 	temp1 = temp;
-	for (int idx = 0; idx <= 3; idx++) {
+	for (int idx = 1; idx <= 7; idx += 2) {
 		while (!(temp > ((m_fFarPlane - m_fNearPlane) / 2))) {
 			glColor3f(0.5f, 0.5f, 0.5f);
-			glVertex3f((2 * halfCarWidth) * idx, 0.0f, temp);
-			glVertex3f((2 * halfCarWidth) * idx, 0.0f, temp + DASHED_STEP);
-			glVertex3f((2 * halfCarWidth) * -idx, 0.0f, temp);
-			glVertex3f((2 * halfCarWidth) * -idx, 0.0f, temp + DASHED_STEP);
+			glVertex3f(halfRoadWidth * idx, 0.0f, temp);
+			glVertex3f(halfRoadWidth * idx, 0.0f, temp + DASHED_STEP);
+			glVertex3f(halfRoadWidth * -idx, 0.0f, temp);
+			glVertex3f(halfRoadWidth * -idx, 0.0f, temp + DASHED_STEP);
 			temp += DASHED_STEP;
 
 			glColor3f(0.0f, 0.0f, 0.0f);
-			glVertex3f((2 * halfCarWidth) * idx, 0.0f, temp);
-			glVertex3f((2 * halfCarWidth) * idx, 0.0f, temp + DASHED_STEP);
-			glVertex3f((2 * halfCarWidth) * -idx, 0.0f, temp);
-			glVertex3f((2 * halfCarWidth) * -idx, 0.0f, temp + DASHED_STEP);
+			glVertex3f(halfRoadWidth * idx, 0.0f, temp);
+			glVertex3f(halfRoadWidth * idx, 0.0f, temp + DASHED_STEP);
+			glVertex3f(halfRoadWidth * -idx, 0.0f, temp);
+			glVertex3f(halfRoadWidth * -idx, 0.0f, temp + DASHED_STEP);
 			temp += DASHED_STEP;
 		}
 		temp = temp1;

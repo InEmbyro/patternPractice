@@ -1,5 +1,4 @@
-1. The road line can be drawn with velocity.
-2. Fix the raw objects position. The origin should be the installation postion 
-of sensors.
+1. Improve the road line with velocity
+2. Drawing tracking objects.
 
 
