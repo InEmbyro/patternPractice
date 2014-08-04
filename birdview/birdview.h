@@ -51,13 +51,18 @@ public:
 	unsigned char ComponentFromIndex(int i, UINT nbits, UINT shift);
 	void	Init();
 	float	m_fRadius;
+	float	m_fOldRadius;
+	float	m_fYoffset;
 	BOOL bSetupPixelFormat(void);
 	void DrawScene();
 	GLfloat	m_fMaxObjSize;
+	GLfloat m_fMaxObjSizeOld;
 	GLfloat m_fAspect;
 	GLfloat	m_fNearPlane;
 	GLfloat m_fFarPlane;
+	GLfloat m_fOldFarPlane;
 	GLfloat m_fFov;
+	GLfloat m_fOldFov;
 	GLfloat m_RoadLineStartZ;
 	GLfloat m_RoadLineStartZStep;
 

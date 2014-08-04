@@ -227,7 +227,7 @@ const char* CBirdviewView::mailslot = "\\\\.\\mailslot\\wnc_bird_view";
 const unsigned int CBirdviewView::slotKey = 0x01;
 
 CBirdviewView::CBirdviewView()
-	:pRcvThread(NULL), m_RoadLineStartZ(0), m_RoadLineStartZStep(0)
+	:pRcvThread(NULL), m_RoadLineStartZ(0), m_RoadLineStartZStep(0), m_fYoffset(0)
 {
 	m_pDC = NULL;
 	m_pOldPalette = NULL;
@@ -542,6 +542,65 @@ void CBirdviewView::DrawRawObject3D(PARAM_STRUCT *pD)
 	glVertex3f(pnt.x - 0.5f,	0.0f,	pnt.y + 0.5f);
 	glEnd();
 
+
+	//
+	pnt.x = 5;
+	pnt.y = -500;
+	glColor3f(1.0f, 0.0f, 0.0f);
+		//front
+	glBegin(GL_QUADS);
+	glNormal3f(0.0f, 0.0f, -1.0f);
+	glVertex3f(pnt.x - 0.5f,	1.0f,	pnt.y + 0.5f);
+	glVertex3f(pnt.x - 0.5f,	0.0f,	pnt.y + 0.5f);
+	glVertex3f(pnt.x + 0.5f,	0.0f,	pnt.y + 0.5f);
+	glVertex3f(pnt.x + 0.5f,	1.0f,	pnt.y + 0.5f);
+	glEnd();
+
+	//back
+	glBegin(GL_QUADS);
+	glNormal3f(0.0f, 0.0f, -1.0f);
+	glVertex3f(pnt.x - 0.5f,	1.0f,	pnt.y - 0.5f);
+	glVertex3f(pnt.x - 0.5f,	0.0f,	pnt.y - 0.5f);
+	glVertex3f(pnt.x + 0.5f,	0.0f,	pnt.y - 0.5f);
+	glVertex3f(pnt.x + 0.5f,	1.0f,	pnt.y - 0.5f);
+	glEnd();
+
+	//right
+	glBegin(GL_QUADS);
+	glNormal3f(-1.0f, 0.0f, 0.0f);
+	glVertex3f(pnt.x + 0.5f,	1.0f,	pnt.y + 0.5f);
+	glVertex3f(pnt.x + 0.5f,	0.0f,	pnt.y + 0.5f);
+	glVertex3f(pnt.x + 0.5f,	0.0f,	pnt.y - 0.5f);
+	glVertex3f(pnt.x + 0.5f,	1.0f,	pnt.y - 0.5f);
+	glEnd();
+
+	//left
+	glBegin(GL_QUADS);
+	glNormal3f(-1.0f, 0.0f, 0.0f);
+	glVertex3f(pnt.x - 0.5f,	1.0f,	pnt.y + 0.5f);
+	glVertex3f(pnt.x - 0.5f,	0.0f,	pnt.y + 0.5f);
+	glVertex3f(pnt.x - 0.5f,	0.0f,	pnt.y - 0.5f);
+	glVertex3f(pnt.x - 0.5f,	1.0f,	pnt.y - 0.5f);
+	glEnd();
+
+	//top
+	glBegin(GL_QUADS);
+	glNormal3f(0.0f, 1.0f, 0.0f);
+	glVertex3f(pnt.x + 0.5f,	1.0f,	pnt.y + 0.5f);
+	glVertex3f(pnt.x + 0.5f,	1.0f,	pnt.y - 0.5f);
+	glVertex3f(pnt.x - 0.5f,	1.0f,	pnt.y - 0.5f);
+	glVertex3f(pnt.x - 0.5f,	1.0f,	pnt.y + 0.5f);
+	glEnd();
+
+	//bottom
+	glBegin(GL_QUADS);
+	glNormal3f(0.0f, 1.0f, 0.0f);
+	glVertex3f(pnt.x + 0.5f,	0.0f,	pnt.y + 0.5f);
+	glVertex3f(pnt.x + 0.5f,	0.0f,	pnt.y - 0.5f);
+	glVertex3f(pnt.x - 0.5f,	0.0f,	pnt.y - 0.5f);
+	glVertex3f(pnt.x - 0.5f,	0.0f,	pnt.y + 0.5f);
+	glEnd();
+	//
 	glPopMatrix();
 }
 
@@ -848,20 +907,32 @@ void CBirdviewView::Init()
 	glEnable(GL_NORMALIZE); //Automatically normalize normals
 
 	if (m_oldRect.bottom)
-		m_fAspect = (GLfloat)m_oldRect.right/m_oldRect.bottom;
+		m_fAspect = (GLfloat)m_oldRect.Width()/m_oldRect.Height();
 	else    // don't divide by zero, not that we should ever run into that...
 		m_fAspect = 1.0f;
 	m_fNearPlane = 3.0f;
 	m_fFarPlane = 300.0f;
-	m_fMaxObjSize = 40.0f;
+	m_fMaxObjSize = m_fFarPlane / 2;
+	m_fMaxObjSizeOld = m_fMaxObjSize;
 	m_fRadius = m_fNearPlane + m_fMaxObjSize / 2.0f;
-	m_fFov = 60.0f;
+	m_fFov = 30.0f;
 
+	m_fOldRadius = m_fRadius;
+	m_fOldFarPlane = m_fFarPlane;
+	m_fOldFov = m_fFov;
+
+#if 0
+	glViewport(0, 0, (GLsizei)m_oldRect.Width(), (GLsizei)m_oldRect.Height());
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(-1.5, 1.5, -1.5, 1.5, -10, 10);
+#else
 	glViewport(0, 0, m_oldRect.Width(), m_oldRect.Height());
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	gluPerspective(m_fFov, m_fAspect, m_fNearPlane, m_fFarPlane);
 	glMatrixMode(GL_MODELVIEW);
+#endif
 }
 
 BOOL CBirdviewView::bSetupPixelFormat()
@@ -971,8 +1042,27 @@ BOOL CBirdviewView::OnEraseBkgnd(CDC* pDC)
 
 void CBirdviewView::OnTimer(UINT_PTR nIDEvent)
 {
+	m_fFarPlane++;
+	CRect rect;
 
-	SendMessage(WM_USER_DRAW, 0, 0);
+	GetClientRect(&rect);
+	if (rect.bottom)
+		m_fAspect = (GLfloat)rect.Width()/rect.Height();
+	else    // don't divide by zero, not that we should ever run into that...
+		m_fAspect = 1.0f;
+	m_fNearPlane = 3.0f;
+	m_fMaxObjSize = m_fFarPlane / 2;
+	m_fRadius = m_fNearPlane + m_fMaxObjSize / 2.0f;
+	m_fFov = 30.0f;
+	m_fYoffset++;
+
+	glViewport(0, 0, rect.Width(), rect.Height());
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluPerspective(m_fFov, m_fAspect, m_fNearPlane, m_fFarPlane);
+	glMatrixMode(GL_MODELVIEW);
+
+	//SendMessage(WM_USER_DRAW, 0, 0);
 
 	// TODO: 在此加入您的訊息處理常式程式碼和 (或) 呼叫預設值
 	CView::OnTimer(nIDEvent);
@@ -994,9 +1084,11 @@ void CBirdviewView::DrawScene()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glLoadIdentity();
-	glTranslatef(0.0f, 0.0f, -m_fRadius);
+	glTranslatef(0.0f, -m_fYoffset, -m_fRadius);
 	glRotatef(20.0f, 1.0f, 0.0f, 0.0f);
-	glRotatef(15.0f, 0.0f, 1.0f, 0.0f);
+	//glRotatef(15.0f, 0.0f, 1.0f, 0.0f);
+	//glScalef(0.5f, 0.5f, 0.5f);
+	//gluLookAt(0.0f, 0.0f, 1.0f, -1.0f, -1.0f, -1.0f, 0.0f, 1.0f, 0.0f);
 
 	GLfloat ambientColor[] = {0.5f, 0.5f, 0.5f, 1.0f}; //Color (0.2, 0.2, 0.2)
 	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambientColor);
@@ -1216,7 +1308,27 @@ void CBirdviewView::OnSize(UINT nType, int cx, int cy)
 
 afx_msg LRESULT CBirdviewView::OnUpdateSpeedDrawing(WPARAM wParam, LPARAM lParam)
 {
+
 	m_RoadLineStartZStep = (float)wParam / 6000.0f;
+#if 0
+	m_fMaxObjSize = m_fFarPlane / 2;
+	m_fRadius = m_fNearPlane + m_fMaxObjSize / 2.0f;
+
+
+#endif
+	m_fRadius = m_fOldRadius + (float)wParam / 50.0f;
+	m_fMaxObjSize = m_fMaxObjSizeOld + (float)wParam / 60.0f;
+	m_fYoffset = 10.28 + (float)wParam / 300.0f;
+	m_fFarPlane = m_fOldFarPlane + (float)wParam / 5.0f;
+
+	CRect rect;
+	GetClientRect(&rect);
+
+	glViewport(0, 0, rect.Width(), rect.Height());
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluPerspective(m_fFov, m_fAspect, m_fNearPlane, m_fFarPlane);
+	glMatrixMode(GL_MODELVIEW);
 	//m_RoadLineStartZStep /= 10;
 	return 0;
 }

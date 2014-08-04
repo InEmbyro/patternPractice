@@ -1,4 +1,2 @@
-1. Improve the road line with velocity
-2. Drawing tracking objects.
-
+1. Improve birdview with velocity. The view depth will be increased based on velocity.
 
