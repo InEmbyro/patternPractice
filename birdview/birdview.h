@@ -27,6 +27,9 @@ class CBirdviewView : public CView
 	static float halfCarWidth;
 	static float halfCarLen;
 	static float halfRoadWidth;
+	static float m_Speed;
+	char quote[20];
+	HGLRC	m_hrc;
 
 	CBirdviewView();           // 動態建立所使用的保護建構函式
 	virtual ~CBirdviewView();
@@ -42,6 +45,8 @@ class CBirdviewView : public CView
 	void DrawRawObject3D(PARAM_STRUCT *);
 	void DrawTrackingObject(PARAM_STRUCT*, CDC*);
 	void DrawTrackingObject3D(PARAM_STRUCT*);
+	void DrawFarTarget(void);
+	void DrawText();
 
 public:
 	CPalette    m_cPalette;
@@ -97,6 +102,8 @@ public:
 	afx_msg void OnSize(UINT nType, int cx, int cy);
 protected:
 	afx_msg LRESULT OnUpdateSpeedDrawing(WPARAM wParam, LPARAM lParam);
+public:
+	afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
 };
 
 #pragma once

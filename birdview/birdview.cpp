@@ -32,6 +32,7 @@ static AFX_EXTENSION_MODULE birdviewDLL = { NULL, NULL };
 float CBirdviewView::halfCarWidth = 1.0f;
 float CBirdviewView::halfCarLen = 2.0f;
 float CBirdviewView::halfRoadWidth = (3.5f / 2);
+float CBirdviewView::m_Speed;
 
 unsigned char threeto8[8] =
 {
@@ -227,7 +228,7 @@ const char* CBirdviewView::mailslot = "\\\\.\\mailslot\\wnc_bird_view";
 const unsigned int CBirdviewView::slotKey = 0x01;
 
 CBirdviewView::CBirdviewView()
-	:pRcvThread(NULL), m_RoadLineStartZ(0), m_RoadLineStartZStep(0), m_fYoffset(0)
+	:pRcvThread(NULL), m_RoadLineStartZ(0), m_RoadLineStartZStep(0), m_fYoffset(10.28)
 {
 	m_pDC = NULL;
 	m_pOldPalette = NULL;
@@ -303,6 +304,7 @@ ON_WM_TIMER()
 ON_WM_DESTROY()
 ON_WM_SIZE()
 ON_MESSAGE(WM_UPDATE_SPEED_DRAWING, &CBirdviewView::OnUpdateSpeedDrawing)
+ON_WM_KEYDOWN()
 END_MESSAGE_MAP()
 
 // CBirdviewView 診斷
@@ -544,63 +546,6 @@ void CBirdviewView::DrawRawObject3D(PARAM_STRUCT *pD)
 
 
 	//
-	pnt.x = 5;
-	pnt.y = -500;
-	glColor3f(1.0f, 0.0f, 0.0f);
-		//front
-	glBegin(GL_QUADS);
-	glNormal3f(0.0f, 0.0f, -1.0f);
-	glVertex3f(pnt.x - 0.5f,	1.0f,	pnt.y + 0.5f);
-	glVertex3f(pnt.x - 0.5f,	0.0f,	pnt.y + 0.5f);
-	glVertex3f(pnt.x + 0.5f,	0.0f,	pnt.y + 0.5f);
-	glVertex3f(pnt.x + 0.5f,	1.0f,	pnt.y + 0.5f);
-	glEnd();
-
-	//back
-	glBegin(GL_QUADS);
-	glNormal3f(0.0f, 0.0f, -1.0f);
-	glVertex3f(pnt.x - 0.5f,	1.0f,	pnt.y - 0.5f);
-	glVertex3f(pnt.x - 0.5f,	0.0f,	pnt.y - 0.5f);
-	glVertex3f(pnt.x + 0.5f,	0.0f,	pnt.y - 0.5f);
-	glVertex3f(pnt.x + 0.5f,	1.0f,	pnt.y - 0.5f);
-	glEnd();
-
-	//right
-	glBegin(GL_QUADS);
-	glNormal3f(-1.0f, 0.0f, 0.0f);
-	glVertex3f(pnt.x + 0.5f,	1.0f,	pnt.y + 0.5f);
-	glVertex3f(pnt.x + 0.5f,	0.0f,	pnt.y + 0.5f);
-	glVertex3f(pnt.x + 0.5f,	0.0f,	pnt.y - 0.5f);
-	glVertex3f(pnt.x + 0.5f,	1.0f,	pnt.y - 0.5f);
-	glEnd();
-
-	//left
-	glBegin(GL_QUADS);
-	glNormal3f(-1.0f, 0.0f, 0.0f);
-	glVertex3f(pnt.x - 0.5f,	1.0f,	pnt.y + 0.5f);
-	glVertex3f(pnt.x - 0.5f,	0.0f,	pnt.y + 0.5f);
-	glVertex3f(pnt.x - 0.5f,	0.0f,	pnt.y - 0.5f);
-	glVertex3f(pnt.x - 0.5f,	1.0f,	pnt.y - 0.5f);
-	glEnd();
-
-	//top
-	glBegin(GL_QUADS);
-	glNormal3f(0.0f, 1.0f, 0.0f);
-	glVertex3f(pnt.x + 0.5f,	1.0f,	pnt.y + 0.5f);
-	glVertex3f(pnt.x + 0.5f,	1.0f,	pnt.y - 0.5f);
-	glVertex3f(pnt.x - 0.5f,	1.0f,	pnt.y - 0.5f);
-	glVertex3f(pnt.x - 0.5f,	1.0f,	pnt.y + 0.5f);
-	glEnd();
-
-	//bottom
-	glBegin(GL_QUADS);
-	glNormal3f(0.0f, 1.0f, 0.0f);
-	glVertex3f(pnt.x + 0.5f,	0.0f,	pnt.y + 0.5f);
-	glVertex3f(pnt.x + 0.5f,	0.0f,	pnt.y - 0.5f);
-	glVertex3f(pnt.x - 0.5f,	0.0f,	pnt.y - 0.5f);
-	glVertex3f(pnt.x - 0.5f,	0.0f,	pnt.y + 0.5f);
-	glEnd();
-	//
 	glPopMatrix();
 }
 
@@ -647,6 +592,109 @@ void CBirdviewView::DrawRawObject(PARAM_STRUCT *pD, CDC *pDc)
 	pDc->DrawText(str, rect, DT_SINGLELINE | DT_LEFT | DT_VCENTER);
 }
 
+void CBirdviewView::DrawFarTarget()
+{
+	CPoint pnt;
+
+	pnt.x = halfCarWidth * 3;
+	pnt.y = -10 + m_Speed;
+
+	glPushMatrix();
+	glColor3f(0.0f, 1.0f, 0.0f);
+	//front
+	glBegin(GL_QUADS);
+	glNormal3f(0.0f, 0.0f, -1.0f);
+	glVertex3f(pnt.x - halfCarWidth,	2.0f,	pnt.y + halfCarLen);
+	glVertex3f(pnt.x - halfCarWidth,	0.0f,	pnt.y + halfCarLen);
+	glVertex3f(pnt.x + halfCarWidth,	0.0f,	pnt.y + halfCarLen);
+	glVertex3f(pnt.x + halfCarWidth,	2.0f,	pnt.y + halfCarLen);
+	glEnd();
+
+	//back
+	glBegin(GL_QUADS);
+	glNormal3f(0.0f, 0.0f, -1.0f);
+	glVertex3f(pnt.x - halfCarWidth,	2.0f,	pnt.y - halfCarLen);
+	glVertex3f(pnt.x - halfCarWidth,	0.0f,	pnt.y - halfCarLen);
+	glVertex3f(pnt.x + halfCarWidth,	0.0f,	pnt.y - halfCarLen);
+	glVertex3f(pnt.x + halfCarWidth,	2.0f,	pnt.y - halfCarLen);
+	glEnd();
+
+	//right
+	glBegin(GL_QUADS);
+	glNormal3f(-1.0f, 0.0f, 0.0f);
+	glVertex3f(pnt.x + halfCarWidth,	2.0f,	pnt.y + halfCarLen);
+	glVertex3f(pnt.x + halfCarWidth,	0.0f,	pnt.y + halfCarLen);
+	glVertex3f(pnt.x + halfCarWidth,	0.0f,	pnt.y - halfCarLen);
+	glVertex3f(pnt.x + halfCarWidth,	2.0f,	pnt.y - halfCarLen);
+	glEnd();
+
+	//left
+	glBegin(GL_QUADS);
+	glNormal3f(-1.0f, 0.0f, 0.0f);
+	glVertex3f(pnt.x - halfCarWidth,	2.0f,	pnt.y + halfCarLen);
+	glVertex3f(pnt.x - halfCarWidth,	0.0f,	pnt.y + halfCarLen);
+	glVertex3f(pnt.x - halfCarWidth,	0.0f,	pnt.y - halfCarLen);
+	glVertex3f(pnt.x - halfCarWidth,	2.0f,	pnt.y - halfCarLen);
+	glEnd();
+
+	//top
+	glBegin(GL_QUADS);
+	glNormal3f(0.0f, 1.0f, 0.0f);
+	glVertex3f(pnt.x + halfCarWidth,	2.0f,	pnt.y + halfCarLen);
+	glVertex3f(pnt.x + halfCarWidth,	2.0f,	pnt.y - halfCarLen);
+	glVertex3f(pnt.x - halfCarWidth,	2.0f,	pnt.y - halfCarLen);
+	glVertex3f(pnt.x - halfCarWidth,	2.0f,	pnt.y + halfCarLen);
+	glEnd();
+
+	//bottom
+	glBegin(GL_QUADS);
+	glNormal3f(0.0f, 1.0f, 0.0f);
+	glVertex3f(pnt.x + halfCarWidth,	0.0f,	pnt.y + halfCarLen);
+	glVertex3f(pnt.x + halfCarWidth,	0.0f,	pnt.y - halfCarLen);
+	glVertex3f(pnt.x - halfCarWidth,	0.0f,	pnt.y - halfCarLen);
+	glVertex3f(pnt.x - halfCarWidth,	0.0f,	pnt.y + halfCarLen);
+	glEnd();
+	//
+
+	glPopMatrix();
+}
+
+void CBirdviewView::DrawText()
+{
+	float dis = 0.0f;
+
+	glPushMatrix();
+	glColor3f(1.0f, 1.0f, 1.0f);
+
+	for (dis = -20.0; dis <= 20.0f; dis += 5.0f) {
+		glRasterPos3f(halfRoadWidth * 7, 0.0f, dis);
+		sprintf(quote, "%.1fm", -dis);
+		glCallLists(strlen(quote), GL_UNSIGNED_BYTE, quote); 
+	}
+
+	for (dis = -20.0; dis >= -100.0f; dis -= 10.0f) {
+		glRasterPos3f(halfRoadWidth * 7, 0.0f, dis);
+		sprintf(quote, "%.1fm", -dis);
+		glCallLists(strlen(quote), GL_UNSIGNED_BYTE, quote); 
+		glRasterPos3f(halfRoadWidth * 7, 0.0f, -dis);
+		sprintf(quote, "%.1fm", dis);
+		glCallLists(strlen(quote), GL_UNSIGNED_BYTE, quote); 
+	}
+
+	for (dis = -100.0f; dis >= -500.0f; dis -= 50.0f) {
+		glRasterPos3f(halfRoadWidth * 7, 0.0f, dis);
+		sprintf(quote, "%.1fm", -dis);
+		glCallLists(strlen(quote), GL_UNSIGNED_BYTE, quote); 
+
+		glRasterPos3f(halfRoadWidth * 7, 0.0f, -dis);
+		sprintf(quote, "%.1fm", dis);
+		glCallLists(strlen(quote), GL_UNSIGNED_BYTE, quote); 
+	}
+
+	glPopMatrix();
+
+}
+
 afx_msg LRESULT CBirdviewView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 {
 	PARAM_STRUCT data;
@@ -660,6 +708,9 @@ afx_msg LRESULT CBirdviewView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 
 #if 1
 	DrawScene();
+	DrawFarTarget();
+	DrawText();
+
 	int arrIdx = 0;
 	for (arrIdx = 0; arrIdx < _ListArray.GetSize(); arrIdx++) {
 		WaitForSingleObject(_ListArrayMutex.GetAt(arrIdx), INFINITE);
@@ -880,7 +931,6 @@ void CBirdviewView::Init()
 {
 	PIXELFORMATDESCRIPTOR pfd;
 	int         n;
-	HGLRC       hrc;
 
 	m_pDC = new CClientDC(this);
 
@@ -894,8 +944,21 @@ void CBirdviewView::Init()
 
 	CreateRGBPalette();
 
-	hrc = wglCreateContext(m_pDC->GetSafeHdc());
-	wglMakeCurrent(m_pDC->GetSafeHdc(), hrc);
+	m_hrc = wglCreateContext(m_pDC->GetSafeHdc());
+	wglMakeCurrent(m_pDC->GetSafeHdc(), m_hrc);
+
+/*
+HFONT font = CreateFont(12, 0, 0, 0,
+                           FW_NORMAL, FALSE, FALSE, FALSE,
+                           ANSI_CHARSET, 0,
+                            0,0,0, _T("Times New Roman"));
+	SelectObject(m_pDC->GetSafeHdc(), font);
+*/
+	wglUseFontBitmaps(m_pDC->GetSafeHdc(), 0, 256, 1000); 
+	// move bottom left, southwest of the red triangle  
+	//glRasterPos2f(30.0F, 300.0F); 
+	// set up for a string-drawing display list call  
+	glListBase(1000); 
 
 	GetClientRect(&m_oldRect);
 	glClearDepth(1.0f);
@@ -1042,28 +1105,8 @@ BOOL CBirdviewView::OnEraseBkgnd(CDC* pDC)
 
 void CBirdviewView::OnTimer(UINT_PTR nIDEvent)
 {
-	m_fFarPlane++;
-	CRect rect;
 
-	GetClientRect(&rect);
-	if (rect.bottom)
-		m_fAspect = (GLfloat)rect.Width()/rect.Height();
-	else    // don't divide by zero, not that we should ever run into that...
-		m_fAspect = 1.0f;
-	m_fNearPlane = 3.0f;
-	m_fMaxObjSize = m_fFarPlane / 2;
-	m_fRadius = m_fNearPlane + m_fMaxObjSize / 2.0f;
-	m_fFov = 30.0f;
-	m_fYoffset++;
-
-	glViewport(0, 0, rect.Width(), rect.Height());
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	gluPerspective(m_fFov, m_fAspect, m_fNearPlane, m_fFarPlane);
-	glMatrixMode(GL_MODELVIEW);
-
-	//SendMessage(WM_USER_DRAW, 0, 0);
-
+	SendMessage(WM_USER_DRAW, 0, 0);
 	// TODO: 在此加入您的訊息處理常式程式碼和 (或) 呼叫預設值
 	CView::OnTimer(nIDEvent);
 
@@ -1084,12 +1127,13 @@ void CBirdviewView::DrawScene()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glLoadIdentity();
-	glTranslatef(0.0f, -m_fYoffset, -m_fRadius);
-	glRotatef(20.0f, 1.0f, 0.0f, 0.0f);
-	//glRotatef(15.0f, 0.0f, 1.0f, 0.0f);
-	//glScalef(0.5f, 0.5f, 0.5f);
-	//gluLookAt(0.0f, 0.0f, 1.0f, -1.0f, -1.0f, -1.0f, 0.0f, 1.0f, 0.0f);
+	glTranslatef(0.0f, -10.0f, -m_fRadius);
 
+#if 1
+	//glRotatef(10.0f, 1.0f, 0.0f, 0.0f);
+	glScalef(2.0f, 2.0f, 2.0f);
+	gluLookAt(0.0f, 3.0f, halfCarLen * 4, 0.0f, 0.0f, -(200.0f), 0.0f, 1.0f, 0.0f);
+	//
 	GLfloat ambientColor[] = {0.5f, 0.5f, 0.5f, 1.0f}; //Color (0.2, 0.2, 0.2)
 	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambientColor);
 	
@@ -1200,12 +1244,6 @@ void CBirdviewView::DrawScene()
 	glEnd();
 	glPopMatrix();
 
-	//draw road line @right side
-	//glPushMatrix();
-	//glPushAttrib(GL_ENABLE_BIT); 
-	//glLineStipple(1, 0xFF00);
-	//glEnable(GL_LINE_STIPPLE);
-
 	float temp;
 	temp = -1000.0f;
 
@@ -1257,11 +1295,10 @@ void CBirdviewView::DrawScene()
 	}
 	glEnd();
 	glPopMatrix();
-
-	//glDisable(GL_LINE_STIPPLE);
-	//glPopAttrib();
-	//glPopMatrix();
 #endif
+
+#endif
+
 }
 
 
@@ -1308,18 +1345,9 @@ void CBirdviewView::OnSize(UINT nType, int cx, int cy)
 
 afx_msg LRESULT CBirdviewView::OnUpdateSpeedDrawing(WPARAM wParam, LPARAM lParam)
 {
-
 	m_RoadLineStartZStep = (float)wParam / 6000.0f;
-#if 0
-	m_fMaxObjSize = m_fFarPlane / 2;
-	m_fRadius = m_fNearPlane + m_fMaxObjSize / 2.0f;
-
-
-#endif
-	m_fRadius = m_fOldRadius + (float)wParam / 50.0f;
-	m_fMaxObjSize = m_fMaxObjSizeOld + (float)wParam / 60.0f;
-	m_fYoffset = 10.28 + (float)wParam / 300.0f;
-	m_fFarPlane = m_fOldFarPlane + (float)wParam / 5.0f;
+	m_fRadius = m_fOldRadius + (float)wParam / 300.0f;
+	m_fFarPlane = m_fOldFarPlane + (float)wParam / 10.0f;
 
 	CRect rect;
 	GetClientRect(&rect);
@@ -1327,8 +1355,29 @@ afx_msg LRESULT CBirdviewView::OnUpdateSpeedDrawing(WPARAM wParam, LPARAM lParam
 	glViewport(0, 0, rect.Width(), rect.Height());
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(m_fFov, m_fAspect, m_fNearPlane, m_fFarPlane);
+	gluPerspective(m_fFov, (float)rect.Width()/(float)rect.Height(), m_fNearPlane, m_fFarPlane);
 	glMatrixMode(GL_MODELVIEW);
 	//m_RoadLineStartZStep /= 10;
 	return 0;
+}
+
+
+void CBirdviewView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
+{
+	// TODO: 在此加入您的訊息處理常式程式碼和 (或) 呼叫預設值
+
+	switch (nChar) {
+	case VK_UP:
+		if (m_Speed <= 322.0f)
+			m_Speed += 1.0f;
+		break;
+	case VK_DOWN:
+//		if (m_Speed >= 100.0f)
+			m_Speed -= 1.0f;
+		break;
+	default:
+		break;
+	}
+	//SendMessage(WM_UPDATE_SPEED_DRAWING, m_Speed, 0);
+	CView::OnKeyDown(nChar, nRepCnt, nFlags);
 }
