@@ -32,7 +32,7 @@ static AFX_EXTENSION_MODULE birdviewDLL = { NULL, NULL };
 float CBirdviewView::halfCarWidth = 1.0f;
 float CBirdviewView::halfCarLen = 2.0f;
 float CBirdviewView::halfRoadWidth = (3.5f / 2);
-float CBirdviewView::m_Speed;
+float CBirdviewView::m_Speed = 0;
 
 unsigned char threeto8[8] =
 {
@@ -415,6 +415,13 @@ void CBirdviewView::DrawTrackingObject3D(PARAM_STRUCT* pD)
 	glEnd();
 	glPopMatrix();
 
+	glPushMatrix();
+	glColor3f(0.8f, 0.8f, 0.8f);
+	glRasterPos3f(tempX - halfCarWidth, 1.0f, tempZ + halfCarLen);
+	sprintf(quote, "%d", raw.TargetNum);
+	glCallLists(strlen(quote), GL_UNSIGNED_BYTE, quote);
+	glPopMatrix();
+
 	//bottom
 	glPushMatrix();
 	glNormal3f(0.0f, 1.0f, 0.0f);
@@ -535,6 +542,13 @@ void CBirdviewView::DrawRawObject3D(PARAM_STRUCT *pD)
 	glVertex3f(pnt.x - 0.5f,	1.0f,	pnt.y + 0.5f);
 	glEnd();
 
+	glPushMatrix();
+	glColor3f(0.8f, 0.8f, 0.8f);
+	glRasterPos3f(pnt.x, 1.0f, pnt.y);
+	sprintf(quote, "%d", raw.TargetNum);
+	glCallLists(strlen(quote), GL_UNSIGNED_BYTE, quote);
+	glPopMatrix();
+	
 	//bottom
 	glBegin(GL_QUADS);
 	glNormal3f(0.0f, 1.0f, 0.0f);
@@ -597,7 +611,7 @@ void CBirdviewView::DrawFarTarget()
 	CPoint pnt;
 
 	pnt.x = halfCarWidth * 3;
-	pnt.y = -10 + m_Speed;
+	pnt.y = -200;
 
 	glPushMatrix();
 	glColor3f(0.0f, 1.0f, 0.0f);
@@ -690,6 +704,16 @@ void CBirdviewView::DrawText()
 		sprintf(quote, "%.1fm", dis);
 		glCallLists(strlen(quote), GL_UNSIGNED_BYTE, quote); 
 	}
+
+#if 0
+	glRasterPos3f(-30.0f, 3.0f, 0.0f);
+	sprintf(quote, "%.2fkm/hr,", m_Speed);
+	glCallLists(strlen(quote), GL_UNSIGNED_BYTE, quote);		
+	sprintf(quote, "%.2f,", m_fFarPlane);
+	glCallLists(strlen(quote), GL_UNSIGNED_BYTE, quote);		
+	sprintf(quote, "%.2f,", m_fRadius);
+	glCallLists(strlen(quote), GL_UNSIGNED_BYTE, quote);		
+#endif
 
 	glPopMatrix();
 
@@ -973,8 +997,8 @@ HFONT font = CreateFont(12, 0, 0, 0,
 		m_fAspect = (GLfloat)m_oldRect.Width()/m_oldRect.Height();
 	else    // don't divide by zero, not that we should ever run into that...
 		m_fAspect = 1.0f;
-	m_fNearPlane = 3.0f;
-	m_fFarPlane = 300.0f;
+	m_fNearPlane = 30.0f;
+	m_fFarPlane = 300;
 	m_fMaxObjSize = m_fFarPlane / 2;
 	m_fMaxObjSizeOld = m_fMaxObjSize;
 	m_fRadius = m_fNearPlane + m_fMaxObjSize / 2.0f;
@@ -1130,9 +1154,10 @@ void CBirdviewView::DrawScene()
 	glTranslatef(0.0f, -10.0f, -m_fRadius);
 
 #if 1
-	//glRotatef(10.0f, 1.0f, 0.0f, 0.0f);
+	//glRotatef(0.0f, 1.0f, 0.0f, 0.0f);
 	glScalef(2.0f, 2.0f, 2.0f);
 	gluLookAt(0.0f, 3.0f, halfCarLen * 4, 0.0f, 0.0f, -(200.0f), 0.0f, 1.0f, 0.0f);
+	//gluLookAt(0.0f, 10.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f);
 	//
 	GLfloat ambientColor[] = {0.5f, 0.5f, 0.5f, 1.0f}; //Color (0.2, 0.2, 0.2)
 	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambientColor);
@@ -1346,7 +1371,7 @@ void CBirdviewView::OnSize(UINT nType, int cx, int cy)
 afx_msg LRESULT CBirdviewView::OnUpdateSpeedDrawing(WPARAM wParam, LPARAM lParam)
 {
 	m_RoadLineStartZStep = (float)wParam / 6000.0f;
-	m_fRadius = m_fOldRadius + (float)wParam / 300.0f;
+	m_fRadius = m_fOldRadius + (float)wParam / 100.0f;
 	m_fFarPlane = m_fOldFarPlane + (float)wParam / 10.0f;
 
 	CRect rect;
@@ -1355,7 +1380,8 @@ afx_msg LRESULT CBirdviewView::OnUpdateSpeedDrawing(WPARAM wParam, LPARAM lParam
 	glViewport(0, 0, rect.Width(), rect.Height());
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(m_fFov, (float)rect.Width()/(float)rect.Height(), m_fNearPlane, m_fFarPlane);
+	m_fAspect = (float)rect.Width()/(float)rect.Height();//+ (float)wParam / 100.0f;
+	gluPerspective(m_fFov, m_fAspect, m_fNearPlane, m_fFarPlane);
 	glMatrixMode(GL_MODELVIEW);
 	//m_RoadLineStartZStep /= 10;
 	return 0;
@@ -1369,15 +1395,17 @@ void CBirdviewView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 	switch (nChar) {
 	case VK_UP:
 		if (m_Speed <= 322.0f)
-			m_Speed += 1.0f;
+			m_Speed += 10.0f;
 		break;
 	case VK_DOWN:
-//		if (m_Speed >= 100.0f)
-			m_Speed -= 1.0f;
+		if (m_Speed > 0.0f)
+			m_Speed -= 10.0f;
+		else 
+			m_Speed = 0;
 		break;
 	default:
 		break;
 	}
-	//SendMessage(WM_UPDATE_SPEED_DRAWING, m_Speed, 0);
+	SendMessage(WM_UPDATE_SPEED_DRAWING, m_Speed*100, 0);
 	CView::OnKeyDown(nChar, nRepCnt, nFlags);
 }

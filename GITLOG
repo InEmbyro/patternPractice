@@ -1,2 +1,6 @@
-1. The depth of field will change related to velocity.
+1. Enhance the depth view of birdview.
+  The far-end of distance (FCW) will be effected by m_fFarPlane.
+  The near-end of distance (BSD) will be effected by m_fRadius.
+
+Next, how to integrate 0x401 & 0x402.
 
