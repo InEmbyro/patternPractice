@@ -119,10 +119,12 @@ typedef union {
 	struct {
 		unsigned char TargetNum;
 		double	angle;
+		double	theta;
 		double	range;
 		double 	AbsLevel_db;
 		double	x_range;
 		double	y_range;
+		double	z_range;
 		double relatedSpeed;	// m/s
 		unsigned char type;
 	};

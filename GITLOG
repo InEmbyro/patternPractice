@@ -1,6 +1,4 @@
-1. Enhance the depth view of birdview.
-  The far-end of distance (FCW) will be effected by m_fFarPlane.
-  The near-end of distance (BSD) will be effected by m_fRadius.
+1. The 0x401 and 0x402 have been combined to show the object in 3D axis.
 
-Next, how to integrate 0x401 & 0x402.
+Next, how to show tracking object.
 

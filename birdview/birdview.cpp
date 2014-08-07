@@ -31,6 +31,7 @@
 static AFX_EXTENSION_MODULE birdviewDLL = { NULL, NULL };
 float CBirdviewView::halfCarWidth = 1.0f;
 float CBirdviewView::halfCarLen = 2.0f;
+float CBirdviewView::halfCarHeight = 1.0f;
 float CBirdviewView::halfRoadWidth = (3.5f / 2);
 float CBirdviewView::m_Speed = 0;
 
@@ -217,7 +218,7 @@ END_MESSAGE_MAP()
 // CBirdviewFrm 訊息處理常式
 
 unsigned long rcvIdent[] = {
-	0x400, 0x401, 0x00,
+	0x400, 0x401, 0x402, 0x00,
 	0x410, 0x411, 0x00,
 	0x601, 0x610, 0x611, 0x612, 0x613, 0x614, 0x615, 0x616, 0x617, 0x618, 0x619, 0x620, 0x00};
 
@@ -471,6 +472,110 @@ void CBirdviewView::DrawTrackingObject(PARAM_STRUCT *pD, CDC *pDc)
 }
 // CBirdviewView 訊息處理常式
 
+void CBirdviewView::DrawRawObject3D(RAW_OBJECT_STRUCT *pRaw, unsigned char sensorNo)
+{
+	int angle;
+	float temp;
+	float z;
+	float x;
+	float y;
+
+	if (sensorNo == 0)
+		angle = SENSOR_ROTATE;
+	else
+		angle = -SENSOR_ROTATE;
+
+	temp = (pRaw->x_range * cos(angle * RAD_CONVER)) - (pRaw->y_range * sin(angle * RAD_CONVER));
+	x = temp;
+	temp = (pRaw->x_range * sin(angle * RAD_CONVER)) + (pRaw->y_range * cos(angle * RAD_CONVER));
+	temp += halfCarLen;
+	y = temp;	//it is Z
+	z = pRaw->z_range;
+
+	glPushMatrix();
+	switch (sensorNo) {
+	case 0:
+		if (z != 0.0f)
+			glColor3f(1.0f, 0.0f, 1.0f);
+		else
+			glColor3f(1.0f, 0.0f, 0.0f);
+		break;
+	case 1:
+		if (z != 0.0f)
+			glColor3f(1.0f, 1.0f, 1.0f);
+		else
+			glColor3f(1.0f, 1.0f, 0.0f);
+		break;
+	default:
+		break;
+	}
+
+	glTranslatef(0.0f, 0.0f, halfCarLen);
+	//front
+	glBegin(GL_QUADS);
+	glNormal3f(0.0f, 0.0f, -1.0f);
+	glVertex3f(x - 0.5f,	z + 1.0f,	y + 0.5f);
+	glVertex3f(x - 0.5f,	z + 0.0f,	y + 0.5f);
+	glVertex3f(x + 0.5f,	z + 0.0f,	y + 0.5f);
+	glVertex3f(x + 0.5f,	z + 1.0f,	y + 0.5f);
+	glEnd();
+
+	//back
+	glBegin(GL_QUADS);
+	glNormal3f(0.0f, 0.0f, -1.0f);
+	glVertex3f(x - 0.5f,	z + 1.0f,	y - 0.5f);
+	glVertex3f(x - 0.5f,	z + 0.0f,	y - 0.5f);
+	glVertex3f(x + 0.5f,	z + 0.0f,	y - 0.5f);
+	glVertex3f(x + 0.5f,	z + 1.0f,	y - 0.5f);
+	glEnd();
+
+	//right
+	glBegin(GL_QUADS);
+	glNormal3f(-1.0f, 0.0f, 0.0f);
+	glVertex3f(x + 0.5f,	z + 1.0f,	y + 0.5f);
+	glVertex3f(x + 0.5f,	z + 0.0f,	y + 0.5f);
+	glVertex3f(x + 0.5f,	z + 0.0f,	y - 0.5f);
+	glVertex3f(x + 0.5f,	z + 1.0f,	y - 0.5f);
+	glEnd();
+
+	//left
+	glBegin(GL_QUADS);
+	glNormal3f(-1.0f, 0.0f, 0.0f);
+	glVertex3f(x - 0.5f,	z + 1.0f,	y + 0.5f);
+	glVertex3f(x - 0.5f,	z + 0.0f,	y + 0.5f);
+	glVertex3f(x - 0.5f,	z + 0.0f,	y - 0.5f);
+	glVertex3f(x - 0.5f,	z + 1.0f,	y - 0.5f);
+	glEnd();
+
+	//top
+	glBegin(GL_QUADS);
+	glNormal3f(0.0f, 1.0f, 0.0f);
+	glVertex3f(x + 0.5f,	z + 1.0f,	y + 0.5f);
+	glVertex3f(x + 0.5f,	z + 1.0f,	y - 0.5f);
+	glVertex3f(x - 0.5f,	z + 1.0f,	y - 0.5f);
+	glVertex3f(x - 0.5f,	z + 1.0f,	y + 0.5f);
+	glEnd();
+
+	glPushMatrix();
+	glColor3f(0.8f, 0.8f, 0.8f);
+	glRasterPos3f(x, z + 1.0f, y);
+	sprintf(quote, "%d", pRaw->TargetNum);
+	glCallLists(strlen(quote), GL_UNSIGNED_BYTE, quote);
+	glPopMatrix();
+	
+	//bottom
+	glBegin(GL_QUADS);
+	glNormal3f(0.0f, 1.0f, 0.0f);
+	glVertex3f(x + 0.5f,	z + 0.0f,	y + 0.5f);
+	glVertex3f(x + 0.5f,	z + 0.0f,	y - 0.5f);
+	glVertex3f(x - 0.5f,	z + 0.0f,	y - 0.5f);
+	glVertex3f(x - 0.5f,	z + 0.0f,	y + 0.5f);
+	glEnd();
+
+	//
+	glPopMatrix();
+}
+
 void CBirdviewView::DrawRawObject3D(PARAM_STRUCT *pD)
 {
 	int angle;
@@ -719,6 +824,15 @@ void CBirdviewView::DrawText()
 
 }
 
+
+/*	pRaw points to raw data which has been parsed by ParseRawObject.
+	The function find the related raw object based on Target Number.
+
+	Return Value:
+		If the source data and raw are pairs, TRUE will be returned,
+		otherwise, FALSE will be returned.
+*/
+
 afx_msg LRESULT CBirdviewView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 {
 	PARAM_STRUCT data;
@@ -726,6 +840,11 @@ afx_msg LRESULT CBirdviewView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 	CString str;
 	CList <PARAM_STRUCT, PARAM_STRUCT&>* p;
 	POSITION pos;
+	RAW_OBJECT_STRUCT raw;
+	PARAM_STRUCT data2nd;
+	POSITION pos2nd;
+	POSITION pos2ndOld;
+	RAW_OBJECT_STRUCT raw2nd;
 
 	if (GetSafeHwnd() == NULL)
 		return 0;
@@ -735,6 +854,10 @@ afx_msg LRESULT CBirdviewView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 	DrawFarTarget();
 	DrawText();
 
+
+	/*	The drawing case should consider the array index of rcvIdent[].
+		The order is mandatory. Arbitrarily change will impact other portion
+	*/
 	int arrIdx = 0;
 	for (arrIdx = 0; arrIdx < _ListArray.GetSize(); arrIdx++) {
 		WaitForSingleObject(_ListArrayMutex.GetAt(arrIdx), INFINITE);
@@ -743,18 +866,41 @@ afx_msg LRESULT CBirdviewView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 			ReleaseMutex(_ListArrayMutex.GetAt(arrIdx));
 			continue;
 		}
-		pos = p->GetHeadPosition();
-		while (pos) {
-			data = p->GetAt(pos);
-			p->RemoveHead();
-			if (data.Ident == 0x401) {
-				DrawRawObject3D(&data);
-			} else if (data.Ident == 0x411) {
-				DrawRawObject3D(&data);
-			} else if (data.Ident >= 0x610 && data.Ident <= 0x620) {
-				DrawTrackingObject3D(&data);
-			}
+		switch (arrIdx) {
+		case 0:
+		case 1:
 			pos = p->GetHeadPosition();
+			if (!pos)
+				break;
+			data = p->GetAt(pos);
+			ParseRawObject(&data, &raw);
+			pos2nd = pos;
+			while (pos2nd) {
+				pos2ndOld = pos2nd;
+				data2nd = p->GetNext(pos2nd);
+				if (data2nd.Ident == 0x401 || data2nd.Ident == 0x411)
+					continue;
+				if (ParseRawObject2nd(&data2nd, &raw)) {
+					DrawRawObject3D(&raw, 0);
+					p->RemoveAt(pos2ndOld);
+					break;
+				}
+			}
+			break;
+		default:
+			pos = p->GetHeadPosition();
+			while (pos) {
+				data = p->GetAt(pos);
+				p->RemoveHead();
+				if (data.Ident == 0x401) {
+					DrawRawObject3D(&data);
+				} else if (data.Ident == 0x411) {
+					DrawRawObject3D(&data);
+				} else if (data.Ident >= 0x610 && data.Ident <= 0x620) {
+					DrawTrackingObject3D(&data);
+				}
+				pos = p->GetHeadPosition();
+			}
 		}
 		ReleaseMutex(_ListArrayMutex.GetAt(arrIdx));
 	}
@@ -867,6 +1013,25 @@ void CBirdviewView::ParseRawObject(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *pRaw)
 
 	pRaw->x_range = pRaw->range * sin(pRaw->angle * RAD_CONVER);
 	pRaw->y_range = pRaw->range * cos(pRaw->angle * RAD_CONVER);
+	pRaw->z_range = 0.0f;
+}
+
+BOOL CBirdviewView::ParseRawObject2nd(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *pRaw)
+{
+	int temp;
+
+	temp = pSrc->RCV_data[0] & 0x3F;
+	if (temp != pRaw->TargetNum)
+		return FALSE;
+
+	temp = pSrc->RCV_data[6] & 0x07;
+	temp = (temp << 8) + pSrc->RCV_data[5];
+	pRaw->theta = (temp - 1024) * 0.16;
+	pRaw->theta += 5;
+
+	pRaw->z_range = pRaw->range * sin(pRaw->theta * RAD_CONVER);
+
+	return TRUE;
 }
 
 void CBirdviewView::SetOrigin(CDC *pDc, BOOL action, int x_off, int y_off)
@@ -1154,10 +1319,10 @@ void CBirdviewView::DrawScene()
 	glTranslatef(0.0f, -10.0f, -m_fRadius);
 
 #if 1
-	//glRotatef(0.0f, 1.0f, 0.0f, 0.0f);
+	//glRotatef(20.0f, 0.0f, 1.0f, 0.0f);
 	glScalef(2.0f, 2.0f, 2.0f);
-	gluLookAt(0.0f, 3.0f, halfCarLen * 4, 0.0f, 0.0f, -(200.0f), 0.0f, 1.0f, 0.0f);
-	//gluLookAt(0.0f, 10.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f);
+	gluLookAt(0.0f, 2.0f, halfCarLen * 4, 0.0f, 0.0f, -(200.0f), 0.0f, 1.0f, 0.0f);
+	//gluLookAt(0.0f, 0.0f, -halfCarLen * 2, 0.0f, 0.0f, 100.0f, 0.0f, 1.0f, 0.0f);
 	//
 	GLfloat ambientColor[] = {0.5f, 0.5f, 0.5f, 1.0f}; //Color (0.2, 0.2, 0.2)
 	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambientColor);

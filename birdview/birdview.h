@@ -26,6 +26,7 @@ class CBirdviewView : public CView
 	static const unsigned int slotKey;
 	static float halfCarWidth;
 	static float halfCarLen;
+	static float halfCarHeight;
 	static float halfRoadWidth;
 	static float m_Speed;
 	char quote[20];
@@ -39,10 +40,12 @@ class CBirdviewView : public CView
 	void CreateRGBPalette();
 
 	CReceiveThread *pRcvThread;
+	BOOL ParseRawObject2nd(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *pRaw);
 	void ParseRawObject(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *pRaw);
 	void ParseTrackingObject(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *pRaw);
 	void DrawRawObject(PARAM_STRUCT *, CDC*);
 	void DrawRawObject3D(PARAM_STRUCT *);
+	void DrawRawObject3D(RAW_OBJECT_STRUCT *pRaw, unsigned char sensorNo);
 	void DrawTrackingObject(PARAM_STRUCT*, CDC*);
 	void DrawTrackingObject3D(PARAM_STRUCT*);
 	void DrawFarTarget(void);
