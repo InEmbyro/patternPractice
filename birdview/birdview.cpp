@@ -219,7 +219,7 @@ END_MESSAGE_MAP()
 
 unsigned long rcvIdent[] = {
 	0x400, 0x401, 0x402, 0x00,
-	0x410, 0x411, 0x00,
+	0x410, 0x411, 0x412, 0x00,
 	0x601, 0x610, 0x611, 0x612, 0x613, 0x614, 0x615, 0x616, 0x617, 0x618, 0x619, 0x620, 0x00};
 
 // CBirdviewView
@@ -881,7 +881,7 @@ afx_msg LRESULT CBirdviewView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 				if (data2nd.Ident == 0x401 || data2nd.Ident == 0x411)
 					continue;
 				if (ParseRawObject2nd(&data2nd, &raw)) {
-					DrawRawObject3D(&raw, 0);
+					DrawRawObject3D(&raw, arrIdx);
 					p->RemoveAt(pos2ndOld);
 					break;
 				}
