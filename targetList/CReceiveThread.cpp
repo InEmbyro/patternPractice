@@ -125,7 +125,7 @@ __next_read:
 					CopyMemory(&data, slotData.ptr + dataLen, sizeof(PARAM_STRUCT));
 					dataLen += sizeof(PARAM_STRUCT);
 					if (pView->_filterMap.Lookup(data.Ident, fakeKey)) {
-						if (data.Ident > 0x44F) {
+						if (data.Ident >= 0x610) {
 							pView->ParseTrackingObject(&data, &rawData);
 						} else {
 							pView->ParseRawObject(&data, &rawData);

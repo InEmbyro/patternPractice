@@ -901,19 +901,19 @@ afx_msg LRESULT CBirdviewView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 			while (pos) {
 				posOld = pos;
 				data = p->GetNext(pos);
-				if (data.DataLength != 8 || data.Ident <= 0x610 || data.Ident >= 0x620) {
+				if (data.DataLength != 8 || data.Ident < 0x610 || data.Ident > 0x620) {
 					continue;
 				}
 				ParseTrackingObject(&data, &raw);
 				pos2nd = pos;
 				while (pos2nd) {
 					data2nd = p->GetAt(pos2nd);
-					if (data.DataLength != 7 || data.Ident <= 0x610 || data.Ident >= 0x620) {
+					if (data2nd.DataLength != 7 || data2nd.Ident < 0x610 || data2nd.Ident > 0x620) {
 						p->GetNext(pos2nd);
 						continue;
 					}
 					if (ParseTrackingObject2nd(&data2nd, &raw)) {
-//						DrawTrackingObject3D(
+						DrawTrackingObject3D(&raw);
 						if (pos == pos2nd)
 							p->GetNext(pos);
 						p->RemoveAt(pos2nd);
@@ -970,10 +970,10 @@ void CBirdviewView::DrawTrackingObject3D(RAW_OBJECT_STRUCT *pRaw)
 	glPushMatrix();
 	glNormal3f(0.0f, 0.0f, -1.0f);
 	glBegin(GL_QUADS);
-	glVertex3f(tempX - halfCarWidth, 0.0f, tempZ + halfCarLen);
-	glVertex3f(tempX - halfCarWidth, 1.0f, tempZ + halfCarLen);
-	glVertex3f(tempX + halfCarWidth, 1.0f, tempZ + halfCarLen);
-	glVertex3f(tempX + halfCarWidth, 0.0f, tempZ + halfCarLen);
+	glVertex3f(tempX - halfCarWidth, tempY + 0.0f, tempZ + halfCarLen);
+	glVertex3f(tempX - halfCarWidth, tempY + 1.0f, tempZ + halfCarLen);
+	glVertex3f(tempX + halfCarWidth, tempY + 1.0f, tempZ + halfCarLen);
+	glVertex3f(tempX + halfCarWidth, tempY + 0.0f, tempZ + halfCarLen);
 	glEnd();
 	glPopMatrix();
 
@@ -981,10 +981,10 @@ void CBirdviewView::DrawTrackingObject3D(RAW_OBJECT_STRUCT *pRaw)
 	glPushMatrix();
 	glNormal3f(0.0f, 0.0f, -1.0f);
 	glBegin(GL_QUADS);
-	glVertex3f(tempX - halfCarWidth, 0.0f, tempZ - halfCarLen);
-	glVertex3f(tempX - halfCarWidth, 1.0f, tempZ - halfCarLen);
-	glVertex3f(tempX + halfCarWidth, 1.0f, tempZ - halfCarLen);
-	glVertex3f(tempX + halfCarWidth, 0.0f, tempZ - halfCarLen);
+	glVertex3f(tempX - halfCarWidth, tempY + 0.0f, tempZ - halfCarLen);
+	glVertex3f(tempX - halfCarWidth, tempY + 1.0f, tempZ - halfCarLen);
+	glVertex3f(tempX + halfCarWidth, tempY + 1.0f, tempZ - halfCarLen);
+	glVertex3f(tempX + halfCarWidth, tempY + 0.0f, tempZ - halfCarLen);
 	glEnd();
 	glPopMatrix();
 
@@ -992,10 +992,10 @@ void CBirdviewView::DrawTrackingObject3D(RAW_OBJECT_STRUCT *pRaw)
 	glPushMatrix();
 	glNormal3f(-1.0f, 0.0f, 0.0f);
 	glBegin(GL_QUADS);
-	glVertex3f(tempX + halfCarWidth, 1.0f, tempZ + halfCarLen);
-	glVertex3f(tempX + halfCarWidth, 1.0f, tempZ - halfCarLen);
-	glVertex3f(tempX + halfCarWidth, 0.0f, tempZ - halfCarLen);
-	glVertex3f(tempX + halfCarWidth, 0.0f, tempZ + halfCarLen);
+	glVertex3f(tempX + halfCarWidth, tempY + 1.0f, tempZ + halfCarLen);
+	glVertex3f(tempX + halfCarWidth, tempY + 1.0f, tempZ - halfCarLen);
+	glVertex3f(tempX + halfCarWidth, tempY + 0.0f, tempZ - halfCarLen);
+	glVertex3f(tempX + halfCarWidth, tempY + 0.0f, tempZ + halfCarLen);
 	glEnd();
 	glPopMatrix();
 
@@ -1003,10 +1003,10 @@ void CBirdviewView::DrawTrackingObject3D(RAW_OBJECT_STRUCT *pRaw)
 	glPushMatrix();
 	glNormal3f(-1.0f, 0.0f, 0.0f);
 	glBegin(GL_QUADS);
-	glVertex3f(tempX - halfCarWidth, 1.0f, tempZ + halfCarLen);
-	glVertex3f(tempX - halfCarWidth, 1.0f, tempZ - halfCarLen);
-	glVertex3f(tempX - halfCarWidth, 0.0f, tempZ - halfCarLen);
-	glVertex3f(tempX - halfCarWidth, 0.0f, tempZ + halfCarLen);
+	glVertex3f(tempX - halfCarWidth, tempY + 1.0f, tempZ + halfCarLen);
+	glVertex3f(tempX - halfCarWidth, tempY + 1.0f, tempZ - halfCarLen);
+	glVertex3f(tempX - halfCarWidth, tempY + 0.0f, tempZ - halfCarLen);
+	glVertex3f(tempX - halfCarWidth, tempY + 0.0f, tempZ + halfCarLen);
 	glEnd();
 	glPopMatrix();
 
@@ -1014,16 +1014,16 @@ void CBirdviewView::DrawTrackingObject3D(RAW_OBJECT_STRUCT *pRaw)
 	glPushMatrix();
 	glNormal3f(0.0f, 1.0f, 0.0f);
 	glBegin(GL_QUADS);
-	glVertex3f(tempX - halfCarWidth, 1.0f, tempZ + halfCarLen);
-	glVertex3f(tempX - halfCarWidth, 1.0f, tempZ - halfCarLen);
-	glVertex3f(tempX + halfCarWidth, 1.0f, tempZ - halfCarLen);
-	glVertex3f(tempX + halfCarWidth, 1.0f, tempZ + halfCarLen);
+	glVertex3f(tempX - halfCarWidth, tempY + 1.0f, tempZ + halfCarLen);
+	glVertex3f(tempX - halfCarWidth, tempY + 1.0f, tempZ - halfCarLen);
+	glVertex3f(tempX + halfCarWidth, tempY + 1.0f, tempZ - halfCarLen);
+	glVertex3f(tempX + halfCarWidth, tempY + 1.0f, tempZ + halfCarLen);
 	glEnd();
 	glPopMatrix();
 
 	glPushMatrix();
 	glColor3f(0.8f, 0.8f, 0.8f);
-	glRasterPos3f(tempX - halfCarWidth, 1.0f, tempZ + halfCarLen);
+	glRasterPos3f(tempX - halfCarWidth, tempY + 1.0f, tempZ + halfCarLen);
 	sprintf(quote, "%d", pRaw->TargetNum);
 	glCallLists(strlen(quote), GL_UNSIGNED_BYTE, quote);
 	glPopMatrix();
@@ -1032,10 +1032,10 @@ void CBirdviewView::DrawTrackingObject3D(RAW_OBJECT_STRUCT *pRaw)
 	glPushMatrix();
 	glNormal3f(0.0f, 1.0f, 0.0f);
 	glBegin(GL_QUADS);
-	glVertex3f(tempX - halfCarWidth, 0.0f, tempZ + halfCarLen);
-	glVertex3f(tempX - halfCarWidth, 0.0f, tempZ - halfCarLen);
-	glVertex3f(tempX + halfCarWidth, 0.0f, tempZ - halfCarLen);
-	glVertex3f(tempX + halfCarWidth, 0.0f, tempZ + halfCarLen);
+	glVertex3f(tempX - halfCarWidth, tempY + 0.0f, tempZ + halfCarLen);
+	glVertex3f(tempX - halfCarWidth, tempY + 0.0f, tempZ - halfCarLen);
+	glVertex3f(tempX + halfCarWidth, tempY + 0.0f, tempZ - halfCarLen);
+	glVertex3f(tempX + halfCarWidth, tempY + 0.0f, tempZ + halfCarLen);
 	glEnd();
 	glPopMatrix();
 
