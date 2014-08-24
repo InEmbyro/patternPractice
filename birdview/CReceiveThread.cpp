@@ -89,11 +89,11 @@ UINT CReceiveThread::update_thread(LPVOID _p)
 	DWORD ret;
 	DWORD cbRead;
 	CBirdviewView *pView = NULL;
-	CList <PARAM_STRUCT, PARAM_STRUCT&>* _pList;
+//	CList <PARAM_STRUCT, PARAM_STRUCT&>* _pList;
 	CList <PARAM_STRUCT, PARAM_STRUCT&>* _pViewList;
 	ARRAY_IDX aIdx;
 	int idx = 0;
-	BOOL found;
+//	BOOL found;
 
 	BOOL fResult; 
 	DWORD cbMessage;
@@ -186,7 +186,7 @@ __next_read:
 		}
 	}
 
-_exit:
+//_exit:
 	SetEvent(_this->_confirmHnd);
 	/*	When the thread exits, the related pointer (_pThread) will be released by framework.
 		the member of _pThread will be meaningless and should be set to NULL to avoid unpected deleting */

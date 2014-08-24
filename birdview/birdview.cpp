@@ -843,8 +843,8 @@ afx_msg LRESULT CBirdviewView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 	RAW_OBJECT_STRUCT raw;
 	PARAM_STRUCT data2nd;
 	POSITION pos2nd;
-	POSITION pos2ndOld;
-	RAW_OBJECT_STRUCT raw2nd;
+//	POSITION pos2ndOld;
+//	RAW_OBJECT_STRUCT raw2nd;
 
 	if (GetSafeHwnd() == NULL)
 		return 0;

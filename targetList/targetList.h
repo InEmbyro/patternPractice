@@ -23,7 +23,9 @@ class CTargetList : public CFormView
 	CTargetList();           // 動態建立所使用的保護建構函式
 	CReceiveThread *pRcvThread;
 	void ParseRawObject(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *pRaw);
+	void ParseRawObject2nd(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *pRaw);
 	void ParseTrackingObject(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *pRaw);
+	void ParseTrackingObject2nd(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *pRaw);
 
 	void SetTrackingHeader();
 	void SetRawHeader();
@@ -47,10 +49,18 @@ protected:
 public:
 	static const char* mailslot;
 	CMap <unsigned long, unsigned long, unsigned long, unsigned long&> _filterMap;
+#if 1
+	HANDLE _MapShowMutex;
+	HANDLE _MapStoreMutex;
+	CMap <unsigned char, unsigned char, RAW_OBJECT_STRUCT, RAW_OBJECT_STRUCT> *_MapShow;
+	CMap <unsigned char, unsigned char, RAW_OBJECT_STRUCT, RAW_OBJECT_STRUCT> *_MapStore;
+#else
 	HANDLE _listMutex;
 	HANDLE _listStoreMutex;
 	CList <RAW_OBJECT_STRUCT, RAW_OBJECT_STRUCT&> *_list;
 	CList <RAW_OBJECT_STRUCT, RAW_OBJECT_STRUCT&> *_listStore;
+#endif
+
 	CArray <RAW_OBJECT_STRUCT, RAW_OBJECT_STRUCT&> _listArray;
 	static int __cdecl Compare(const RAW_OBJECT_STRUCT * p1, const RAW_OBJECT_STRUCT * p2);
 

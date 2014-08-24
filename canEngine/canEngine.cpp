@@ -448,7 +448,7 @@ void CCanInfo::SlotInfo()
 	SLOT_INFO _sl;
 
 	SLOT_DATA slotData;
-	SLOT_DATA *pSlot;
+//	SLOT_DATA *pSlot;
 	slotData.len = static_cast<int>(m_curOffset[0]);
 
 	WaitForSingleObject(_noteSlotMutex, INFINITE);

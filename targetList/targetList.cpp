@@ -19,9 +19,9 @@ using namespace std;
 #endif
 
 unsigned long recvId[] = {
-	0x610, 0x611, 0x612, 0x613, 0x614, 0x615, 0x616, 0x617, 0x618, 0x619, 0x620, 0x00,
-	0x401, 0x00,
-	0x411, 0x00,
+	0x601, 0x610, 0x611, 0x612, 0x613, 0x614, 0x615, 0x616, 0x617, 0x618, 0x619, 0x620, 0x00,
+	0x400, 0x401, 0x402, 0x00,
+	0x410, 0x411, 0x412, 0x00
 };
 
 const char *comboStr[] = {
@@ -105,6 +105,23 @@ CTargetList::CTargetList()
 		ptr++;
 	}
 	_filterMap.InitHashTable(100);
+#if 1
+	_MapShowMutex = CreateMutex(NULL, FALSE, NULL);
+	_MapStoreMutex = CreateMutex(NULL, FALSE, NULL);
+	_MapShow = new CMap <unsigned char, unsigned char, RAW_OBJECT_STRUCT, RAW_OBJECT_STRUCT>;
+	if (_MapShow) {
+		_MapStore = new CMap <unsigned char, unsigned char, RAW_OBJECT_STRUCT, RAW_OBJECT_STRUCT>;
+		if (_MapStore) {
+			_MapShow->InitHashTable(50);
+			_MapStore->InitHashTable(50);
+		} else {
+			AfxMessageBox(_T("!_MapStore"));
+			delete _MapShow;
+		}
+	} else {
+		AfxMessageBox(_T("!_MapShow"));
+	}
+#else
 	_listMutex = CreateMutex(NULL, FALSE, NULL);
 	_listStoreMutex = CreateMutex(NULL, FALSE, NULL);
 
@@ -117,16 +134,27 @@ CTargetList::CTargetList()
 	} else {
 		AfxMessageBox(_T("!_list"));
 	}
+#endif
 }
 
 CTargetList::~CTargetList()
 {
+#if 1
+	CloseHandle(_MapShowMutex);
+	CloseHandle(_MapStoreMutex);
+	if (_MapShow)
+		delete _MapShow;
+	if (_MapStore)
+		delete _MapStore;
+
+#else
 	CloseHandle(_listMutex);
 	CloseHandle(_listStoreMutex);
 	if (_list)
 		delete _list;
 	if (_listStore)
 		delete _listStore;
+#endif
 }
 
 void CTargetList::DoDataExchange(CDataExchange* pDX)
@@ -196,7 +224,19 @@ BOOL CTargetList::Create(LPCTSTR lpszClassName, LPCTSTR lpszWindowName, DWORD dw
 
 	return CFormView::Create(lpszClassName, lpszWindowName, dwStyle, rect, pParentWnd, nID, pContext);
 }
+void CTargetList::ParseRawObject2nd(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *pRaw)
+{
+	int temp;
 
+	temp = pSrc->RCV_data[0] & 0x3F;
+	pRaw->TargetNum = temp;
+
+	temp = pSrc->RCV_data[6] & 0x07;
+	temp = (temp << 8) + pSrc->RCV_data[5];
+	pRaw->theta = (temp - 1024) * 0.16;
+	pRaw->theta += 5;
+
+}
 void CTargetList::ParseRawObject(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *pRaw)
 {
 	if (pSrc == NULL || pRaw == NULL)
@@ -228,6 +268,23 @@ void CTargetList::ParseRawObject(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *pRaw)
 
 	pRaw->x_range = pRaw->range * sin(pRaw->angle * RAD_CONVER);
 	pRaw->y_range = pRaw->range * cos(pRaw->angle * RAD_CONVER);
+}
+
+
+void CTargetList::ParseTrackingObject2nd(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *pRaw)
+{
+	int temp;
+
+	pRaw->TargetNum = (pSrc->RCV_data[7] & 0xFC) >> 2;
+
+	temp = pSrc->RCV_data[3] & 0x01;
+	temp = (temp << 8) + pSrc->RCV_data[2];
+	temp = (temp << 3) + ((pSrc->RCV_data[1] & 0xE0) >> 5);
+	pRaw->z_point = (temp - 2048) * 0.016;
+
+	temp = pSrc->RCV_data[5] & 0x7F;
+	temp = (temp << 4) + ((pSrc->RCV_data[4] & 0xF0) >> 4);
+	pRaw->z_speed = (temp - 1024) * 0.1;
 }
 
 void CTargetList::ParseTrackingObject(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *pRaw)
@@ -294,6 +351,9 @@ int CTargetListForm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	for (ite = comboList.begin(); ite < comboList.end(); ite++) {
 		_pView->m_combo.AddString(*ite);
 	}
+
+	/*	The default selected item of combon list is TargetList.
+		So, only the CAN ID of tracking ID is added in _filterMap	*/
 	_pView->m_combo.SetCurSel(0);
 	for (int idx = 0; idx < sizeof(recvId)/sizeof(recvId[0]); idx++) {
 		if (recvId[idx] == 0x00)
@@ -362,12 +422,21 @@ afx_msg LRESULT CTargetList::OnUserDraw(WPARAM wParam, LPARAM lParam)
 	POSITION pos;
 	
 	_listArray.RemoveAll();
+#if 1
+	WaitForSingleObject(_MapShowMutex, INFINITE);
+	idx = 0;
+	while (_MapShow->Lookup(idx++, data)) {
+		_listArray.Add(data);
+	}
+	ReleaseMutex(_MapShowMutex);
+#else
 	WaitForSingleObject(_listMutex, INFINITE);
 	while ((pos = _list->FindIndex(row++))) {
 		data = _list->GetAt(pos);
 		_listArray.Add(data);
 	}
 	ReleaseMutex(_listMutex);
+#endif
 	RAW_OBJECT_STRUCT *pD = _listArray.GetData();
 	qsort(pD, _listArray.GetSize(), sizeof(RAW_OBJECT_STRUCT), (GENERICCOMPAREFN1)Compare);
 	row = 0;
@@ -384,9 +453,13 @@ afx_msg LRESULT CTargetList::OnUserDraw(WPARAM wParam, LPARAM lParam)
 			m_listctrl.SetItemText(row, idx++, sz);
 			sz.Format(_T("%.2f"), data.y_point);
 			m_listctrl.SetItemText(row, idx++, sz);
+			sz.Format(_T("%.2f"), data.z_point);
+			m_listctrl.SetItemText(row, idx++, sz);
 			sz.Format(_T("%.2f"), data.x_speed);
 			m_listctrl.SetItemText(row, idx++, sz);
 			sz.Format(_T("%.2f"), data.y_speed);
+			m_listctrl.SetItemText(row, idx++, sz);
+			sz.Format(_T("%.2f"), data.z_speed);
 			m_listctrl.SetItemText(row, idx++, sz);
 			sz.Format(_T("%d"), data.lane);
 			m_listctrl.SetItemText(row, idx++, sz);
@@ -405,6 +478,8 @@ afx_msg LRESULT CTargetList::OnUserDraw(WPARAM wParam, LPARAM lParam)
 			sz.Format(_T("%d"), data.TargetNum);
 			m_listctrl.InsertItem(row, sz);
 			sz.Format(_T("%.2f"), data.angle);
+			m_listctrl.SetItemText(row, idx++, sz);
+			sz.Format(_T("%.2f"), data.theta);
 			m_listctrl.SetItemText(row, idx++, sz);
 			sz.Format(_T("%.2f"), data.range);
 			m_listctrl.SetItemText(row, idx++, sz);
@@ -465,19 +540,28 @@ void CTargetList::OnCbnSelchangeTargetlistCombo()
 		break;
 	}
 
+#if 1
+	WaitForSingleObject(_MapShowMutex, INFINITE);
+	_MapShow->RemoveAll();
+	ReleaseMutex(_MapShowMutex);
+
+	WaitForSingleObject(_MapStoreMutex, INFINITE);
+	_MapStore->RemoveAll();
+	ReleaseMutex(_MapStoreMutex);
+#else
 	WaitForSingleObject(_listMutex, INFINITE);
 	_list->RemoveAll();
 	if (_list)
 		delete _list;
 	_list = new CList <RAW_OBJECT_STRUCT, RAW_OBJECT_STRUCT&>;
 	ReleaseMutex(_listMutex);
-
 	WaitForSingleObject(_listStoreMutex, INFINITE);
 	_listStore->RemoveAll();
 	if (_listStore)
 		delete _listStore;
 	_listStore = new CList <RAW_OBJECT_STRUCT, RAW_OBJECT_STRUCT&>;
 	ReleaseMutex(_listStoreMutex);
+#endif
 }
 
 
@@ -499,8 +583,10 @@ void CTargetList::SetTrackingHeader()
 	m_listctrl.InsertColumn(idx++, _T("No."),			LVCFMT_LEFT, 50, 0);
 	m_listctrl.InsertColumn(idx++, _T("x_point[m]"),	LVCFMT_LEFT, 90, 0);
 	m_listctrl.InsertColumn(idx++, _T("y_point[m]"),	LVCFMT_LEFT, 90, 0);
+	m_listctrl.InsertColumn(idx++, _T("z_point[m]"),	LVCFMT_LEFT, 90, 0);
 	m_listctrl.InsertColumn(idx++, _T("Speed_x[m/s]"),	LVCFMT_LEFT, 90, 0);
 	m_listctrl.InsertColumn(idx++, _T("Speed_y[m/s]"),	LVCFMT_LEFT, 90, 0);
+	m_listctrl.InsertColumn(idx++, _T("Speed_z[m/s]"),	LVCFMT_LEFT, 90, 0);
 	m_listctrl.InsertColumn(idx++, _T("Lane"),			LVCFMT_LEFT, 90, 0);
 	m_listctrl.InsertColumn(idx++, _T("Length"),		LVCFMT_LEFT, 90, 0);
 	m_listctrl.InsertColumn(idx++, _T("Size"),			LVCFMT_LEFT, 90, 0);
@@ -515,6 +601,7 @@ void CTargetList::SetRawHeader()
 	idx = 0;
 	m_listctrl.InsertColumn(idx++, _T("No."),				LVCFMT_LEFT, 50, 0);
 	m_listctrl.InsertColumn(idx++, _T("Azimuth[deg]"),		LVCFMT_LEFT, 90, 0);
+	m_listctrl.InsertColumn(idx++, _T("Elevation[deg]"),		LVCFMT_LEFT, 90, 0);
 	m_listctrl.InsertColumn(idx++, _T("Range[m]"),			LVCFMT_LEFT, 90, 0);
 	m_listctrl.InsertColumn(idx++, _T("Amplitude"),			LVCFMT_LEFT, 90, 0);
 	m_listctrl.InsertColumn(idx++, _T("Class"),				LVCFMT_LEFT, 90, 0);
