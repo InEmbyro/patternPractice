@@ -43,11 +43,13 @@ class CBirdviewView : public CView
 	BOOL ParseRawObject2nd(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *pRaw);
 	void ParseRawObject(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *pRaw);
 	void ParseTrackingObject(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *pRaw);
+	BOOL ParseTrackingObject2nd(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *pRaw);
 	void DrawRawObject(PARAM_STRUCT *, CDC*);
 	void DrawRawObject3D(PARAM_STRUCT *);
 	void DrawRawObject3D(RAW_OBJECT_STRUCT *pRaw, unsigned char sensorNo);
 	void DrawTrackingObject(PARAM_STRUCT*, CDC*);
 	void DrawTrackingObject3D(PARAM_STRUCT*);
+	void DrawTrackingObject3D(RAW_OBJECT_STRUCT *pRaw);
 	void DrawFarTarget(void);
 	void DrawText();
 

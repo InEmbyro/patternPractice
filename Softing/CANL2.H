@@ -132,8 +132,10 @@ typedef union {
 		unsigned char TargetNum;
 		double	x_point;
 		double	y_point;
+		double	z_point;
 		double 	x_speed;
 		double	y_speed;
+		double	z_speed;
 		unsigned char lane;
 		unsigned char len;
 		unsigned char size;

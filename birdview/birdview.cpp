@@ -824,7 +824,6 @@ void CBirdviewView::DrawText()
 
 }
 
-
 /*	pRaw points to raw data which has been parsed by ParseRawObject.
 	The function find the related raw object based on Target Number.
 
@@ -840,6 +839,7 @@ afx_msg LRESULT CBirdviewView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 	CString str;
 	CList <PARAM_STRUCT, PARAM_STRUCT&>* p;
 	POSITION pos;
+	POSITION posOld;
 	RAW_OBJECT_STRUCT raw;
 	PARAM_STRUCT data2nd;
 	POSITION pos2nd;
@@ -849,7 +849,6 @@ afx_msg LRESULT CBirdviewView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 	if (GetSafeHwnd() == NULL)
 		return 0;
 
-#if 1
 	DrawScene();
 	DrawFarTarget();
 	DrawText();
@@ -870,116 +869,176 @@ afx_msg LRESULT CBirdviewView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 		case 0:
 		case 1:
 			pos = p->GetHeadPosition();
-			if (!pos)
-				break;
-			data = p->GetAt(pos);
-			ParseRawObject(&data, &raw);
-			pos2nd = pos;
-			while (pos2nd) {
-				pos2ndOld = pos2nd;
-				data2nd = p->GetNext(pos2nd);
-				if (data2nd.Ident == 0x401 || data2nd.Ident == 0x411)
+			while (pos) {
+				posOld = pos;
+				data = p->GetNext(pos);
+				if (data.Ident == 0x402 || data.Ident == 0x412) {
 					continue;
-				if (ParseRawObject2nd(&data2nd, &raw)) {
-					DrawRawObject3D(&raw, arrIdx);
-					p->RemoveAt(pos2ndOld);
-					break;
+				}
+				ParseRawObject(&data, &raw);
+				pos2nd = pos;
+				while (pos2nd) {
+					data2nd = p->GetAt(pos2nd);
+					if (data2nd.Ident == 0x401 || data2nd.Ident == 0x411) {
+						p->GetNext(pos2nd);
+						continue;
+					}
+					if (ParseRawObject2nd(&data2nd, &raw)) {
+						DrawRawObject3D(&raw, arrIdx);
+						if (pos == pos2nd)
+							p->GetNext(pos);
+						p->RemoveAt(pos2nd);
+						break;
+					} else {
+						p->GetNext(pos2nd);
+						continue;
+					}
+				}
+			}
+			break;
+		case 2:
+			pos = p->GetHeadPosition();
+			while (pos) {
+				posOld = pos;
+				data = p->GetNext(pos);
+				if (data.DataLength != 8 || data.Ident <= 0x610 || data.Ident >= 0x620) {
+					continue;
+				}
+				ParseTrackingObject(&data, &raw);
+				pos2nd = pos;
+				while (pos2nd) {
+					data2nd = p->GetAt(pos2nd);
+					if (data.DataLength != 7 || data.Ident <= 0x610 || data.Ident >= 0x620) {
+						p->GetNext(pos2nd);
+						continue;
+					}
+					if (ParseTrackingObject2nd(&data2nd, &raw)) {
+//						DrawTrackingObject3D(
+						if (pos == pos2nd)
+							p->GetNext(pos);
+						p->RemoveAt(pos2nd);
+						break;
+					} else {
+						p->GetNext(pos2nd);
+						continue;
+					}
 				}
 			}
 			break;
 		default:
-			pos = p->GetHeadPosition();
-			while (pos) {
-				data = p->GetAt(pos);
-				p->RemoveHead();
-				if (data.Ident == 0x401) {
-					DrawRawObject3D(&data);
-				} else if (data.Ident == 0x411) {
-					DrawRawObject3D(&data);
-				} else if (data.Ident >= 0x610 && data.Ident <= 0x620) {
-					DrawTrackingObject3D(&data);
-				}
-				pos = p->GetHeadPosition();
-			}
+			p->RemoveAll();
 		}
 		ReleaseMutex(_ListArrayMutex.GetAt(arrIdx));
 	}
 
 	glFinish();
 	SwapBuffers(wglGetCurrentDC());
-#else 
-	/* Create a compatible dc & bmp to avoid flickering */
-	CClientDC dc(this);	/* acquire device context */
-	CRect rect;
-	GetClientRect(&rect);
-
-	CDC dcMem;
-	dcMem.CreateCompatibleDC(&dc);
-
-	/* Prepare Pen for drawing object */
-	CPen pen, *pOldPen;
-	CBrush	*pOldBrush = NULL;
-	CBrush	*pBrush = CBrush::FromHandle((HBRUSH)GetStockObject(NULL_BRUSH));
-	CFont font;
-	CFont *pOldFont;
-	font.CreatePointFont(90, _T("Arial"));
-	pOldFont = dcMem.SelectObject(&font);
-	dcMem.SetTextColor(RGB(255, 255, 255));
-
-	CBitmap bmp;
-	CBitmap *pOldBmp = NULL;
-	bmp.CreateCompatibleBitmap(&dc, rect.Width(), rect.Height());
-	pOldBmp = dcMem.SelectObject(&bmp);
-	pOldBrush = dcMem.SelectObject(pBrush);
-	DrawCarLine(&dcMem);
-
-	POSITION pos;
-	//pos = _List.GetHeadPosition();
-	/* Assign pen, brush etc.. */
-	pOldPen = dcMem.SelectObject(&pen);
-
-	int arrIdx = 0;
-	for (arrIdx = 0; arrIdx < _ListArray.GetSize(); arrIdx++) {
-		WaitForSingleObject(_ListArrayMutex.GetAt(arrIdx), INFINITE);
-		p = _ListArray.GetAt(arrIdx);
-		if (!p) {
-			ReleaseMutex(_ListArrayMutex.GetAt(arrIdx));
-			continue;
-		}
-		pos = p->GetHeadPosition();
-		while (pos) {
-			data = p->GetAt(pos);
-			p->RemoveHead();
-			if (data.Ident == 0x401) {
-				SetOrigin(&dcMem, TRUE, -(CAR_WIDTH / 2), CAR_LENGTH);
-				DrawRawOjbect(&data, &dcMem);
-			} else if (data.Ident == 0x411) {
-				SetOrigin(&dcMem, TRUE, CAR_WIDTH / 2, CAR_LENGTH);
-				DrawRawOjbect(&data, &dcMem);
-			} else if (data.Ident >= 0x610 && data.Ident <= 0x620) {
-				SetOrigin(&dcMem, TRUE, 0, Y_OFFSET);
-				DrawTrackingObject(&data, &dcMem);
-			}
-			SetOrigin(&dcMem, FALSE);
-			pos = p->GetHeadPosition();
-		}
-		ReleaseMutex(_ListArrayMutex.GetAt(arrIdx));
-	}
-
-	dcMem.SelectObject(pOldPen);
-	dcMem.SelectObject(pOldBrush);
-	if (pen.m_hObject)
-		pen.DeleteObject();
-
-	//
-	GetClientRect(&rect);
-	dc.BitBlt(0, 0, rect.Width(), rect.Height(), &dcMem, 0, 0, SRCCOPY);
-	dcMem.SelectObject(pOldBmp);
-	if (bmp.m_hObject)
-		bmp.DeleteObject();
-	dcMem.DeleteDC();
-#endif
 	return 0;
+}
+
+BOOL CBirdviewView::ParseTrackingObject2nd(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *pRaw)
+{
+	int temp;
+
+	temp = (pSrc->RCV_data[7] & 0xFC) >> 2;
+
+	if (pRaw->TargetNum != temp)
+		return FALSE;
+
+	temp = pSrc->RCV_data[3] & 0x01;
+	temp = (temp << 8) + pSrc->RCV_data[2];
+	temp = (temp << 3) + ((pSrc->RCV_data[1] & 0xE0) >> 5);
+	pRaw->z_range = (temp - 2048) * 0.016;
+
+	return TRUE;
+}
+
+
+void CBirdviewView::DrawTrackingObject3D(RAW_OBJECT_STRUCT *pRaw)
+{
+	float tempX;
+	float tempZ;
+	float tempY;
+
+	tempZ = -pRaw->x_range;
+	tempX = -pRaw->y_range;
+	tempY = pRaw->z_range;
+
+	glColor3f(0.0f, 1.0f, 0.0f);
+
+	//front
+	glPushMatrix();
+	glNormal3f(0.0f, 0.0f, -1.0f);
+	glBegin(GL_QUADS);
+	glVertex3f(tempX - halfCarWidth, 0.0f, tempZ + halfCarLen);
+	glVertex3f(tempX - halfCarWidth, 1.0f, tempZ + halfCarLen);
+	glVertex3f(tempX + halfCarWidth, 1.0f, tempZ + halfCarLen);
+	glVertex3f(tempX + halfCarWidth, 0.0f, tempZ + halfCarLen);
+	glEnd();
+	glPopMatrix();
+
+	//back
+	glPushMatrix();
+	glNormal3f(0.0f, 0.0f, -1.0f);
+	glBegin(GL_QUADS);
+	glVertex3f(tempX - halfCarWidth, 0.0f, tempZ - halfCarLen);
+	glVertex3f(tempX - halfCarWidth, 1.0f, tempZ - halfCarLen);
+	glVertex3f(tempX + halfCarWidth, 1.0f, tempZ - halfCarLen);
+	glVertex3f(tempX + halfCarWidth, 0.0f, tempZ - halfCarLen);
+	glEnd();
+	glPopMatrix();
+
+	//right
+	glPushMatrix();
+	glNormal3f(-1.0f, 0.0f, 0.0f);
+	glBegin(GL_QUADS);
+	glVertex3f(tempX + halfCarWidth, 1.0f, tempZ + halfCarLen);
+	glVertex3f(tempX + halfCarWidth, 1.0f, tempZ - halfCarLen);
+	glVertex3f(tempX + halfCarWidth, 0.0f, tempZ - halfCarLen);
+	glVertex3f(tempX + halfCarWidth, 0.0f, tempZ + halfCarLen);
+	glEnd();
+	glPopMatrix();
+
+	//left
+	glPushMatrix();
+	glNormal3f(-1.0f, 0.0f, 0.0f);
+	glBegin(GL_QUADS);
+	glVertex3f(tempX - halfCarWidth, 1.0f, tempZ + halfCarLen);
+	glVertex3f(tempX - halfCarWidth, 1.0f, tempZ - halfCarLen);
+	glVertex3f(tempX - halfCarWidth, 0.0f, tempZ - halfCarLen);
+	glVertex3f(tempX - halfCarWidth, 0.0f, tempZ + halfCarLen);
+	glEnd();
+	glPopMatrix();
+
+	//top
+	glPushMatrix();
+	glNormal3f(0.0f, 1.0f, 0.0f);
+	glBegin(GL_QUADS);
+	glVertex3f(tempX - halfCarWidth, 1.0f, tempZ + halfCarLen);
+	glVertex3f(tempX - halfCarWidth, 1.0f, tempZ - halfCarLen);
+	glVertex3f(tempX + halfCarWidth, 1.0f, tempZ - halfCarLen);
+	glVertex3f(tempX + halfCarWidth, 1.0f, tempZ + halfCarLen);
+	glEnd();
+	glPopMatrix();
+
+	glPushMatrix();
+	glColor3f(0.8f, 0.8f, 0.8f);
+	glRasterPos3f(tempX - halfCarWidth, 1.0f, tempZ + halfCarLen);
+	sprintf(quote, "%d", pRaw->TargetNum);
+	glCallLists(strlen(quote), GL_UNSIGNED_BYTE, quote);
+	glPopMatrix();
+
+	//bottom
+	glPushMatrix();
+	glNormal3f(0.0f, 1.0f, 0.0f);
+	glBegin(GL_QUADS);
+	glVertex3f(tempX - halfCarWidth, 0.0f, tempZ + halfCarLen);
+	glVertex3f(tempX - halfCarWidth, 0.0f, tempZ - halfCarLen);
+	glVertex3f(tempX + halfCarWidth, 0.0f, tempZ - halfCarLen);
+	glVertex3f(tempX + halfCarWidth, 0.0f, tempZ + halfCarLen);
+	glEnd();
+	glPopMatrix();
+
 }
 
 void CBirdviewView::ParseRawObject(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *pRaw)

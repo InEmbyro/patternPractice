@@ -1,4 +1,6 @@
-1. Improve the drawing of Slave.
-
-Next, how to show tracking object.
+Bug fixing.
+Originally, the drawing of raw object is not correct. The combination of the 
+0x401 and the 0x402 can be shown, but incorrect operation causes corrput data 
+is shown.
+Next, try tracking object.
 
