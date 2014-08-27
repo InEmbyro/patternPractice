@@ -1,5 +1,6 @@
 Bug fixing.
 
-In birdview and targetList, the parsing of tracking 0x610 (DLC=8) & 0x610 (DLC=7) is wrong.
-
+1. Wrong parsing of 0x610 (7) target number.
+2. Modify the offset of x_range
+3. Add three comparasion function of target list
 

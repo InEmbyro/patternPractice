@@ -139,6 +139,7 @@ __next_read:
 							pView->_MapStore = new CMap <unsigned char, unsigned char, RAW_OBJECT_STRUCT, RAW_OBJECT_STRUCT>;
 							if (!pView->_MapStore)
 								AfxMessageBox(_T("!pView->_MapStore"));
+							pView->_MapStore->InitHashTable(50);
 							ReleaseMutex(pView->_MapShowMutex);
 							ReleaseMutex(pView->_MapStoreMutex);
 						}

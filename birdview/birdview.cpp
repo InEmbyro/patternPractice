@@ -341,7 +341,7 @@ void CBirdviewView::ParseTrackingObject(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *p
 	
 	temp = pSrc->RCV_data[1] & 0x1F;
 	temp = (temp << 8) + pSrc->RCV_data[0];
-	pRaw->x_range = (temp - 7500) * 0.016;
+	pRaw->x_range = (temp - 2500) * 0.016;
 
 	temp = pSrc->RCV_data[3] & 0x01;
 	temp = (temp << 8) + pSrc->RCV_data[2];

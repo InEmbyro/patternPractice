@@ -62,7 +62,8 @@ public:
 #endif
 
 	CArray <RAW_OBJECT_STRUCT, RAW_OBJECT_STRUCT&> _listArray;
-	static int __cdecl Compare(const RAW_OBJECT_STRUCT * p1, const RAW_OBJECT_STRUCT * p2);
+	static int __cdecl Compare0(const RAW_OBJECT_STRUCT * p1, const RAW_OBJECT_STRUCT * p2);
+	static int __cdecl Compare1(const RAW_OBJECT_STRUCT * p1, const RAW_OBJECT_STRUCT * p2);
 
 	CComboBox m_combo;
 	CTargetListCtrl m_listctrl;

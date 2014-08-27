@@ -275,7 +275,7 @@ void CTargetList::ParseTrackingObject2nd(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *
 {
 	int temp;
 
-	pRaw->TargetNum = (pSrc->RCV_data[0] & 0xFC) >> 2;
+	pRaw->TargetNum = (pSrc->RCV_data[0] & 0x3F);
 
 	temp = pSrc->RCV_data[3] & 0x01;
 	temp = (temp << 8) + pSrc->RCV_data[2];
@@ -298,7 +298,7 @@ void CTargetList::ParseTrackingObject(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *pRa
 	
 	temp = pSrc->RCV_data[1] & 0x1F;
 	temp = (temp << 8) + pSrc->RCV_data[0];
-	pRaw->x_point = (temp - 7500) * 0.016;
+	pRaw->x_point = (temp - 2500) * 0.016;
 
 	temp = pSrc->RCV_data[3] & 0x01;
 	temp = (temp << 8) + pSrc->RCV_data[2];
@@ -317,6 +317,8 @@ void CTargetList::ParseTrackingObject(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *pRa
 	temp = (temp << 1) + ((pSrc->RCV_data[5] & 0x80) >> 7);
 	pRaw->lane = temp;
 
+	temp = pSrc->RCV_data[6] & 0x1E;
+	pRaw->len = (temp >> 1);
 	temp = pSrc->RCV_data[7] & 0x03;
 	temp = (temp << 3) + ((pSrc->RCV_data[6] & 0xE0) >> 5);
 	pRaw->size = temp * 0.064;
@@ -403,11 +405,22 @@ void CTargetList::OnSize(UINT nType, int cx, int cy)
 		m_listctrl.SetWindowPos(NULL, 0, 0, cx, cy,SWP_NOMOVE);
 }
 
-int __cdecl CTargetList::Compare(const RAW_OBJECT_STRUCT * p1, const RAW_OBJECT_STRUCT * p2)
+int __cdecl CTargetList::Compare1(const RAW_OBJECT_STRUCT * p1, const RAW_OBJECT_STRUCT * p2)
 {
-	if (p1->TargetNum > p2->TargetNum)
+	if (p1->range > p2->range)
 		return 1;
-	else if (p1->TargetNum < p2->TargetNum)
+	else if (p1->range < p2->range)
+		return -1;
+	else
+		return 0;
+
+}
+
+int __cdecl CTargetList::Compare0(const RAW_OBJECT_STRUCT * p1, const RAW_OBJECT_STRUCT * p2)
+{
+	if (p1->x_point > p2->x_point)
+		return 1;
+	else if (p1->x_point < p2->x_point)
 		return -1;
 	else
 		return 0;
@@ -438,7 +451,10 @@ afx_msg LRESULT CTargetList::OnUserDraw(WPARAM wParam, LPARAM lParam)
 	ReleaseMutex(_listMutex);
 #endif
 	RAW_OBJECT_STRUCT *pD = _listArray.GetData();
-	qsort(pD, _listArray.GetSize(), sizeof(RAW_OBJECT_STRUCT), (GENERICCOMPAREFN1)Compare);
+	if (m_combo.GetCurSel() == 0)
+		qsort(pD, _listArray.GetSize(), sizeof(RAW_OBJECT_STRUCT), (GENERICCOMPAREFN1)Compare0);
+	else
+		qsort(pD, _listArray.GetSize(), sizeof(RAW_OBJECT_STRUCT), (GENERICCOMPAREFN1)Compare1);
 	row = 0;
 
 	switch (m_combo.GetCurSel()) {
@@ -449,17 +465,17 @@ afx_msg LRESULT CTargetList::OnUserDraw(WPARAM wParam, LPARAM lParam)
 			idx = 1;
 			sz.Format(_T("%d"), data.TargetNum);
 			m_listctrl.InsertItem(row, sz);
-			sz.Format(_T("%.2f"), data.x_point);
+			sz.Format(_T("%.3f"), data.x_point);
 			m_listctrl.SetItemText(row, idx++, sz);
-			sz.Format(_T("%.2f"), data.y_point);
+			sz.Format(_T("%.3f"), data.y_point);
 			m_listctrl.SetItemText(row, idx++, sz);
-			sz.Format(_T("%.2f"), data.z_point);
+			sz.Format(_T("%.3f"), data.z_point);
 			m_listctrl.SetItemText(row, idx++, sz);
-			sz.Format(_T("%.2f"), data.x_speed);
+			sz.Format(_T("%.3f"), data.x_speed);
 			m_listctrl.SetItemText(row, idx++, sz);
-			sz.Format(_T("%.2f"), data.y_speed);
+			sz.Format(_T("%.3f"), data.y_speed);
 			m_listctrl.SetItemText(row, idx++, sz);
-			sz.Format(_T("%.2f"), data.z_speed);
+			sz.Format(_T("%.3f"), data.z_speed);
 			m_listctrl.SetItemText(row, idx++, sz);
 			sz.Format(_T("%d"), data.lane);
 			m_listctrl.SetItemText(row, idx++, sz);

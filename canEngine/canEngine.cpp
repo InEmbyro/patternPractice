@@ -10,7 +10,7 @@
 
 //const char* CCanInfo::_dereferenceSlotName = "\\\\.\\mailslot\\wnc_canEngine_decref";
 const int CCanInfo::MSG_LEN_MAX = 20;
-const int CCanInfo::SHARED_MEM_BLOCK_SIZE = 64;
+const int CCanInfo::SHARED_MEM_BLOCK_SIZE = 128;
 
 //
 //TODO: 如果這個 DLL 是動態地對 MFC DLL 連結，
