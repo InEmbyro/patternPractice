@@ -275,7 +275,7 @@ void CTargetList::ParseTrackingObject2nd(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *
 {
 	int temp;
 
-	pRaw->TargetNum = (pSrc->RCV_data[7] & 0xFC) >> 2;
+	pRaw->TargetNum = (pSrc->RCV_data[0] & 0xFC) >> 2;
 
 	temp = pSrc->RCV_data[3] & 0x01;
 	temp = (temp << 8) + pSrc->RCV_data[2];

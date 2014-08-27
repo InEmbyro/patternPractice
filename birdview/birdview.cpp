@@ -940,7 +940,7 @@ BOOL CBirdviewView::ParseTrackingObject2nd(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT
 {
 	int temp;
 
-	temp = (pSrc->RCV_data[7] & 0xFC) >> 2;
+	temp = (pSrc->RCV_data[0] & 0xFC) >> 2;
 
 	if (pRaw->TargetNum != temp)
 		return FALSE;

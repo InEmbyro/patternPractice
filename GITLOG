@@ -1,2 +1,5 @@
-1. This code is used in the first time field trial.
+Bug fixing.
+
+In birdview and targetList, the parsing of tracking 0x610 (DLC=8) & 0x610 (DLC=7) is wrong.
+
 
