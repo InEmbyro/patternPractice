@@ -498,7 +498,7 @@ void CBirdviewView::DrawRawObject3D(RAW_OBJECT_STRUCT *pRaw, unsigned char senso
 		if (z != 0.0f)
 			glColor3f(1.0f, 0.0f, 1.0f);
 		else
-			glColor3f(1.0f, 0.0f, 0.0f);
+			glColor3f(1.0f, 0.0f, 1.0f);
 		break;
 	case 1:
 		if (z != 0.0f)
@@ -940,7 +940,7 @@ BOOL CBirdviewView::ParseTrackingObject2nd(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT
 {
 	int temp;
 
-	temp = (pSrc->RCV_data[0] & 0xFC) >> 2;
+	temp = (pSrc->RCV_data[0] & 0x3F);
 
 	if (pRaw->TargetNum != temp)
 		return FALSE;
@@ -1023,7 +1023,7 @@ void CBirdviewView::DrawTrackingObject3D(RAW_OBJECT_STRUCT *pRaw)
 
 	glPushMatrix();
 	glColor3f(0.8f, 0.8f, 0.8f);
-	glRasterPos3f(tempX - halfCarWidth, tempY + 1.0f, tempZ + halfCarLen);
+	glRasterPos3f(tempX, tempY + 2.0f, tempZ);
 	sprintf(quote, "%d", pRaw->TargetNum);
 	glCallLists(strlen(quote), GL_UNSIGNED_BYTE, quote);
 	glPopMatrix();
@@ -1086,7 +1086,7 @@ BOOL CBirdviewView::ParseRawObject2nd(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *pRa
 	temp = pSrc->RCV_data[6] & 0x07;
 	temp = (temp << 8) + pSrc->RCV_data[5];
 	pRaw->theta = (temp - 1024) * 0.16;
-	pRaw->theta += 5;
+	//pRaw->theta += 5;
 
 	pRaw->z_range = pRaw->range * sin(pRaw->theta * RAD_CONVER);
 
@@ -1382,7 +1382,7 @@ void CBirdviewView::DrawScene()
 #define SCALE	5.0f
 	glScalef(SCALE, SCALE, SCALE);
 	gluLookAt(0.0f, 2.0f, halfCarLen * 4, 0.0f, 0.0f, -(200.0f), 0.0f, 1.0f, 0.0f);
-	//gluLookAt(-10.0f, 0.0f, -halfCarLen * 2, 0.0f, 0.0f, 100.0f, 0.0f, 1.0f, 0.0f);
+	//gluLookAt(-10.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f);
 	//
 	GLfloat ambientColor[] = {0.5f, 0.5f, 0.5f, 1.0f}; //Color (0.2, 0.2, 0.2)
 	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambientColor);

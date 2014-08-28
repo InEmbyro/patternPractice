@@ -1,6 +1,5 @@
 Bug fixing.
 
-1. Wrong parsing of 0x610 (7) target number.
-2. Modify the offset of x_range
-3. Add three comparasion function of target list
+1. Wrong parsing of 0x610 (7) target number in birdview
+
 
