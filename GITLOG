@@ -1,5 +1,1 @@
-Bug fixing.
-
-1. Wrong parsing of 0x610 (7) target number in birdview
-
-
+1. Bug fixing. The relative speed of 0x401 is wrong.

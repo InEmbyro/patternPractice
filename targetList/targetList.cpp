@@ -234,8 +234,6 @@ void CTargetList::ParseRawObject2nd(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *pRaw)
 	temp = pSrc->RCV_data[6] & 0x07;
 	temp = (temp << 8) + pSrc->RCV_data[5];
 	pRaw->theta = (temp - 1024) * 0.16;
-	pRaw->theta += 5;
-
 }
 void CTargetList::ParseRawObject(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *pRaw)
 {
@@ -263,7 +261,7 @@ void CTargetList::ParseRawObject(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *pRaw)
 	pRaw->type = (pSrc->RCV_data[5] & 0x7C) >> 2;
 
 	temp = pSrc->RCV_data[7];
-	temp = (temp << 6) + ((pSrc->RCV_data[4] & 0xFC) >> 2);
+	temp = (temp << 6) + ((pSrc->RCV_data[6] & 0xFC) >> 2);
 	pRaw->relatedSpeed = (temp - 8192) * 0.02;
 
 	pRaw->x_range = pRaw->range * sin(pRaw->angle * RAD_CONVER);
@@ -319,6 +317,7 @@ void CTargetList::ParseTrackingObject(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *pRa
 
 	temp = pSrc->RCV_data[6] & 0x1E;
 	pRaw->len = (temp >> 1);
+
 	temp = pSrc->RCV_data[7] & 0x03;
 	temp = (temp << 3) + ((pSrc->RCV_data[6] & 0xE0) >> 5);
 	pRaw->size = temp * 0.064;
