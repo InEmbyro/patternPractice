@@ -29,9 +29,9 @@
 #define FAN_LEN			(3.5f * 1.5)
 
 static AFX_EXTENSION_MODULE birdviewDLL = { NULL, NULL };
-float CBirdviewView::halfCarWidth = 1.0f;
-float CBirdviewView::halfCarLen = 2.0f;
-float CBirdviewView::halfCarHeight = 1.0f;
+float CBirdviewView::halfCarWidth = 0.5f;
+float CBirdviewView::halfCarLen = 0.5f;
+float CBirdviewView::halfCarHeight = 0.5f;
 float CBirdviewView::halfRoadWidth = (3.5f / 2);
 float CBirdviewView::m_Speed = 0;
 
@@ -218,8 +218,8 @@ END_MESSAGE_MAP()
 // CBirdviewFrm 訊息處理常式
 
 unsigned long rcvIdent[] = {
-	0x400, 0x401, 0x402, 0x00,
-	0x410, 0x411, 0x412, 0x00,
+	//0x400, 0x401, 0x402, 0x00,
+	//0x410, 0x411, 0x412, 0x00,
 	0x601, 0x610, 0x611, 0x612, 0x613, 0x614, 0x615, 0x616, 0x617, 0x618, 0x619, 0x620, 0x00};
 
 // CBirdviewView
@@ -866,6 +866,7 @@ afx_msg LRESULT CBirdviewView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 			continue;
 		}
 		switch (arrIdx) {
+#if 0
 		case 0:
 		//case 1:
 			pos = p->GetHeadPosition();
@@ -896,7 +897,8 @@ afx_msg LRESULT CBirdviewView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 				}
 			}
 			break;
-		case 2:
+#endif
+		case 0:
 			pos = p->GetHeadPosition();
 			while (pos) {
 				posOld = pos;
@@ -971,8 +973,8 @@ void CBirdviewView::DrawTrackingObject3D(RAW_OBJECT_STRUCT *pRaw)
 	glNormal3f(0.0f, 0.0f, -1.0f);
 	glBegin(GL_QUADS);
 	glVertex3f(tempX - halfCarWidth, tempY + 0.0f, tempZ + halfCarLen);
-	glVertex3f(tempX - halfCarWidth, tempY + 2.0f, tempZ + halfCarLen);
-	glVertex3f(tempX + halfCarWidth, tempY + 2.0f, tempZ + halfCarLen);
+	glVertex3f(tempX - halfCarWidth, tempY + 1.0f, tempZ + halfCarLen);
+	glVertex3f(tempX + halfCarWidth, tempY + 1.0f, tempZ + halfCarLen);
 	glVertex3f(tempX + halfCarWidth, tempY + 0.0f, tempZ + halfCarLen);
 	glEnd();
 	glPopMatrix();
@@ -982,8 +984,8 @@ void CBirdviewView::DrawTrackingObject3D(RAW_OBJECT_STRUCT *pRaw)
 	glNormal3f(0.0f, 0.0f, -1.0f);
 	glBegin(GL_QUADS);
 	glVertex3f(tempX - halfCarWidth, tempY + 0.0f, tempZ - halfCarLen);
-	glVertex3f(tempX - halfCarWidth, tempY + 2.0f, tempZ - halfCarLen);
-	glVertex3f(tempX + halfCarWidth, tempY + 2.0f, tempZ - halfCarLen);
+	glVertex3f(tempX - halfCarWidth, tempY + 1.0f, tempZ - halfCarLen);
+	glVertex3f(tempX + halfCarWidth, tempY + 1.0f, tempZ - halfCarLen);
 	glVertex3f(tempX + halfCarWidth, tempY + 0.0f, tempZ - halfCarLen);
 	glEnd();
 	glPopMatrix();
@@ -992,8 +994,8 @@ void CBirdviewView::DrawTrackingObject3D(RAW_OBJECT_STRUCT *pRaw)
 	glPushMatrix();
 	glNormal3f(-1.0f, 0.0f, 0.0f);
 	glBegin(GL_QUADS);
-	glVertex3f(tempX + halfCarWidth, tempY + 2.0f, tempZ + halfCarLen);
-	glVertex3f(tempX + halfCarWidth, tempY + 2.0f, tempZ - halfCarLen);
+	glVertex3f(tempX + halfCarWidth, tempY + 1.0f, tempZ + halfCarLen);
+	glVertex3f(tempX + halfCarWidth, tempY + 1.0f, tempZ - halfCarLen);
 	glVertex3f(tempX + halfCarWidth, tempY + 0.0f, tempZ - halfCarLen);
 	glVertex3f(tempX + halfCarWidth, tempY + 0.0f, tempZ + halfCarLen);
 	glEnd();
@@ -1003,8 +1005,8 @@ void CBirdviewView::DrawTrackingObject3D(RAW_OBJECT_STRUCT *pRaw)
 	glPushMatrix();
 	glNormal3f(-1.0f, 0.0f, 0.0f);
 	glBegin(GL_QUADS);
-	glVertex3f(tempX - halfCarWidth, tempY + 2.0f, tempZ + halfCarLen);
-	glVertex3f(tempX - halfCarWidth, tempY + 2.0f, tempZ - halfCarLen);
+	glVertex3f(tempX - halfCarWidth, tempY + 1.0f, tempZ + halfCarLen);
+	glVertex3f(tempX - halfCarWidth, tempY + 1.0f, tempZ - halfCarLen);
 	glVertex3f(tempX - halfCarWidth, tempY + 0.0f, tempZ - halfCarLen);
 	glVertex3f(tempX - halfCarWidth, tempY + 0.0f, tempZ + halfCarLen);
 	glEnd();
@@ -1014,10 +1016,10 @@ void CBirdviewView::DrawTrackingObject3D(RAW_OBJECT_STRUCT *pRaw)
 	glPushMatrix();
 	glNormal3f(0.0f, 1.0f, 0.0f);
 	glBegin(GL_QUADS);
-	glVertex3f(tempX - halfCarWidth, tempY + 2.0f, tempZ + halfCarLen);
-	glVertex3f(tempX - halfCarWidth, tempY + 2.0f, tempZ - halfCarLen);
-	glVertex3f(tempX + halfCarWidth, tempY + 2.0f, tempZ - halfCarLen);
-	glVertex3f(tempX + halfCarWidth, tempY + 2.0f, tempZ + halfCarLen);
+	glVertex3f(tempX - halfCarWidth, tempY + 1.0f, tempZ + halfCarLen);
+	glVertex3f(tempX - halfCarWidth, tempY + 1.0f, tempZ - halfCarLen);
+	glVertex3f(tempX + halfCarWidth, tempY + 1.0f, tempZ - halfCarLen);
+	glVertex3f(tempX + halfCarWidth, tempY + 1.0f, tempZ + halfCarLen);
 	glEnd();
 	glPopMatrix();
 
@@ -1378,10 +1380,10 @@ void CBirdviewView::DrawScene()
 	glTranslatef(0.0f, -10.0f, -m_fRadius);
 
 #if 1
-	glRotatef(0.0f, 0.0f, 1.0f, 0.0f);
+	glRotatef(30.0f, 0.0f, 1.0f, 0.0f);
 #define SCALE	5.0f
 	glScalef(SCALE, SCALE, SCALE);
-	gluLookAt(0.0f, 2.0f, halfCarLen * 4, 0.0f, 0.0f, -(200.0f), 0.0f, 1.0f, 0.0f);
+	gluLookAt(-halfCarLen * 4.0f, 2.0f, halfCarLen * 4, 0.0f, 0.0f, -(200.0f), 0.0f, 1.0f, 0.0f);
 	//gluLookAt(-10.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f);
 	//
 	GLfloat ambientColor[] = {0.5f, 0.5f, 0.5f, 1.0f}; //Color (0.2, 0.2, 0.2)
@@ -1403,6 +1405,7 @@ void CBirdviewView::DrawScene()
 	glPushMatrix();
 	glColor3f(1.0f, 0.0f, 0.0f);
 
+#if 0
 	//front
 	glBegin(GL_QUADS);
 	glNormal3f(0.0f, 0.0f, -1.0f);
@@ -1458,6 +1461,7 @@ void CBirdviewView::DrawScene()
 	glVertex3f(-halfCarWidth,	0.0f, -halfCarLen);
 	glEnd();
 	glPopMatrix();
+#endif //#if 0
 
 #if 1
 	float tempX = 0;

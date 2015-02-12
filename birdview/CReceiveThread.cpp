@@ -133,8 +133,9 @@ __next_read:
 					}
 					if (pView->_FilterMap.Lookup(data.Ident, aIdx)) {
 						switch (aIdx.canId) {
+#if 0
 						case 0x400:
-						case 0x410:
+						//case 0x410:
 							/* The header of raw object will be send twice */
 							if (data.DataLength == 7)
 								break;
@@ -147,10 +148,13 @@ __next_read:
 							ReleaseMutex(pView->_ListStoreArrayMutex.GetAt(aIdx.rowIdx));
 							ReleaseMutex(pView->_ListArrayMutex.GetAt(aIdx.rowIdx));
 							break;
+#endif
 						case 0x601:
 							/* If there is not tracking objects, buffer should not be swap */
+/*
 							if (data.RCV_data[0] == 0)
 								break;
+*/
 							WaitForSingleObject(pView->_ListArrayMutex.GetAt(aIdx.rowIdx), INFINITE);
 							if (pView->_ListArray[aIdx.rowIdx])
 								delete pView->_ListArray[aIdx.rowIdx];
@@ -161,11 +165,19 @@ __next_read:
 							ReleaseMutex(pView->_ListArrayMutex.GetAt(aIdx.rowIdx));
 							break;
 						default:
-							WaitForSingleObject(pView->_ListStoreArrayMutex.GetAt(aIdx.rowIdx), INFINITE);
-							_pViewList = pView->_ListStoreArray[aIdx.rowIdx];
-							pView->_ListStoreArray[aIdx.rowIdx]->AddTail(data);
-							_pViewList = pView->_ListStoreArray[aIdx.rowIdx];
-							ReleaseMutex(pView->_ListStoreArrayMutex.GetAt(aIdx.rowIdx));
+							if (aIdx.canId >= 0x610 && aIdx.canId <= 0x620) {
+								WaitForSingleObject(pView->_ListStoreArrayMutex.GetAt(aIdx.rowIdx), INFINITE);
+								_pViewList = pView->_ListStoreArray[aIdx.rowIdx];
+								pView->_ListStoreArray[aIdx.rowIdx]->AddTail(data);
+								_pViewList = pView->_ListStoreArray[aIdx.rowIdx];
+								ReleaseMutex(pView->_ListStoreArrayMutex.GetAt(aIdx.rowIdx));
+							} else {
+								WaitForSingleObject(pView->_ListStoreArrayMutex.GetAt(aIdx.rowIdx), INFINITE);
+								_pViewList = pView->_ListStoreArray[aIdx.rowIdx];
+								pView->_ListStoreArray[aIdx.rowIdx]->AddTail(data);
+								_pViewList = pView->_ListStoreArray[aIdx.rowIdx];
+								ReleaseMutex(pView->_ListStoreArrayMutex.GetAt(aIdx.rowIdx));
+							}
 							break;
 						}
 					}
