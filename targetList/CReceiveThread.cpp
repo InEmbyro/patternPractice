@@ -147,15 +147,15 @@ __next_read:
 							if (data.DataLength == 8) {
 								pView->ParseTrackingObject(&data, &rawData);
 								WaitForSingleObject(pView->_MapStoreMutex, INFINITE);
-								pView->_MapStore->SetAt(rawData.TargetNum, rawData);
+								pView->_MapStore->SetAt(data.Ident - 0x610, rawData);
 								ReleaseMutex(pView->_MapStoreMutex);
 							} else if (data.DataLength == 7) {
 								pView->ParseTrackingObject2nd(&data, &rawData);
 								WaitForSingleObject(pView->_MapStoreMutex, INFINITE);
-								if (pView->_MapStore->Lookup(rawData.TargetNum, rawData2)) {
+								if (pView->_MapStore->Lookup(data.Ident - 0x610, rawData2)) {
 									rawData2.z_point = rawData.z_point;
 									rawData2.z_speed = rawData.z_speed;
-									pView->_MapStore->SetAt(rawData2.TargetNum, rawData2);
+									pView->_MapStore->SetAt(data.Ident - 0x610, rawData2);
 								}
 								ReleaseMutex(pView->_MapStoreMutex);
 							}

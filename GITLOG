@@ -1,1 +1,3 @@
-1. Bug fixing. The relative speed of 0x401 is wrong.
+1. The key index of hash table should not use object number, but the ID of 
+tracking object.
+
