@@ -19,6 +19,7 @@
 #define PI	3.1415926
 #define RAD_CONVER	(PI / 180)
 #define SCALE	10
+#define SCALE_1	2.0f
 #define OBJECT_SIZE		10
 
 #define CAR_WIDTH	(2 * SCALE)		//2 meter
@@ -452,9 +453,9 @@ void CBirdviewView::DrawTrackingObject(PARAM_STRUCT *pD, CDC *pDc)
 	pen.CreatePen(PS_SOLID, 3, RGB(0, 200, 0));
 	pOldPen = pDc->SelectObject(&pen);
 
-	pnt.y = raw.x_range * SCALE;
+	pnt.y = raw.x_range * SCALE_1;
 	pnt.y = -pnt.y;
-	pnt.x = raw.y_range * SCALE;
+	pnt.x = raw.y_range * SCALE_1;
 	pnt.x = -pnt.x;
 
 	rect.left = pnt.x - (CAR_WIDTH / 2);
@@ -791,6 +792,7 @@ void CBirdviewView::DrawText()
 		glCallLists(strlen(quote), GL_UNSIGNED_BYTE, quote); 
 	}
 
+#if 0
 	for (dis = -20.0; dis >= -100.0f; dis -= 10.0f) {
 		glRasterPos3f(halfRoadWidth * 7, 0.0f, dis);
 		sprintf(quote, "%.1fm", -dis);
@@ -809,7 +811,7 @@ void CBirdviewView::DrawText()
 		sprintf(quote, "%.1fm", dis);
 		glCallLists(strlen(quote), GL_UNSIGNED_BYTE, quote); 
 	}
-
+#endif
 #if 0
 	glRasterPos3f(-30.0f, 3.0f, 0.0f);
 	sprintf(quote, "%.2fkm/hr,", m_Speed);
@@ -1222,13 +1224,13 @@ HFONT font = CreateFont(12, 0, 0, 0,
 	if (m_oldRect.bottom)
 		m_fAspect = (GLfloat)m_oldRect.Width()/m_oldRect.Height();
 	else    // don't divide by zero, not that we should ever run into that...
-		m_fAspect = 1.0f;
-	m_fNearPlane = 30.0f;
+	m_fAspect = 1.0f;
+	m_fNearPlane = 1.0f;
 	m_fFarPlane = 300;
 	m_fMaxObjSize = m_fFarPlane / 2;
 	m_fMaxObjSizeOld = m_fMaxObjSize;
 	m_fRadius = m_fNearPlane + m_fMaxObjSize / 2.0f;
-	m_fFov = 30.0f;
+	m_fFov = 120.0f;
 
 	m_fOldRadius = m_fRadius;
 	m_fOldFarPlane = m_fFarPlane;
@@ -1377,13 +1379,13 @@ void CBirdviewView::DrawScene()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glLoadIdentity();
-	glTranslatef(0.0f, -10.0f, -m_fRadius);
+	//glTranslatef(0.0f, -10.0f, -m_fRadius);
 
 #if 1
-	glRotatef(30.0f, 0.0f, 1.0f, 0.0f);
-#define SCALE	5.0f
-	glScalef(SCALE, SCALE, SCALE);
-	gluLookAt(-halfCarLen * 4.0f, 2.0f, halfCarLen * 4, 0.0f, 0.0f, -(200.0f), 0.0f, 1.0f, 0.0f);
+	glTranslatef(0.0f, 0.0f, 2.0f);
+	//glRotatef(60.0f, 0.0f, 1.0f, 0.0f);
+	glScalef(SCALE_1, SCALE_1, SCALE_1);
+	gluLookAt(0.0f, 1.0f, 2.0f, 0.0f, 0.0f, -(100.0f), 0.0f, 1.0f, 0.0f);
 	//gluLookAt(-10.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f);
 	//
 	GLfloat ambientColor[] = {0.5f, 0.5f, 0.5f, 1.0f}; //Color (0.2, 0.2, 0.2)
@@ -1467,6 +1469,7 @@ void CBirdviewView::DrawScene()
 	float tempX = 0;
 	float tempZ = 0;
 
+#if 0
 	//drawing front fan
 	glPushMatrix();
 	glTranslatef(0.0f, 0.0f, -halfCarLen);
@@ -1516,6 +1519,7 @@ void CBirdviewView::DrawScene()
 	glEnd();
 	glPopMatrix();
 
+#endif
 	float temp;
 	temp = -1000.0f;
 
@@ -1545,6 +1549,7 @@ void CBirdviewView::DrawScene()
 		temp = temp1;
 	}
 
+	//temp = temp1 + m_RoadLineStartZ + DASHED_STEP;
 	temp = temp1 + m_RoadLineStartZ + DASHED_STEP;
 	temp1 = temp;
 	for (int idx = 1; idx <= 7; idx += 2) {
