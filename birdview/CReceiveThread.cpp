@@ -133,7 +133,7 @@ __next_read:
 					}
 					if (pView->_FilterMap.Lookup(data.Ident, aIdx)) {
 						switch (aIdx.canId) {
-#if 0
+#if 1
 						case 0x400:
 						//case 0x410:
 							/* The header of raw object will be send twice */
