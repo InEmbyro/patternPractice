@@ -165,7 +165,7 @@ __next_read:
 							ReleaseMutex(pView->_ListArrayMutex.GetAt(aIdx.rowIdx));
 							break;
 						default:
-							if (aIdx.canId >= 0x610 && aIdx.canId <= 0x620) {
+							if (aIdx.canId >= 0x610 && aIdx.canId <= 0x63F) {
 								WaitForSingleObject(pView->_ListStoreArrayMutex.GetAt(aIdx.rowIdx), INFINITE);
 								_pViewList = pView->_ListStoreArray[aIdx.rowIdx];
 								pView->_ListStoreArray[aIdx.rowIdx]->AddTail(data);

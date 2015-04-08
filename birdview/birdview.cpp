@@ -221,7 +221,9 @@ END_MESSAGE_MAP()
 unsigned long rcvIdent[] = {
 	0x400, 0x401, 0x402, 0x00,
 	//0x410, 0x411, 0x412, 0x00,
-	0x601, 0x610, 0x611, 0x612, 0x613, 0x614, 0x615, 0x616, 0x617, 0x618, 0x619, 0x620, 0x00};
+	0x601, 0x610, 0x611, 0x612, 0x613, 0x614, 0x615, 0x616, 0x617, 0x618, 0x619, 0x620, 0x621, 0x622, 0x623, 0x624,
+	0x625, 0x626, 0x627, 0x628, 0x629, 0x62A, 0x62B, 0x62c, 0x62d, 0x62e, 0x62f, 0x630, 0x631, 0x632, 0x633, 0x634,
+	0x635, 0x636, 0x637, 0x638, 0x639, 0x63A, 0x63B, 0x63C, 0x63D, 0x62E, 0x63F, 0x00};
 
 // CBirdviewView
 
@@ -899,14 +901,14 @@ afx_msg LRESULT CBirdviewView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 			while (pos) {
 				posOld = pos;
 				data = p->GetNext(pos);
-				if (data.DataLength != 8 || data.Ident < 0x610 || data.Ident > 0x620) {
+				if (data.DataLength != 8 || data.Ident < 0x610 || data.Ident > 0x63F) {
 					continue;
 				}
 				ParseTrackingObject(&data, &raw);
 				pos2nd = pos;
 				while (pos2nd) {
 					data2nd = p->GetAt(pos2nd);
-					if (data2nd.DataLength != 7 || data2nd.Ident < 0x610 || data2nd.Ident > 0x620) {
+					if (data2nd.DataLength != 7 || data2nd.Ident < 0x610 || data2nd.Ident > 0x63F) {
 						p->GetNext(pos2nd);
 						continue;
 					}
@@ -1228,7 +1230,7 @@ HFONT font = CreateFont(12, 0, 0, 0,
 	m_fMaxObjSize = m_fFarPlane / 2;
 	m_fMaxObjSizeOld = m_fMaxObjSize;
 	m_fRadius = m_fNearPlane + m_fMaxObjSize / 2.0f;
-	m_fFov = 120.0f;
+	m_fFov = 30.0f;
 
 	m_fOldRadius = m_fRadius;
 	m_fOldFarPlane = m_fFarPlane;
@@ -1380,11 +1382,11 @@ void CBirdviewView::DrawScene()
 	//glTranslatef(0.0f, -10.0f, -m_fRadius);
 
 #if 1
-	glTranslatef(0.0f, 0.0f, -2.0f);
+	glTranslatef(0.0f, 0.0f, -5.0f);
 	glRotatef(0.0f, 0.0f, 1.0f, 0.0f);
 
 	glScalef(5.0f, 5.0f, 5.0f);
-	gluLookAt(0.0f, 1.0f, 0.0f, 0.0f, 0.0f, -300.0f, 0.0f, 1.0f, 0.0f);
+	gluLookAt(0.0f, 0.5f, 0.0f, 0.0f, 0.0f, -300.0f, 0.0f, 1.0f, 0.0f);
 	//gluLookAt(-5.0f, 3.0f, -10.0f, 5.0f, 0.0f, -10.0f, 0.0f, 1.0f, 0.0f);
 	//
 	GLfloat ambientColor[] = {0.5f, 0.5f, 0.5f, 1.0f}; //Color (0.2, 0.2, 0.2)
