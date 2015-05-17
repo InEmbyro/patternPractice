@@ -896,6 +896,7 @@ afx_msg LRESULT CBirdviewView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 				}
 			}
 			break;
+#if 1
 		case 1:
 			pos = p->GetHeadPosition();
 			while (pos) {
@@ -925,6 +926,7 @@ afx_msg LRESULT CBirdviewView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 				}
 			}
 			break;
+#endif
 		default:
 			p->RemoveAll();
 		}
@@ -966,9 +968,11 @@ void CBirdviewView::DrawTrackingObject3D(RAW_OBJECT_STRUCT *pRaw)
 
 	glColor3f(0.0f, 1.0f, 0.0f);
 
+#if 1
 	//front
 	glPushMatrix();
 	glNormal3f(0.0f, 0.0f, -1.0f);
+	//glScalef(5.0f, 5.0f, 5.0f);
 	glBegin(GL_QUADS);
 	glVertex3f(tempX - halfCarWidth, tempY + 0.0f, tempZ + halfCarLen);
 	glVertex3f(tempX - halfCarWidth, tempY + 0.1f, tempZ + halfCarLen);
@@ -976,7 +980,7 @@ void CBirdviewView::DrawTrackingObject3D(RAW_OBJECT_STRUCT *pRaw)
 	glVertex3f(tempX + halfCarWidth, tempY + 0.0f, tempZ + halfCarLen);
 	glEnd();
 	glPopMatrix();
-
+#endif
 	//back
 	glPushMatrix();
 	glNormal3f(0.0f, 0.0f, -1.0f);
@@ -1014,10 +1018,10 @@ void CBirdviewView::DrawTrackingObject3D(RAW_OBJECT_STRUCT *pRaw)
 	glPushMatrix();
 	glNormal3f(0.0f, 1.0f, 0.0f);
 	glBegin(GL_QUADS);
-	glVertex3f(tempX - halfCarWidth, tempY + 0.1f, tempZ + halfCarLen);
-	glVertex3f(tempX - halfCarWidth, tempY + 0.1f, tempZ - halfCarLen);
-	glVertex3f(tempX + halfCarWidth, tempY + 0.1f, tempZ - halfCarLen);
-	glVertex3f(tempX + halfCarWidth, tempY + 0.1f, tempZ + halfCarLen);
+	glVertex3f(tempX - halfCarWidth, tempY + 0.01f, tempZ + halfCarLen);
+	glVertex3f(tempX - halfCarWidth, tempY + 0.01f, tempZ - halfCarLen);
+	glVertex3f(tempX + halfCarWidth, tempY + 0.01f, tempZ - halfCarLen);
+	glVertex3f(tempX + halfCarWidth, tempY + 0.01f, tempZ + halfCarLen);
 	glEnd();
 	glPopMatrix();
 
@@ -1386,7 +1390,7 @@ void CBirdviewView::DrawScene()
 	glRotatef(0.0f, 0.0f, 1.0f, 0.0f);
 
 	glScalef(5.0f, 5.0f, 5.0f);
-	gluLookAt(0.0f, 0.5f, 0.0f, 0.0f, 0.0f, -300.0f, 0.0f, 1.0f, 0.0f);
+	gluLookAt(0.0f, 0.5f, -1.0f, 0.0f, 0.0f, -300.0f, 0.0f, 1.0f, 0.0f);
 	//gluLookAt(-5.0f, 3.0f, -10.0f, 5.0f, 0.0f, -10.0f, 0.0f, 1.0f, 0.0f);
 	//
 	GLfloat ambientColor[] = {0.5f, 0.5f, 0.5f, 1.0f}; //Color (0.2, 0.2, 0.2)
