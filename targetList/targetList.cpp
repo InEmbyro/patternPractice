@@ -269,20 +269,12 @@ void CTargetList::ParseRawObject(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *pRaw)
 }
 
 
+
 void CTargetList::ParseTrackingObject2nd(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *pRaw)
 {
 	int temp;
 
-	pRaw->TargetNum = (pSrc->RCV_data[0] & 0x3F);
-
-	temp = pSrc->RCV_data[3] & 0x01;
-	temp = (temp << 8) + pSrc->RCV_data[2];
-	temp = (temp << 3) + ((pSrc->RCV_data[1] & 0xE0) >> 5);
-	pRaw->z_point = (temp - 2048) * 0.016;
-
-	temp = pSrc->RCV_data[5] & 0x7F;
-	temp = (temp << 4) + ((pSrc->RCV_data[4] & 0xF0) >> 4);
-	pRaw->z_speed = (temp - 1024) * 0.1;
+	pRaw->TargetNum = pSrc->RCV_data[0];
 }
 
 void CTargetList::ParseTrackingObject(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *pRaw)
@@ -292,36 +284,30 @@ void CTargetList::ParseTrackingObject(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *pRa
 
 	int temp;
 
-	pRaw->TargetNum = (pSrc->RCV_data[7] & 0xFC) >> 2;
-	
-	temp = pSrc->RCV_data[1] & 0x1F;
+	temp = pSrc->RCV_data[1] & 0x0F;
 	temp = (temp << 8) + pSrc->RCV_data[0];
-	pRaw->x_point = (temp - 2500) * 0.016;
+	pRaw->x_point = temp * 0.032f;
 
-	temp = pSrc->RCV_data[3] & 0x01;
-	temp = (temp << 8) + pSrc->RCV_data[2];
-	temp = (temp << 3) + ((pSrc->RCV_data[1] & 0xE0) >> 5);
+	temp = pSrc->RCV_data[2];
+	temp = (temp << 4) + ((pSrc->RCV_data[1] & 0xF0) >> 4);
 	pRaw->y_point = (temp - 2048) * 0.016;
 
-	temp = pSrc->RCV_data[4] & 0x0F;
-	temp = (temp << 7) + ((pSrc->RCV_data[3] & 0xFE) >> 1);
-	pRaw->x_speed = (temp - 1024) * 0.1;
+	temp = pSrc->RCV_data[3];
+	pRaw->z_point = (temp - 32.0f) * 0.064f;
 
-	temp = pSrc->RCV_data[5] & 0x7F;
+	temp = pSrc->RCV_data[5] & 0x0F;
+	temp = (temp << 8) + pSrc->RCV_data[4];
+	pRaw->x_speed = (temp - 2048.0f) * 0.1f;
+
+	temp = pSrc->RCV_data[6];
 	temp = (temp << 4) + ((pSrc->RCV_data[4] & 0xF0) >> 4);
-	pRaw->y_speed = (temp - 1024) * 0.1;
+	pRaw->y_speed = (temp - 2048.0f) * 0.1f;
 
-	temp = pSrc->RCV_data[6] & 0x01;
-	temp = (temp << 1) + ((pSrc->RCV_data[5] & 0x80) >> 7);
-	pRaw->lane = temp;
+	temp = pSrc->RCV_data[7];
+	pRaw->z_speed = (temp - 128.0f) * 0.05f;
 
-	temp = pSrc->RCV_data[6] & 0x1E;
-	pRaw->len = (temp >> 1);
-
-	temp = pSrc->RCV_data[7] & 0x03;
-	temp = (temp << 3) + ((pSrc->RCV_data[6] & 0xE0) >> 5);
-	pRaw->size = temp * 0.064;
 }
+
 
 int CTargetListForm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {

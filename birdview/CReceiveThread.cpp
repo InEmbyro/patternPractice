@@ -149,7 +149,7 @@ __next_read:
 							ReleaseMutex(pView->_ListArrayMutex.GetAt(aIdx.rowIdx));
 							break;
 #endif
-						case 0x601:
+						case 0x501:
 							/* If there is not tracking objects, buffer should not be swap */
 /*
 							if (data.RCV_data[0] == 0)

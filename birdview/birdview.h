@@ -52,6 +52,7 @@ class CBirdviewView : public CView
 	void DrawTrackingObject3D(RAW_OBJECT_STRUCT *pRaw);
 	void DrawFarTarget(void);
 	void DrawText();
+	void DrawCircle(float cx, float cy, float r, int num_segments);
 
 public:
 	CPalette    m_cPalette;

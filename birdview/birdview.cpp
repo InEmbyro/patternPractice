@@ -221,9 +221,7 @@ END_MESSAGE_MAP()
 unsigned long rcvIdent[] = {
 	0x400, 0x401, 0x402, 0x00,
 	//0x410, 0x411, 0x412, 0x00,
-	0x601, 0x610, 0x611, 0x612, 0x613, 0x614, 0x615, 0x616, 0x617, 0x618, 0x619, 0x620, 0x621, 0x622, 0x623, 0x624,
-	0x625, 0x626, 0x627, 0x628, 0x629, 0x62A, 0x62B, 0x62c, 0x62d, 0x62e, 0x62f, 0x630, 0x631, 0x632, 0x633, 0x634,
-	0x635, 0x636, 0x637, 0x638, 0x639, 0x63A, 0x63B, 0x63C, 0x63D, 0x62E, 0x63F, 0x00};
+	0x501, 0x510, 0x511, 0x512, 0x513, 0x514, 0x515, 0x516, 0x517, 0x518, 0x519, 0x520, 0x521, 0x522, 0x523, 0x00};
 
 // CBirdviewView
 
@@ -508,56 +506,56 @@ void CBirdviewView::DrawRawObject3D(RAW_OBJECT_STRUCT *pRaw, unsigned char senso
 	default:
 		break;
 	}
-
+#define OFFSET_SCALE	(0.05f)
 	//glTranslatef(0.0f, 0.0f, 0.0f);
 	//front
 	glBegin(GL_QUADS);
 	glNormal3f(0.0f, 0.0f, -1.0f);
-	glVertex3f(x - 0.1f,	y + 0.1f,	z + 0.1f);
-	glVertex3f(x - 0.1f,	y + 0.0f,	z + 0.1f);
-	glVertex3f(x + 0.1f,	y + 0.0f,	z + 0.1f);
-	glVertex3f(x + 0.1f,	y + 0.1f,	z + 0.1f);
+	glVertex3f(x - OFFSET_SCALE,	y + OFFSET_SCALE,	z + OFFSET_SCALE);
+	glVertex3f(x - OFFSET_SCALE,	y + 0.0f,			z + OFFSET_SCALE);
+	glVertex3f(x + OFFSET_SCALE,	y + 0.0f,			z + OFFSET_SCALE);
+	glVertex3f(x + OFFSET_SCALE,	y + OFFSET_SCALE,	z + OFFSET_SCALE);
 	glEnd();
 
 	//back
 	glBegin(GL_QUADS);
 	glNormal3f(0.0f, 0.0f, -1.0f);
-	glVertex3f(x - 0.1f,	y + 0.1f,	z - 0.1f);
-	glVertex3f(x - 0.1f,	y + 0.0f,	z - 0.1f);
-	glVertex3f(x + 0.1f,	y + 0.0f,	z - 0.1f);
-	glVertex3f(x + 0.1f,	y + 0.1f,	z - 0.1f);
+	glVertex3f(x - OFFSET_SCALE,	y + OFFSET_SCALE,	z - OFFSET_SCALE);
+	glVertex3f(x - OFFSET_SCALE,	y + 0.0f,			z - OFFSET_SCALE);
+	glVertex3f(x + OFFSET_SCALE,	y + 0.0f,			z - OFFSET_SCALE);
+	glVertex3f(x + OFFSET_SCALE,	y + OFFSET_SCALE,	z - OFFSET_SCALE);
 	glEnd();
 
 	//right
 	glBegin(GL_QUADS);
 	glNormal3f(-1.0f, 0.0f, 0.0f);
-	glVertex3f(x + 0.1f,	y + 0.1f,	z + 0.1f);
-	glVertex3f(x + 0.1f,	y + 0.0f,	z + 0.1f);
-	glVertex3f(x + 0.1f,	y + 0.0f,	z - 0.1f);
-	glVertex3f(x + 0.1f,	y + 0.1f,	z - 0.1f);
+	glVertex3f(x + OFFSET_SCALE,	y + OFFSET_SCALE,	z + OFFSET_SCALE);
+	glVertex3f(x + OFFSET_SCALE,	y + 0.0f,			z + OFFSET_SCALE);
+	glVertex3f(x + OFFSET_SCALE,	y + 0.0f,			z - OFFSET_SCALE);
+	glVertex3f(x + OFFSET_SCALE,	y + OFFSET_SCALE,	z - OFFSET_SCALE);
 	glEnd();
 
 	//left
 	glBegin(GL_QUADS);
 	glNormal3f(-1.0f, 0.0f, 0.0f);
-	glVertex3f(x - 0.1f,	y + 0.1f,	z + 0.1f);
-	glVertex3f(x - 0.1f,	y + 0.0f,	z + 0.1f);
-	glVertex3f(x - 0.1f,	y + 0.0f,	z - 0.1f);
-	glVertex3f(x - 0.1f,	y + 0.1f,	z - 0.1f);
+	glVertex3f(x - OFFSET_SCALE,	y + OFFSET_SCALE,	z + OFFSET_SCALE);
+	glVertex3f(x - OFFSET_SCALE,	y + 0.0f,			z + OFFSET_SCALE);
+	glVertex3f(x - OFFSET_SCALE,	y + 0.0f,			z - OFFSET_SCALE);
+	glVertex3f(x - OFFSET_SCALE,	y + OFFSET_SCALE,	z - OFFSET_SCALE);
 	glEnd();
 
 	//top
 	glBegin(GL_QUADS);
 	glNormal3f(0.0f, 1.0f, 0.0f);
-	glVertex3f(x + 0.1f,	y + 0.1f,	z + 0.1f);
-	glVertex3f(x + 0.1f,	y + 0.1f,	z - 0.1f);
-	glVertex3f(x - 0.1f,	y + 0.1f,	z - 0.1f);
-	glVertex3f(x - 0.1f,	y + 0.1f,	z + 0.1f);
+	glVertex3f(x + OFFSET_SCALE,	y + OFFSET_SCALE,	z + OFFSET_SCALE);
+	glVertex3f(x + OFFSET_SCALE,	y + OFFSET_SCALE,	z - OFFSET_SCALE);
+	glVertex3f(x - OFFSET_SCALE,	y + OFFSET_SCALE,	z - OFFSET_SCALE);
+	glVertex3f(x - OFFSET_SCALE,	y + OFFSET_SCALE,	z + OFFSET_SCALE);
 	glEnd();
 
 	glPushMatrix();
 	glColor3f(0.8f, 0.8f, 0.8f);
-	glRasterPos3f(x, z + 0.1f, y);
+	glRasterPos3f(x + OFFSET_SCALE, y, z);
 	sprintf(quote, "%d", pRaw->TargetNum);
 	glCallLists(strlen(quote), GL_UNSIGNED_BYTE, quote);
 	glPopMatrix();
@@ -565,10 +563,10 @@ void CBirdviewView::DrawRawObject3D(RAW_OBJECT_STRUCT *pRaw, unsigned char senso
 	//bottom
 	glBegin(GL_QUADS);
 	glNormal3f(0.0f, 1.0f, 0.0f);
-	glVertex3f(x + 0.1f, y + 0.0f,	z + 0.1f);
-	glVertex3f(x + 0.1f, y + 0.0f,	z - 0.1f);
-	glVertex3f(x - 0.1f, y + 0.0f,	z - 0.1f);
-	glVertex3f(x - 0.1f, y + 0.0f,	z + 0.1f);
+	glVertex3f(x + OFFSET_SCALE, y + 0.0f,	z + OFFSET_SCALE);
+	glVertex3f(x + OFFSET_SCALE, y + 0.0f,	z - OFFSET_SCALE);
+	glVertex3f(x - OFFSET_SCALE, y + 0.0f,	z - OFFSET_SCALE);
+	glVertex3f(x - OFFSET_SCALE, y + 0.0f,	z + OFFSET_SCALE);
 	glEnd();
 
 	//
@@ -851,7 +849,7 @@ afx_msg LRESULT CBirdviewView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 
 	DrawScene();
 	//DrawFarTarget();
-	DrawText();
+	//DrawText();
 
 
 	/*	The drawing case should consider the array index of rcvIdent[].
@@ -1234,7 +1232,7 @@ HFONT font = CreateFont(12, 0, 0, 0,
 	m_fMaxObjSize = m_fFarPlane / 2;
 	m_fMaxObjSizeOld = m_fMaxObjSize;
 	m_fRadius = m_fNearPlane + m_fMaxObjSize / 2.0f;
-	m_fFov = 30.0f;
+	m_fFov = 60;
 
 	m_fOldRadius = m_fRadius;
 	m_fOldFarPlane = m_fFarPlane;
@@ -1386,12 +1384,11 @@ void CBirdviewView::DrawScene()
 	//glTranslatef(0.0f, -10.0f, -m_fRadius);
 
 #if 1
-	glTranslatef(0.0f, 0.0f, -5.0f);
-	glRotatef(0.0f, 0.0f, 1.0f, 0.0f);
+	glTranslatef(0.0f, 0.0f, 0.0f);
+	//glRotatef(10.0f, 1.0f, 0.0f, 0.0f);
 
-	glScalef(5.0f, 5.0f, 5.0f);
-	gluLookAt(0.0f, 0.5f, -1.0f, 0.0f, 0.0f, -300.0f, 0.0f, 1.0f, 0.0f);
-	//gluLookAt(-5.0f, 3.0f, -10.0f, 5.0f, 0.0f, -10.0f, 0.0f, 1.0f, 0.0f);
+	glScalef(1.0f,1.0f,1.0f);
+	gluLookAt(0.0f, 1.0f, 2.0f, 0.0f, 0.0f, -300.0f, 0.0f, 1.0f, 0.0f);
 	//
 	GLfloat ambientColor[] = {0.5f, 0.5f, 0.5f, 1.0f}; //Color (0.2, 0.2, 0.2)
 	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambientColor);
@@ -1409,6 +1406,25 @@ void CBirdviewView::DrawScene()
 	glLightfv(GL_LIGHT1, GL_DIFFUSE, lightColor1);
 	glLightfv(GL_LIGHT1, GL_POSITION, lightPos1);
 	
+	//drawing right fan
+	glPushMatrix();
+//	glTranslatef(halfCarWidth, 0.0f, halfCarLen);
+//	glRotatef(SENSOR_ROTATE, 0.0f, 1.0f, 0.0f);
+	//glRotatef(57, 0.0f, 1.0f, 0.0f);
+
+	glBegin(GL_LINE_LOOP);
+	glColor3f(0.5f, 0.5f, 0.5f);
+	glVertex3f(0.0f, 0.0f, 0.0f);
+	float tempX;
+	float tempZ;
+	for (float idx = 120; idx <= 240; idx += 0.01) {
+		tempX = 15.0f * sin(idx * 3.1415926 / 180);
+		tempZ = 15.0f * cos(idx * 3.1415926 / 180);
+		glVertex3f(tempX, 0.0f, tempZ);
+	}
+	glEnd();
+	glPopMatrix();
+
 #if 0
 	glPushMatrix();
 	glColor3f(1.0f, 0.0f, 0.0f);
@@ -1470,11 +1486,10 @@ void CBirdviewView::DrawScene()
 	glPopMatrix();
 #endif //#if 0
 
-#if 1
+#if 0
 	float tempX = 0;
 	float tempZ = 0;
 
-#if 0
 	//drawing front fan
 	glPushMatrix();
 	glTranslatef(0.0f, 0.0f, -halfCarLen);
@@ -1524,7 +1539,6 @@ void CBirdviewView::DrawScene()
 	glEnd();
 	glPopMatrix();
 
-#endif
 	float temp;
 	temp = -1000.0f;
 
@@ -1578,8 +1592,7 @@ void CBirdviewView::DrawScene()
 	glEnd();
 	glPopMatrix();
 #endif
-
-#endif
+#endif //#if 1
 
 }
 
@@ -1665,4 +1678,40 @@ void CBirdviewView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 	}
 	SendMessage(WM_UPDATE_SPEED_DRAWING, m_Speed*100, 0);
 	CView::OnKeyDown(nChar, nRepCnt, nFlags);
+}
+
+void CBirdviewView::DrawCircle(float cx, float cy, float r, int num_segments) 
+{ 
+	float theta = 2 * 3.1415926 / float(num_segments); 
+	float tangetial_factor = tanf(theta);//calculate the tangential factor 
+
+	float radial_factor = cosf(theta);//calculate the radial factor 
+	
+	float x = r;//we start at angle = 0 
+
+	float y = 0; 
+    
+	glBegin(GL_POLYGON); 
+	for(int ii = 0; ii < num_segments; ii++) 
+	{ 
+		glVertex3f(x + cx, 0.0f, y + cy);//output vertex 
+        
+		//calculate the tangential vector 
+		//remember, the radial vector is (x, y) 
+		//to get the tangential vector we flip those coordinates and negate one of them 
+
+		float tx = -y; 
+		float ty = x; 
+        
+		//add the tangential vector 
+
+		x += tx * tangetial_factor; 
+		y += ty * tangetial_factor; 
+        
+		//correct using the radial factor 
+
+		x *= radial_factor; 
+		y *= radial_factor; 
+	} 
+	glEnd(); 
 }
