@@ -35,6 +35,8 @@ float CBirdviewView::halfCarLen = 0.1f;
 float CBirdviewView::halfCarHeight = 0.1f;
 float CBirdviewView::halfRoadWidth = (0.7f / 2);
 float CBirdviewView::m_Speed = 0;
+bool CBirdviewView::m_showRaw = false;
+bool CBirdviewView::m_showTracking = true;
 
 unsigned char threeto8[8] =
 {
@@ -221,7 +223,7 @@ END_MESSAGE_MAP()
 unsigned long rcvIdent[] = {
 	0x400, 0x401, 0x402, 0x00,
 	//0x410, 0x411, 0x412, 0x00,
-	0x501, 0x510, 0x511, 0x512, 0x513, 0x514, 0x515, 0x516, 0x517, 0x518, 0x519, 0x520, 0x521, 0x522, 0x523, 0x00};
+	0x601, 0x610, 0x611, 0x612, 0x613, 0x614, 0x615, 0x616, 0x617, 0x618, 0x619, 0x620, 0x621, 0x622, 0x623, 0x624, 0x625, 0x00};
 
 // CBirdviewView
 
@@ -338,16 +340,27 @@ void CBirdviewView::ParseTrackingObject(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *p
 	pRaw->AbsLevel_db = 0;
 	pRaw->type = 0;
 
-	pRaw->TargetNum = (pSrc->RCV_data[7] & 0xFC) >> 2;
-	
-	temp = pSrc->RCV_data[1] & 0x1F;
+	temp = pSrc->RCV_data[1] & 0x0F;
 	temp = (temp << 8) + pSrc->RCV_data[0];
-	pRaw->x_range = (temp - 2500) * 0.016;
+	pRaw->x_point = temp * 0.032f;
 
-	temp = pSrc->RCV_data[3] & 0x01;
-	temp = (temp << 8) + pSrc->RCV_data[2];
-	temp = (temp << 3) + ((pSrc->RCV_data[1] & 0xE0) >> 5);
-	pRaw->y_range = (temp - 2048) * 0.016;
+	temp = pSrc->RCV_data[2];
+	temp = (temp << 4) + ((pSrc->RCV_data[1] & 0xF0) >> 4);
+	pRaw->y_point = (temp - 2048) * 0.016;
+
+	temp = pSrc->RCV_data[3];
+	pRaw->z_point = (temp - 32.0f) * 0.064f;
+
+	temp = pSrc->RCV_data[5] & 0x0F;
+	temp = (temp << 8) + pSrc->RCV_data[4];
+	pRaw->x_speed = (temp - 2048.0f) * 0.1f;
+
+	temp = pSrc->RCV_data[6];
+	temp = (temp << 4) + ((pSrc->RCV_data[4] & 0xF0) >> 4);
+	pRaw->y_speed = (temp - 2048.0f) * 0.1f;
+
+	temp = pSrc->RCV_data[7];
+	pRaw->z_speed = (temp - 128.0f) * 0.05f;
 }
 
 void CBirdviewView::DrawTrackingObject3D(PARAM_STRUCT* pD)
@@ -866,6 +879,8 @@ afx_msg LRESULT CBirdviewView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 		switch (arrIdx) {
 		case 0:
 		//case 1:
+			if (m_showRaw == FALSE)
+				break;
 			pos = p->GetHeadPosition();
 			while (pos) {
 				posOld = pos;
@@ -896,6 +911,8 @@ afx_msg LRESULT CBirdviewView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 			break;
 #if 1
 		case 1:
+			if (m_showTracking == false)
+				break;
 			pos = p->GetHeadPosition();
 			while (pos) {
 				posOld = pos;
@@ -907,7 +924,7 @@ afx_msg LRESULT CBirdviewView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 				pos2nd = pos;
 				while (pos2nd) {
 					data2nd = p->GetAt(pos2nd);
-					if (data2nd.DataLength != 7 || data2nd.Ident < 0x610 || data2nd.Ident > 0x63F) {
+					if (data2nd.DataLength != 2 || data2nd.Ident < 0x610 || data2nd.Ident > 0x63F) {
 						p->GetNext(pos2nd);
 						continue;
 					}
@@ -940,16 +957,7 @@ BOOL CBirdviewView::ParseTrackingObject2nd(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT
 {
 	int temp;
 
-	temp = (pSrc->RCV_data[0] & 0x3F);
-
-	if (pRaw->TargetNum != temp)
-		return FALSE;
-
-	temp = pSrc->RCV_data[3] & 0x01;
-	temp = (temp << 8) + pSrc->RCV_data[2];
-	temp = (temp << 3) + ((pSrc->RCV_data[1] & 0xE0) >> 5);
-	pRaw->z_range = (temp - 2048) * 0.016;
-
+	pRaw->TargetNum = pSrc->RCV_data[0];
 	return TRUE;
 }
 
@@ -960,9 +968,9 @@ void CBirdviewView::DrawTrackingObject3D(RAW_OBJECT_STRUCT *pRaw)
 	float tempZ;
 	float tempY;
 
-	tempZ = -pRaw->x_range;
-	tempX = -pRaw->y_range;
-	tempY = pRaw->z_range;
+	tempZ = -pRaw->x_point;
+	tempX = -pRaw->y_point;
+	tempY = pRaw->z_point;
 
 	glColor3f(0.0f, 1.0f, 0.0f);
 

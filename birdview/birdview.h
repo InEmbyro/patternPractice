@@ -29,6 +29,8 @@ class CBirdviewView : public CView
 	static float halfCarHeight;
 	static float halfRoadWidth;
 	static float m_Speed;
+	static bool m_showRaw;
+	static bool m_showTracking;
 	char quote[20];
 	HGLRC	m_hrc;
 

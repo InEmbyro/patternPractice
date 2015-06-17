@@ -515,10 +515,11 @@ void GridFormChildView::OnLvnGetdispinfo(NMHDR *pNMHDR, LRESULT *pResult)
 			str = "";
 			break;
 		}
+
+		::lstrcpy(pDispInfo->item.pszText, str);
 	}
 
 __error:	
-	::lstrcpy(pDispInfo->item.pszText, str);
 	*pResult = 0;
 }
 

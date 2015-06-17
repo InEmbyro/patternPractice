@@ -462,12 +462,6 @@ afx_msg LRESULT CTargetList::OnUserDraw(WPARAM wParam, LPARAM lParam)
 			m_listctrl.SetItemText(row, idx++, sz);
 			sz.Format(_T("%.3f"), data.z_speed);
 			m_listctrl.SetItemText(row, idx++, sz);
-			sz.Format(_T("%d"), data.lane);
-			m_listctrl.SetItemText(row, idx++, sz);
-			sz.Format(_T("%d"), data.len);
-			m_listctrl.SetItemText(row, idx++, sz);
-			sz.Format(_T("%d"), data.size);
-			m_listctrl.SetItemText(row, idx++, sz);
 		}
 		break;
 	case 1:
@@ -588,9 +582,9 @@ void CTargetList::SetTrackingHeader()
 	m_listctrl.InsertColumn(idx++, _T("Speed_x[m/s]"),	LVCFMT_LEFT, 90, 0);
 	m_listctrl.InsertColumn(idx++, _T("Speed_y[m/s]"),	LVCFMT_LEFT, 90, 0);
 	m_listctrl.InsertColumn(idx++, _T("Speed_z[m/s]"),	LVCFMT_LEFT, 90, 0);
-	m_listctrl.InsertColumn(idx++, _T("Lane"),			LVCFMT_LEFT, 90, 0);
-	m_listctrl.InsertColumn(idx++, _T("Length"),		LVCFMT_LEFT, 90, 0);
-	m_listctrl.InsertColumn(idx++, _T("Size"),			LVCFMT_LEFT, 90, 0);
+	//m_listctrl.InsertColumn(idx++, _T("Lane"),			LVCFMT_LEFT, 90, 0);
+	//m_listctrl.InsertColumn(idx++, _T("Length"),		LVCFMT_LEFT, 90, 0);
+	//m_listctrl.InsertColumn(idx++, _T("Size"),			LVCFMT_LEFT, 90, 0);
 }
 
 void CTargetList::SetRawHeader()
