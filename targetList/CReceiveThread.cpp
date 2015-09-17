@@ -149,7 +149,9 @@ __next_read:
 								WaitForSingleObject(pView->_MapStoreMutex, INFINITE);
 								pView->_MapStore->SetAt(data.Ident - 0x610, rawData);
 								ReleaseMutex(pView->_MapStoreMutex);
-							} else if (data.DataLength == 2) {
+							} 
+#if 0
+							else if (data.DataLength == 2) {
 								pView->ParseTrackingObject2nd(&data, &rawData);
 								WaitForSingleObject(pView->_MapStoreMutex, INFINITE);
 								if (pView->_MapStore->Lookup(data.Ident - 0x610, rawData2)) {
@@ -159,6 +161,7 @@ __next_read:
 								}
 								ReleaseMutex(pView->_MapStoreMutex);
 							}
+#endif
 						} else {
 							if (data.Ident == 0x401 || data.Ident == 0x411) {
 								pView->ParseRawObject(&data, &rawData);

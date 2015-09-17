@@ -361,6 +361,8 @@ void CBirdviewView::ParseTrackingObject(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT *p
 
 	temp = pSrc->RCV_data[7];
 	pRaw->z_speed = (temp - 128.0f) * 0.05f;
+
+	pRaw->TargetNum = pSrc->Ident - 0x610;
 }
 
 void CBirdviewView::DrawTrackingObject3D(PARAM_STRUCT* pD)
@@ -917,14 +919,16 @@ afx_msg LRESULT CBirdviewView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 			while (pos) {
 				posOld = pos;
 				data = p->GetNext(pos);
-				if (data.DataLength != 8 || data.Ident < 0x610 || data.Ident > 0x63F) {
+				if (data.DataLength != 8 || data.Ident < 0x610 || data.Ident > 0x62F) {
 					continue;
 				}
 				ParseTrackingObject(&data, &raw);
+				DrawTrackingObject3D(&raw);
+#if 0
 				pos2nd = pos;
 				while (pos2nd) {
 					data2nd = p->GetAt(pos2nd);
-					if (data2nd.DataLength != 2 || data2nd.Ident < 0x610 || data2nd.Ident > 0x63F) {
+					if (data2nd.DataLength != 2 || data2nd.Ident < 0x610 || data2nd.Ident > 0x62F) {
 						p->GetNext(pos2nd);
 						continue;
 					}
@@ -939,6 +943,7 @@ afx_msg LRESULT CBirdviewView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 						continue;
 					}
 				}
+#endif
 			}
 			break;
 #endif
@@ -957,7 +962,7 @@ BOOL CBirdviewView::ParseTrackingObject2nd(PARAM_STRUCT *pSrc, RAW_OBJECT_STRUCT
 {
 	int temp;
 
-	pRaw->TargetNum = pSrc->RCV_data[0];
+	pRaw->TargetNum = pSrc->Ident - 0x610;	//pSrc->RCV_data[0];
 	return TRUE;
 }
 
