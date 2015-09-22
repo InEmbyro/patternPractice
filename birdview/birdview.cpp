@@ -1704,6 +1704,14 @@ void CBirdviewView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 	case VK_SPACE:
 		pFrame->SendMessage(WM_FAKE_KEYDOWN, nChar, 0);
 		break;
+	case 'r':
+	case 'R':
+		m_showRaw = !m_showRaw;
+		break;
+	case 't':
+	case 'T':
+		m_showTracking = !m_showTracking;
+		break;
 	default:
 		break;
 	}

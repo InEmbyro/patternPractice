@@ -1,4 +1,5 @@
-PAUSE function
+KEYPRESS
 
-In birdview, users can PAUSE output by pressing SPACE. The target list is also controlled by this way.
+1. r or R to control whether showing raw objects.
+2. t or T to control whether showing tracking objects.
 
