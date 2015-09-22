@@ -19,6 +19,7 @@ BEGIN_MESSAGE_MAP(CChildFrame, CMDIChildWnd)
 	ON_COMMAND(ID_FILE_CLOSE, &CChildFrame::OnFileClose)
 	ON_WM_SETFOCUS()
 	ON_WM_CREATE()
+	ON_WM_KEYDOWN()
 END_MESSAGE_MAP()
 
 // CChildFrame construction/destruction
@@ -97,4 +98,12 @@ BOOL CChildFrame::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO
 	
 	// otherwise, do default handling
 	return CMDIChildWnd::OnCmdMsg(nID, nCode, pExtra, pHandlerInfo);
+}
+
+
+void CChildFrame::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
+{
+	// TODO: 在此加入您的訊息處理常式程式碼和 (或) 呼叫預設值
+
+	CMDIChildWnd::OnKeyDown(nChar, nRepCnt, nFlags);
 }

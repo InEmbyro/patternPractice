@@ -24,6 +24,7 @@ CChildView::~CChildView()
 
 BEGIN_MESSAGE_MAP(CChildView, CWnd)
 	ON_WM_PAINT()
+//	ON_WM_KEYDOWN()
 END_MESSAGE_MAP()
 
 
@@ -52,3 +53,11 @@ void CChildView::OnPaint()
 	// Do not call CWnd::OnPaint() for painting messages
 }
 
+
+
+//void CChildView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
+//{
+//	// TODO: 在此加入您的訊息處理常式程式碼和 (或) 呼叫預設值
+//
+//	CWnd::OnKeyDown(nChar, nRepCnt, nFlags);
+//}

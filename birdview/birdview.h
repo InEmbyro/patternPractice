@@ -9,6 +9,7 @@
 
 #define	WM_USER_DRAW			(WM_USER + 1)
 #define WM_UPDATE_SPEED_DRAWING (WM_USER + 2)
+#define WM_FAKE_KEYDOWN			(WM_USER + 3)
 
 extern "C" AFX_EXT_API LPVOID WINAPI InitBirdviewForm(void);
 
@@ -78,6 +79,7 @@ public:
 	GLfloat m_fOldFov;
 	GLfloat m_RoadLineStartZ;
 	GLfloat m_RoadLineStartZStep;
+	void ChangeShow();
 
 
 	HANDLE _ListMutex;
@@ -112,6 +114,8 @@ protected:
 	afx_msg LRESULT OnUpdateSpeedDrawing(WPARAM wParam, LPARAM lParam);
 public:
 	afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
+private:
+	bool	m_bShow;
 };
 
 #pragma once
@@ -138,4 +142,6 @@ public:
 public:
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	afx_msg void OnClose();
+protected:
+	afx_msg LRESULT OnFakeKeydown(WPARAM wParam, LPARAM lParam);
 };

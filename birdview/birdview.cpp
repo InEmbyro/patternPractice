@@ -215,6 +215,7 @@ BEGIN_MESSAGE_MAP(CBirdviewFrm, CMDIChildWnd)
 	ON_WM_CREATE()
 	ON_WM_CLOSE()
 //	ON_WM_DESTROY()
+ON_MESSAGE(WM_FAKE_KEYDOWN, &CBirdviewFrm::OnFakeKeydown)
 END_MESSAGE_MAP()
 
 
@@ -231,11 +232,18 @@ IMPLEMENT_DYNCREATE(CBirdviewView, CView)
 const char* CBirdviewView::mailslot = "\\\\.\\mailslot\\wnc_bird_view";
 const unsigned int CBirdviewView::slotKey = 0x01;
 
+
+void CBirdviewView::ChangeShow()
+{
+	m_bShow = !m_bShow;
+}
+
 CBirdviewView::CBirdviewView()
 	:pRcvThread(NULL), m_RoadLineStartZ(0), m_RoadLineStartZStep(0), m_fYoffset(10.28)
 {
 	m_pDC = NULL;
 	m_pOldPalette = NULL;
+	m_bShow = true;
 
 	_ListMutex = CreateMutex(NULL, FALSE, NULL);
 
@@ -860,6 +868,9 @@ afx_msg LRESULT CBirdviewView::OnUserDraw(WPARAM wParam, LPARAM lParam)
 //	RAW_OBJECT_STRUCT raw2nd;
 
 	if (GetSafeHwnd() == NULL)
+		return 0;
+
+	if (!m_bShow)
 		return 0;
 
 	DrawScene();
@@ -1675,6 +1686,9 @@ afx_msg LRESULT CBirdviewView::OnUpdateSpeedDrawing(WPARAM wParam, LPARAM lParam
 void CBirdviewView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	// TODO: 在此加入您的訊息處理常式程式碼和 (或) 呼叫預設值
+	CWinApp* pApp = AfxGetApp();
+	ENSURE(pApp != NULL);
+	CMDIFrameWnd *pFrame = (CMDIFrameWnd*)(pApp->m_pMainWnd);
 
 	switch (nChar) {
 	case VK_UP:
@@ -1686,6 +1700,9 @@ void CBirdviewView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 			m_Speed -= 10.0f;
 		else 
 			m_Speed = 0;
+		break;
+	case VK_SPACE:
+		pFrame->SendMessage(WM_FAKE_KEYDOWN, nChar, 0);
 		break;
 	default:
 		break;
@@ -1728,4 +1745,11 @@ void CBirdviewView::DrawCircle(float cx, float cy, float r, int num_segments)
 		y *= radial_factor; 
 	} 
 	glEnd(); 
+}
+
+
+afx_msg LRESULT CBirdviewFrm::OnFakeKeydown(WPARAM wParam, LPARAM lParam)
+{
+	_pView->ChangeShow();
+	return 0;
 }

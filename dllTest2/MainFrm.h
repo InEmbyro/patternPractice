@@ -4,6 +4,8 @@
 
 #pragma once
 
+#define WM_FAKE_KEYDOWN			(WM_USER + 3)
+
 class CMainFrame : public CMDIFrameWnd
 {
 	DECLARE_DYNAMIC(CMainFrame)
@@ -38,6 +40,9 @@ protected:
 
 public:
 	afx_msg void OnClose();
+//	afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
+protected:
+	afx_msg LRESULT OnFakeKeydown(WPARAM wParam, LPARAM lParam);
 };
 
 

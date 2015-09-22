@@ -9,7 +9,9 @@ extern unsigned long recvId[];
 extern "C" AFX_EXT_API LPVOID WINAPI InitTargetListForm();
 
 typedef int (__cdecl *GENERICCOMPAREFN1)(const void * elem1, const void * elem2);
+
 #define	WM_USER_DRAW	(WM_USER + 1)
+#define WM_FAKE_KEYDOWN			(WM_USER + 3)
 #define RAD_CONVER	(3.1416 / 180)
 
 
@@ -75,6 +77,11 @@ protected:
 public:
 	afx_msg void OnCbnSelchangeTargetlistCombo();
 	virtual void OnInitialUpdate();
+	void	ChangeShow();
+protected:
+	afx_msg LRESULT OnFakeKeydown(WPARAM wParam, LPARAM lParam);
+private:
+	bool	m_bShow;
 };
 
 // CTargetListForm ®Ø¬[
@@ -96,6 +103,8 @@ public:
 	POSITION	rawPos;
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	afx_msg void OnClose();
+protected:
+	afx_msg LRESULT OnFakeKeydown(WPARAM wParam, LPARAM lParam);
 };
 
 

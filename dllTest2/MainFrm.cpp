@@ -18,6 +18,8 @@ IMPLEMENT_DYNAMIC(CMainFrame, CMDIFrameWnd)
 BEGIN_MESSAGE_MAP(CMainFrame, CMDIFrameWnd)
 	ON_WM_CREATE()
 	ON_WM_CLOSE()
+//	ON_WM_KEYDOWN()
+ON_MESSAGE(WM_FAKE_KEYDOWN, &CMainFrame::OnFakeKeydown)
 END_MESSAGE_MAP()
 
 static UINT indicators[] =
@@ -94,4 +96,16 @@ void CMainFrame::OnClose()
 	}
 #endif
 	CMDIFrameWnd::OnClose();
+}
+
+
+afx_msg LRESULT CMainFrame::OnFakeKeydown(WPARAM wParam, LPARAM lParam)
+{
+	UINT uId = AFX_IDM_FIRST_MDICHILD;
+#if 1
+	for (CWnd *pWnd = GetDescendantWindow(uId); pWnd; pWnd = GetDescendantWindow(++uId)) {
+		pWnd->SendMessage(WM_FAKE_KEYDOWN);
+	}
+#endif
+	return 0;
 }

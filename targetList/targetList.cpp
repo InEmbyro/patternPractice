@@ -14,6 +14,8 @@
 
 using namespace std;
 
+#define WM_FAKE_KEYDOWN			(WM_USER + 3)
+
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
@@ -98,6 +100,7 @@ IMPLEMENT_DYNCREATE(CTargetList, CFormView)
 CTargetList::CTargetList()
 	: CFormView(CTargetList::IDD)
 {
+	m_bShow = true;
 	CString sz;
 	const char **ptr = &comboStr[0];
 	while (*ptr) {
@@ -171,6 +174,7 @@ BEGIN_MESSAGE_MAP(CTargetList, CFormView)
 	ON_MESSAGE(WM_USER_DRAW, &CTargetList::OnUserDraw)
 	ON_CBN_SELCHANGE(IDC_TARGETLIST_COMBO, &CTargetList::OnCbnSelchangeTargetlistCombo)
 //	ON_WM_ERASEBKGND()
+ON_MESSAGE(WM_FAKE_KEYDOWN, &CTargetList::OnFakeKeydown)
 END_MESSAGE_MAP()
 
 
@@ -214,6 +218,7 @@ CTargetListForm::~CTargetListForm()
 BEGIN_MESSAGE_MAP(CTargetListForm, CMDIChildWnd)
 	ON_WM_CREATE()
 	ON_WM_CLOSE()
+	ON_MESSAGE(WM_FAKE_KEYDOWN, &CTargetListForm::OnFakeKeydown)
 END_MESSAGE_MAP()
 
 
@@ -402,6 +407,10 @@ int __cdecl CTargetList::Compare1(const RAW_OBJECT_STRUCT * p1, const RAW_OBJECT
 		return 0;
 
 }
+void CTargetList::ChangeShow()
+{
+	m_bShow = !m_bShow;
+}
 
 int __cdecl CTargetList::Compare0(const RAW_OBJECT_STRUCT * p1, const RAW_OBJECT_STRUCT * p2)
 {
@@ -437,6 +446,9 @@ afx_msg LRESULT CTargetList::OnUserDraw(WPARAM wParam, LPARAM lParam)
 	}
 	ReleaseMutex(_listMutex);
 #endif
+	if (!m_bShow)
+		return 0;
+
 	RAW_OBJECT_STRUCT *pD = _listArray.GetData();
 	if (m_combo.GetCurSel() == 0)
 		qsort(pD, _listArray.GetSize(), sizeof(RAW_OBJECT_STRUCT), (GENERICCOMPAREFN1)Compare0);
@@ -603,4 +615,17 @@ void CTargetList::SetRawHeader()
 	m_listctrl.InsertColumn(idx++, _T("Amplitude"),			LVCFMT_LEFT, 90, 0);
 	m_listctrl.InsertColumn(idx++, _T("Class"),				LVCFMT_LEFT, 90, 0);
 	m_listctrl.InsertColumn(idx++, _T("Speed_radial[m/s]"), LVCFMT_LEFT, 90, 0);
+}
+
+
+afx_msg LRESULT CTargetList::OnFakeKeydown(WPARAM wParam, LPARAM lParam)
+{
+	return 0;
+}
+
+
+afx_msg LRESULT CTargetListForm::OnFakeKeydown(WPARAM wParam, LPARAM lParam)
+{
+	_pView->ChangeShow();
+	return 0;
 }
