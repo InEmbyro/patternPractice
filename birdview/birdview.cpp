@@ -30,8 +30,8 @@
 #define FAN_LEN			(3.5f * 1.5)
 
 static AFX_EXTENSION_MODULE birdviewDLL = { NULL, NULL };
-float CBirdviewView::halfCarWidth = 0.5f;
-float CBirdviewView::halfCarLen = 0.5f;
+float CBirdviewView::halfCarWidth = 0.25f;
+float CBirdviewView::halfCarLen = 0.25f;
 float CBirdviewView::halfCarHeight = 0.1f;
 float CBirdviewView::halfRoadWidth = (0.7f / 2);
 float CBirdviewView::m_Speed = 0;
@@ -980,7 +980,7 @@ void CBirdviewView::DrawTrackingObject3D(RAW_OBJECT_STRUCT *pRaw)
 	glColor3f(0.0f, 1.0f, 0.0f);
 	//glScalef(2.0f, 2.0f, 2.0f);
 
-#define HALF_CAR_HEIGHT	(0.5f)
+#define HALF_CAR_HEIGHT	(0.25f)
 #if 1
 	//front
 	glPushMatrix();
@@ -1240,9 +1240,9 @@ HFONT font = CreateFont(12, 0, 0, 0,
 	if (m_oldRect.bottom)
 		m_fAspect = (GLfloat)m_oldRect.Width()/m_oldRect.Height();
 	else    // don't divide by zero, not that we should ever run into that...
-		m_fAspect = 5.0f;
+	m_fAspect = 5.0f;
 	m_fNearPlane = 1.0f;
-	m_fFarPlane = 30;
+	m_fFarPlane = 100;
 	m_fMaxObjSize = m_fFarPlane / 2;
 	m_fMaxObjSizeOld = m_fMaxObjSize;
 	m_fRadius = m_fNearPlane + m_fMaxObjSize / 2.0f;
